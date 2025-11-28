@@ -77,6 +77,7 @@ Configura Firebase:
 - Posizionali nelle rispettive cartelle:
 - `ios/Runner/`
 - `android/app/`
+
 Avvia l'app:
 ```bash
 flutter run
