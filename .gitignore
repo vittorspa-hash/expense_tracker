@@ -1,0 +1,106 @@
+# -------------------------------
+# 🔥 Flutter & Dart
+# -------------------------------
+.dart_tool/
+.packages
+.pub/
+.build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+**/doc/api/
+**/ios/Flutter/.last_build_id
+
+# -------------------------------
+# 🔥 Build outputs
+# -------------------------------
+build/
+
+# -------------------------------
+# 🔥 OS specific
+# -------------------------------
+.DS_Store
+
+# -------------------------------
+# 🔥 Firebase & Secrets
+# (importante per sicurezza!)
+# -------------------------------
+google-services.json
+GoogleService-Info.plist
+*.keystore
+*.jks
+*.env
+.env.*
+.env.local
+
+# -------------------------------
+# 🔥 Android
+# -------------------------------
+android/.gradle/
+android/local.properties
+android/app/debug
+android/app/profile
+android/app/release
+
+# Symbolication / Obfuscation
+app.*.symbols
+app.*.map.json
+
+# -------------------------------
+# 🔥 iOS
+# -------------------------------
+ios/Pods/
+ios/Podfile.lock
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/App.framework
+ios/ServiceDefinitions.json
+DerivedData/
+*.xcworkspace
+*.xcuserstate
+*.xcuserdatad
+
+# -------------------------------
+# 🔥 macOS
+# -------------------------------
+macos/Pods/
+macos/Flutter/ephemeral/
+macos/Flutter/Flutter.framework
+macos/Flutter/Flutter.podspec
+
+# -------------------------------
+# 🔥 Windows
+# -------------------------------
+windows/runner/Debug/
+windows/runner/Release/
+
+# -------------------------------
+# 🔥 Linux
+# -------------------------------
+linux/obj/
+linux/flutter/ephemeral/
+
+# -------------------------------
+# 🔥 Editor configs
+# -------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code (se vuoi ignorarlo scommenta)
+# .vscode/
+
+# Atom
+.atom/
+
+# Misc
+*.log
+*.swp
+*.class
+.history
+.svn/
+.buildlog/
+.swiftpm/
+migrate_working_dir/

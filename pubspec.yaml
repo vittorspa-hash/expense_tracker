@@ -1,0 +1,66 @@
+name: expense_tracker
+description: "A new Flutter project."
+publish_to: 'none'
+
+# Versione dell'app (name+build)
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Gestione stato / utilities
+  get: ^4.7.2
+  get_it: ^8.2.0
+  provider: ^6.1.5+1
+  uuid: ^4.5.1
+
+  # Localizzazione e formattazione
+  intl: ^0.20.2
+  flutter_localizations:
+    sdk: flutter
+
+  # Database locale
+  sqflite: ^2.4.2
+  path_provider: ^2.1.5
+  shared_preferences: ^2.5.3
+
+  # Firebase
+  firebase_core: ^4.1.1
+  cloud_firestore: ^6.0.2
+  firebase_auth: ^6.1.0
+  firebase_storage: ^13.0.2
+
+  # UI e media
+  cupertino_icons: ^1.0.8
+  font_awesome_flutter: ^10.10.0
+  image_picker: ^1.2.0
+  fl_chart: ^1.1.1
+  flutter_screenutil: ^5.9.3
+
+  # Notifiche
+  flutter_local_notifications: ^19.5.0
+  timezone: ^0.10.1
+
+  # Lint
+  flutter_lints: ^6.0.0
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
+  flutter_test:
+    sdk: flutter
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/money.png"
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/icons/money.png

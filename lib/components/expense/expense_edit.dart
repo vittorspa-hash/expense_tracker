@@ -1,0 +1,318 @@
+// expense_edit.dart
+// Widget per creare o modificare una spesa:
+// - Permette di inserire importo, descrizione e data.
+// - Supporta la creazione e la modifica tramite pressione prolungata.
+// - Mostra un dialogo informativo la prima volta che si apre.
+// - Include un FloatingActionButton opzionale per eliminare una spesa.
+// - Mostra snackbar di conferma per creazione, modifica o eliminazione.
+
+import 'package:expense_tracker/utils/snackbar_utils.dart';
+import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/models/expense_model.dart';
+import 'package:expense_tracker/models/store_model.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+class ExpenseEdit extends StatefulWidget {
+  final double? initialValue;
+  final String? initialDescription;
+  final DateTime? initialDate;
+  final IconData? floatingActionButtonIcon;
+  final ExpenseModel? Function()? onFloatingActionButtonPressed;
+  final void Function({
+    required double value,
+    required String? description,
+    required DateTime date,
+  })
+  onSubmit;
+
+  const ExpenseEdit({
+    super.key,
+    this.initialValue,
+    this.initialDescription,
+    this.initialDate,
+    this.floatingActionButtonIcon,
+    this.onFloatingActionButtonPressed,
+    required this.onSubmit,
+  });
+
+  @override
+  State<ExpenseEdit> createState() => _ExpenseEditState();
+}
+
+class _ExpenseEditState extends State<ExpenseEdit> {
+  final priceController = TextEditingController();
+  final descriptionController = TextEditingController();
+  bool isTappedDown = false;
+  late DateTime selectedDate;
+
+  @override
+  void initState() {
+    super.initState();
+    priceController.text = widget.initialValue?.toString() ?? "";
+    descriptionController.text = widget.initialDescription ?? "";
+    selectedDate = widget.initialDate ?? DateTime.now();
+
+    // Mostra dialogo istruzioni solo la prima volta
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showInstructionDialogIfNeeded();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: isDark
+          ? AppColors.editPageBackgroundDark
+          : AppColors.editPageBackgroundLight,
+      body: InkWell(
+        onLongPress: onSubmit,
+        onHighlightChanged: (highlighted) =>
+            setState(() => isTappedDown = highlighted),
+        splashColor: isDark
+            ? AppColors.editPageBackgroundDark
+            : AppColors.editPageBackgroundLight,
+        focusColor: Colors.transparent,
+        highlightColor: AppColors.primary,
+        onTap: () {},
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            inputPrice(),
+            inputDescription(),
+            SizedBox(height: 20.h),
+            inputDate(),
+          ],
+        ),
+      ),
+      floatingActionButton: widget.floatingActionButtonIcon == null
+          ? null
+          : floatingActionButton(isDark),
+    );
+  }
+
+  // --- WIDGET INPUT ---
+
+  Widget inputPrice() => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text(
+        "€",
+        style: TextStyle(
+          fontSize: 50.sp,
+          color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      SizedBox(width: 20.w),
+      IntrinsicWidth(
+        child: TextField(
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          controller: priceController,
+          cursorColor: isTappedDown
+              ? AppColors.textLight
+              : AppColors.textTappedDown,
+          style: TextStyle(
+            fontSize: 50.sp,
+            color: isTappedDown
+                ? AppColors.textLight
+                : AppColors.textTappedDown,
+            fontWeight: FontWeight.w600,
+          ),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+            TextInputFormatter.withFunction((oldValue, newValue) {
+              String text = newValue.text.replaceAll(',', '.');
+              return newValue.copyWith(
+                text: text,
+                selection: newValue.selection,
+              );
+            }),
+          ],
+          decoration: InputDecoration(
+            hintText: "0.00",
+            border: InputBorder.none,
+            hintStyle: TextStyle(
+              color: AppColors.textEditPage,
+              fontSize: 50.sp,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+
+  Widget inputDescription() => IntrinsicWidth(
+    child: TextField(
+      keyboardType: TextInputType.text,
+      controller: descriptionController,
+      cursorColor: isTappedDown
+          ? AppColors.textLight
+          : AppColors.textTappedDown,
+      textAlign: TextAlign.center,
+      textCapitalization: TextCapitalization.sentences,
+      style: TextStyle(
+        fontSize: 20.sp,
+        color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: InputDecoration(
+        hintText: "Descrizione (opzionale)",
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: AppColors.textEditPage, fontSize: 18.sp),
+      ),
+    ),
+  );
+
+  Widget inputDate() {
+    final formattedDate = DateFormat("d MMMM y", "it_IT").format(selectedDate);
+    final displayDate = capitalizeMonth(formattedDate);
+
+    return GestureDetector(
+      onTap: () => _pickDate(context),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_today,
+            color: isTappedDown
+                ? AppColors.textLight
+                : AppColors.textTappedDown,
+            size: 24.sp,
+          ),
+          SizedBox(width: 10.w),
+          Text(
+            displayDate,
+            style: TextStyle(
+              fontSize: 18.sp,
+              color: isTappedDown
+                  ? AppColors.textLight
+                  : AppColors.textTappedDown,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget floatingActionButton(bool isDark) => FloatingActionButton(
+    heroTag: null,
+    backgroundColor: AppColors.delete.withValues(alpha: 0.3),
+    foregroundColor: AppColors.delete,
+    onPressed: () async {
+      final confirm = await DialogModel.showConfirmDialog(
+        context,
+        title: "Conferma eliminazione",
+        content: "Vuoi eliminare la spesa selezionata?",
+        confirmText: "Elimina",
+        cancelText: "Annulla",
+      );
+
+      if (confirm == true) {
+        if (widget.onFloatingActionButtonPressed != null) {
+          final deletedExpense = await Future.sync(
+            () => widget.onFloatingActionButtonPressed!(),
+          );
+
+          if (deletedExpense != null && mounted) {
+            SnackbarUtils.show(
+              context: context,
+              title: "Eliminata!",
+              message: "Spesa eliminata con successo.",
+              deletedItem: deletedExpense,
+              onDelete: (exp) => storeModel.value.deleteExpense(exp),
+              onRestore: (exp) => storeModel.value.createExpense(
+                value: exp.value,
+                description: exp.description,
+                date: exp.createdOn,
+              ),
+            );
+          }
+        }
+      }
+    },
+    child: Icon(widget.floatingActionButtonIcon, size: 28.sp),
+  );
+
+  // --- LOGICA SUBMIT ---
+  void onSubmit() {
+    final value = double.tryParse(priceController.text.trim()) ?? 0.0;
+    final description = descriptionController.text.trim();
+
+    if (value == 0) {
+      SnackbarUtils.show(
+        context: context,
+        title: "Nope!",
+        message: "Non puoi creare una spesa con un valore uguale a 0.",
+      );
+      return;
+    }
+
+    widget.onSubmit(
+      value: value,
+      description: description.isEmpty ? null : description,
+      date: selectedDate,
+    );
+
+    SnackbarUtils.show(
+      context: context,
+      title: widget.initialValue == null ? "Creata!" : "Modificata!",
+      message: widget.initialValue == null
+          ? "Spesa creata con successo."
+          : "Spesa modificata con successo.",
+    );
+  }
+
+  // --- PICKER DATA ---
+  Future<void> _pickDate(BuildContext context) async {
+    final DateTime? pickedDate = await DialogModel.showDatePickerAdaptive(
+      context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+
+    if (pickedDate != null && pickedDate != selectedDate) {
+      setState(() {
+        selectedDate = pickedDate;
+      });
+    }
+  }
+
+  // --- FUNZIONI UTILI ---
+  String capitalizeMonth(String date) {
+    final parts = date.split(' ');
+    if (parts.length < 3) return date;
+    final day = parts[0];
+    final month = parts[1][0].toUpperCase() + parts[1].substring(1);
+    final year = parts[2];
+    return "$day $month $year";
+  }
+
+  Future<void> _showInstructionDialogIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? "guest";
+    final shouldShow = prefs.getBool('showExpenseEditHint_$uid') ?? true;
+
+    if (shouldShow && mounted) {
+      final dontShowAgain = await DialogModel.showInstructionDialog(
+        context,
+        title: "Creazione o modifica di una spesa",
+        message:
+            "Per confermare la creazione o la modifica di una spesa, tieni premuto sullo schermo.",
+      );
+
+      if (dontShowAgain) {
+        await prefs.setBool('showExpenseEditHint_$uid', false);
+      }
+    }
+  }
+}
