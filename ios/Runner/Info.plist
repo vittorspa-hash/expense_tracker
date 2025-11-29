@@ -33,11 +33,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Serve per selezionare la foto profilo</string>
 	
-	<!-- 🔔 PERMESSI NOTIFICHE LOCALI (IMPORTANTE!) -->
-	<key>NSUserNotificationsUsageDescription</key>
-	<string>Vogliamo inviarti promemoria per inserire le tue spese e avvisi quando superi il budget</string>
-	
-	<!-- 📡 BACKGROUND MODES -->
+	<!-- 📡 BACKGROUND MODES (per notifiche programmate) -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

@@ -58,7 +58,9 @@ class _SettingsPageState extends State<SettingsPage>
       // -------------------------------------------------------------------------
       appBar: AppBar(
         elevation: 0,
-        iconTheme: IconThemeData(color: isDark ? AppColors.textDark : AppColors.textLight),
+        iconTheme: IconThemeData(
+          color: isDark ? AppColors.textDark : AppColors.textLight,
+        ),
         title: Text(
           "Impostazioni",
           style: TextStyle(

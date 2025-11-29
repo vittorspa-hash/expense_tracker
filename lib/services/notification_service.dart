@@ -39,20 +39,22 @@ class NotificationService {
   Future<void> initialize() async {
     // Inizializza timezone per notifiche programmate
     tz.initializeTimeZones();
-    tz.setLocalLocation(
-      tz.getLocation('Europe/Rome'),
-    ); // 🇮🇹 Fuso orario italiano
+    tz.setLocalLocation(tz.getLocation('Europe/Rome'));
 
     // ⚙️ Impostazioni Android
     const androidSettings = AndroidInitializationSettings(
       '@mipmap/ic_launcher',
     );
 
-    // ⚙️ Impostazioni iOS
+    // ⚙️ Impostazioni iOS - AGGIUNTO: Richiedi permessi all'inizializzazione
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
+      // ✅ FIX: Abilita presentazione in foreground
+      defaultPresentAlert: true,
+      defaultPresentSound: true,
+      defaultPresentBadge: true,
     );
 
     // ⚙️ Impostazioni generali
@@ -69,13 +71,20 @@ class NotificationService {
           _onNotificationTappedBackground,
     );
 
-    // ✅ FIX iOS: Richiedi esplicitamente i permessi per foreground presentation
+    // ✅ iOS: Richiedi permessi esplicitamente
     if (Platform.isIOS) {
-      await _notifications
+      final iosImplementation = _notifications
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
-          >()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
+          >();
+
+      if (iosImplementation != null) {
+        await iosImplementation.requestPermissions(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+      }
     }
 
     // 📢 Crea canali Android
@@ -150,7 +159,7 @@ class NotificationService {
       return granted ?? false;
     }
 
-    return true; // Android <13 non richiede permessi runtime
+    return true;
   }
 
   // -----------------------------------------------------------------------------
@@ -188,11 +197,13 @@ class NotificationService {
       icon: '@mipmap/ic_launcher',
     );
 
-    // 🍎 Dettagli notifica iOS
+    // 🍎 Dettagli notifica iOS - ✅ FIX: Abilita presentazione foreground
     const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
+      presentAlert: true, // 🔑 Mostra in foreground
+      presentBadge: true, // 🔑 Badge in foreground
+      presentSound: true, // 🔑 Suona in foreground
+      sound: 'default', // Suono di sistema
+      badgeNumber: 1,
     );
 
     const notificationDetails = NotificationDetails(
@@ -208,7 +219,7 @@ class NotificationService {
       tzScheduledDate,
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time, // Ripeti ogni giorno
+      matchDateTimeComponents: DateTimeComponents.time,
     );
 
     debugPrint(
@@ -242,12 +253,14 @@ class NotificationService {
       styleInformation: BigTextStyleInformation(''),
     );
 
-    // 🍎 Dettagli notifica iOS
+    // 🍎 Dettagli notifica iOS - ✅ FIX: Presentazione in foreground
     const iosDetails = DarwinNotificationDetails(
-      presentAlert: true, // Mostra alert anche in foreground
-      presentBadge: true, // Mostra badge
-      presentSound: true, // Suona anche in foreground
-      badgeNumber: 1, // Numero badge
+      presentAlert: true, // 🔑 CRITICO: Mostra anche in foreground
+      presentBadge: true, // 🔑 Badge anche in foreground
+      presentSound: true, // 🔑 Suona anche in foreground
+      sound: 'default', // Suono di sistema
+      badgeNumber: 1,
+      interruptionLevel: InterruptionLevel.timeSensitive, // ⚡ Alta priorità
     );
 
     const notificationDetails = NotificationDetails(
@@ -279,6 +292,7 @@ class NotificationService {
   // -----------------------------------------------------------------------------
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('📱 Notifica tappata (foreground): ${response.id}');
+    // Qui puoi navigare a schermate specifiche in base all'ID notifica
   }
 
   // -----------------------------------------------------------------------------
@@ -300,6 +314,53 @@ class NotificationService {
           >();
       return await androidImplementation?.areNotificationsEnabled() ?? false;
     }
-    return true; // iOS non ha questo check
+
+    // iOS - controlla i permessi
+    if (Platform.isIOS) {
+      final iosImplementation = _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+
+      if (iosImplementation != null) {
+        // Verifica se l'utente ha concesso i permessi
+        final settings = await iosImplementation.checkPermissions();
+        return settings?.isEnabled ?? false;
+      }
+    }
+
+    return true;
+  }
+
+  // -----------------------------------------------------------------------------
+  // 🔢 RESETTA BADGE NOTIFICHE
+  // -----------------------------------------------------------------------------
+  /// Resetta il numero del badge sull'icona dell'app a 0
+  /// Utile per rimuovere l'indicatore rosso quando l'utente apre l'app
+  Future<void> clearBadge() async {
+    // --- iOS ---
+    if (Platform.isIOS) {
+      await _notifications.show(
+        0,
+        '', // titolo vuoto
+        '', // corpo vuoto
+        const NotificationDetails(
+          iOS: DarwinNotificationDetails(
+            badgeNumber: 0, // azzera il badge
+            presentAlert: false, // non mostra alert
+            presentSound: false, // non suona
+          ),
+        ),
+      );
+
+      debugPrint('🔢 Badge iOS resettato senza suono o vibrazione');
+    }
+
+    // --- Android ---
+    if (Platform.isAndroid) {
+      // Su Android il badge si resetta solo se non ci sono notifiche attive
+      await _notifications.cancelAll();
+      debugPrint('🔢 Badge Android resettato');
+    }
   }
 }
