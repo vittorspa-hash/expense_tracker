@@ -9,7 +9,7 @@
 // - Animazione fade-in iniziale
 // -----------------------------------------------------------------------------
 
-import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -113,11 +113,11 @@ class _SettingsPageState extends State<SettingsPage>
                   ],
                 ),
                 child: SettingsTile(
-                  icon: Provider.of<ThemeProvider>(context).isDarkMode
+                  icon: isDark
                       ? Icons.dark_mode_rounded
                       : Icons.light_mode_rounded,
                   title: "Tema scuro",
-                  subtitle: Provider.of<ThemeProvider>(context).isDarkMode
+                  subtitle: isDark
                       ? "Attivato"
                       : "Disattivato",
                   trailingWidget: Consumer<ThemeProvider>(
@@ -287,7 +287,7 @@ class _SettingsPageState extends State<SettingsPage>
     BuildContext context,
     SettingsProvider provider,
   ) async {
-    final picked = await DialogModel.showTimePickerAdaptive(
+    final picked = await DialogUtils.showTimePickerAdaptive(
       context,
       initialTime: provider.reminderTime,
     );
@@ -304,7 +304,7 @@ class _SettingsPageState extends State<SettingsPage>
     BuildContext context,
     SettingsProvider provider,
   ) async {
-    final result = await DialogModel.showInputDialogAdaptive(
+    final result = await DialogUtils.showInputDialogAdaptive(
       context,
       title: "Imposta limite mensile",
       fields: [

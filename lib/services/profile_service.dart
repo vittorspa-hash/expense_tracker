@@ -1,6 +1,6 @@
-// profile_model.dart
+// profile_service.dart
 // -----------------------------------------------------------------------------
-// 🧩 ProfileModel – Gestione logica e dati del profilo utente
+// 🧩 ProfileService – Gestione logica e dati del profilo utente
 //
 // Responsabilità principali:
 // - Gestione immagine profilo: caricamento locale, cambio e rimozione
@@ -10,12 +10,12 @@
 // - Funzioni ausiliarie: refresh dati utente, copia ID negli appunti
 // -----------------------------------------------------------------------------
 // NOTE:
-// Questo model utilizza callback per aggiornare la UI (setState) e SnackBar
+// Questo service utilizza callback per aggiornare la UI (setState) e SnackBar
 // per mostrare messaggi di conferma o errore.
 // -----------------------------------------------------------------------------
 
 import 'dart:io';
-import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +23,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
-class ProfileModel {
+class ProfileService {
   // ---------------------------------------------------------------------------
   // 🔧 Stato e risorse
   // ---------------------------------------------------------------------------
@@ -123,7 +123,7 @@ class ProfileModel {
     BuildContext context,
     VoidCallback onUpdated,
   ) async {
-    final confirm = await DialogModel.showConfirmDialog(
+    final confirm = await DialogUtils.showConfirmDialog(
       context,
       title: "Rimuovi immagine",
       content: "Sei sicuro di voler eliminare la foto profilo?",
@@ -167,7 +167,7 @@ class ProfileModel {
   // 📝 Modifica nome utente
   // ---------------------------------------------------------------------------
   Future<void> changeDisplayName(BuildContext context) async {
-    final result = await DialogModel.showInputDialogAdaptive(
+    final result = await DialogUtils.showInputDialogAdaptive(
       context,
       title: "Modifica nome",
       fields: [
@@ -206,7 +206,7 @@ class ProfileModel {
     BuildContext context,
     Future<void> Function() refreshUser,
   ) async {
-    final result = await DialogModel.showInputDialogAdaptive(
+    final result = await DialogUtils.showInputDialogAdaptive(
       context,
       title: "Modifica email",
       fields: [
@@ -249,7 +249,6 @@ class ProfileModel {
 
       await user!.reauthenticateWithCredential(cred);
       await user!.verifyBeforeUpdateEmail(newEmail);
-      await refreshUser();
       await fb_auth.FirebaseAuth.instance.signOut();
 
       if (!context.mounted) return;
@@ -279,10 +278,10 @@ class ProfileModel {
   }
 
   // ---------------------------------------------------------------------------
-  // 🔒 Modifica password con re-authentication
+  // 🔒 Modifica password
   // ---------------------------------------------------------------------------
   Future<void> changePassword(BuildContext context) async {
-    final result = await DialogModel.showInputDialogAdaptive(
+    final result = await DialogUtils.showInputDialogAdaptive(
       context,
       title: "Modifica password",
       fields: [
@@ -403,7 +402,7 @@ class ProfileModel {
   // 🗑 Elimina account con conferma popup
   // ---------------------------------------------------------------------------
   Future<void> deleteAccount(BuildContext context) async {
-    final confirm = await DialogModel.showConfirmDialog(
+    final confirm = await DialogUtils.showConfirmDialog(
       context,
       title: "Elimina account",
       content: "Sei sicuro di voler eliminare definitivamente il tuo account?",

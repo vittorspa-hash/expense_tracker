@@ -8,7 +8,7 @@ import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 
 class EditExpensePage extends StatefulWidget {
   static const route = "/expense/edit";
@@ -53,7 +53,7 @@ class _EditExpensePageState extends State<EditExpensePage>
     required DateTime date,
   }) {
     // Aggiorna la spesa nello store
-    storeModel.value.editExpense(
+    expenseStore.value.editExpense(
       widget.expenseModel,
       value: value,
       description: description,
@@ -67,7 +67,7 @@ class _EditExpensePageState extends State<EditExpensePage>
   // Funzione chiamata quando si preme il pulsante di eliminazione
   void onDelete() {
     // Elimina la spesa dallo store
-    storeModel.value.deleteExpense(widget.expenseModel);
+    expenseStore.value.deleteExpense(widget.expenseModel);
 
     // Torna alla pagina precedente
     Navigator.pop(context);
@@ -86,7 +86,7 @@ class _EditExpensePageState extends State<EditExpensePage>
         floatingActionButtonIcon: Icons.delete,
         onFloatingActionButtonPressed: () {
           // Rimuove la spesa e la ritorna per la snackbar
-          storeModel.value.deleteExpense(widget.expenseModel);
+          expenseStore.value.deleteExpense(widget.expenseModel);
           Navigator.pop(context);
           return widget.expenseModel;
         },

@@ -1,5 +1,5 @@
 // dialog_helpers.dart
-// Helper methods per DialogModel
+// Helper methods per DialogUtils
 // Questo file contiene una raccolta di metodi statici per la costruzione di dialog, bottom sheet e componenti correlati in modo riutilizzabile e adattivo tra iOS e Android.
 // Tutte le funzioni sono pensate per essere pure, senza modificare stato globale, e facilitano la creazione di UI coerenti e accessibili.
 // Ogni sezione è suddivisa per tipologia di componente o funzionalità.
@@ -14,23 +14,30 @@ import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class DialogHelpers {
-  // ========== PROPRIETÀ COMUNI ==========
+  // ===================== PROPRIETÀ COMUNI =====================
+  // Ritorna true se la piattaforma è iOS
   static bool get isIOS => Platform.isIOS;
+
+  // Verifica se il tema attuale è scuro
   static bool isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
+
+  // Restituisce il colore del testo in base al tema
   static Color textColor(BuildContext context) =>
       isDark(context) ? AppColors.textLight : AppColors.textDark;
 
-  // ========== UTILITY METHODS ==========
+  // ===================== UTILITY METHODS =====================
+  // Controlla se il testo rappresenta un'azione distruttiva (es. elimina/logout)
   static bool isDestructiveAction(String text) =>
       text.toLowerCase().contains("elimina") ||
       text.toLowerCase().contains("logout");
 
+  // Restituisce un bordo arrotondato per i dialog
   static RoundedRectangleBorder roundedRectangleBorder() =>
       RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.r));
 
-  // ========== DIALOG BUTTONS (UNIFICATI) ==========
-  /// Costruisce un bottone adattivo per dialog (Cupertino o Material)
+  // ===================== DIALOG BUTTONS (UNIFICATI) =====================
+  /// Crea un bottone adattivo per dialog (iOS/Android)
   static Widget buildActionButton(
     BuildContext context,
     String text,
@@ -57,12 +64,14 @@ class DialogHelpers {
     );
   }
 
-  // ========== SHEET COMPONENTS ==========
+  // ===================== SHEET COMPONENTS =====================
+  // Crea il titolo per un bottom sheet
   static Widget buildSheetTitle(String title) => Text(
     title,
     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
   );
 
+  // Bottone per bottom sheet stile Cupertino
   static Widget buildCupertinoSheetButton(
     BuildContext context,
     String text,
@@ -80,6 +89,7 @@ class DialogHelpers {
     ),
   );
 
+  // Bottone per bottom sheet stile Material
   static Widget buildMaterialSheetButton(
     BuildContext context,
     String text,
@@ -96,7 +106,8 @@ class DialogHelpers {
     ),
   );
 
-  // ========== ADAPTIVE SHEET BUILDERS ==========
+  // ===================== ADAPTIVE SHEET BUILDERS =====================
+  // Mostra un bottom sheet adattivo con opzioni
   static Future<String?> showAdaptiveSheet({
     required BuildContext context,
     required String title,
@@ -158,6 +169,7 @@ class DialogHelpers {
     );
   }
 
+  // Mostra un picker per la selezione dell'anno
   static Future<String?> showAdaptiveYearPicker({
     required BuildContext context,
     required List<String> years,
@@ -239,7 +251,8 @@ class DialogHelpers {
     );
   }
 
-  // ========== PROFILE COMPONENTS ==========
+  // ===================== PROFILE COMPONENTS =====================
+  // Costruisce l'header del profilo utente
   static Widget buildProfileHeader(
     BuildContext context,
     User? user,
@@ -269,6 +282,7 @@ class DialogHelpers {
     );
   }
 
+  // Restituisce l'avatar utente (locale o da rete)
   static Widget buildAvatar(User? user, File? localAvatar) => CircleAvatar(
     radius: 34.r,
     backgroundColor: AppColors.backgroundAvatar,
@@ -280,6 +294,7 @@ class DialogHelpers {
         : null,
   );
 
+  // Azione per aprire la pagina profilo e ricaricare l'avatar
   static Widget buildProfileAction(
     BuildContext context,
     User? user,
@@ -301,6 +316,7 @@ class DialogHelpers {
     ),
   );
 
+  // Azione per aprire la pagina impostazioni
   static Widget buildSettingsAction(BuildContext context, bool isDark) =>
       CupertinoActionSheetAction(
         onPressed: () {
@@ -316,6 +332,7 @@ class DialogHelpers {
         ),
       );
 
+  // Azione di logout per Cupertino
   static Widget buildLogoutAction(
     BuildContext context,
     bool isDark,
@@ -333,6 +350,7 @@ class DialogHelpers {
     );
   }
 
+  // ListTile per aprire la pagina profilo
   static Widget buildProfileListTile(
     BuildContext context,
     User? user,
@@ -350,6 +368,7 @@ class DialogHelpers {
     },
   );
 
+  // ListTile per aprire la pagina impostazioni
   static Widget buildSettingsListTile(BuildContext context, bool isDark) =>
       ListTile(
         shape: RoundedRectangleBorder(
@@ -363,6 +382,7 @@ class DialogHelpers {
         },
       );
 
+  // ListTile per logout
   static Widget buildLogoutListTile(BuildContext context, bool isDark) =>
       ListTile(
         shape: RoundedRectangleBorder(
@@ -376,6 +396,7 @@ class DialogHelpers {
         onTap: () => _handleLogout(context),
       );
 
+  // Gestisce la logica di conferma e logout
   static Future<void> _handleLogout(BuildContext context) async {
     Navigator.pop(context);
 
@@ -425,6 +446,7 @@ class DialogHelpers {
     }
   }
 
+  // Bottone per chiudere un dialog
   static Widget buildCloseButton(BuildContext context) => SizedBox(
     width: double.infinity,
     child: ElevatedButton(
@@ -443,7 +465,8 @@ class DialogHelpers {
     ),
   );
 
-  // ========== INPUT DIALOG COMPONENTS ==========
+  // ===================== INPUT DIALOG COMPONENTS =====================
+  // Costruisce un campo di testo per dialog, con gestione password e focus
   static Widget buildTextField(
     BuildContext dialogCtx,
     Map<String, dynamic> field,
@@ -497,6 +520,7 @@ class DialogHelpers {
     );
   }
 
+  // Bottone per la funzione "Password dimenticata?"
   static Widget buildForgotPasswordButton(
     VoidCallback onPressed,
     Color txtColor,
@@ -523,6 +547,7 @@ class DialogHelpers {
     ),
   );
 
+  // Costruisce le azioni di conferma/cancella per dialog di input
   static List<Widget> buildDialogActions(
     BuildContext context,
     String cancelText,
@@ -560,7 +585,8 @@ class DialogHelpers {
     ];
   }
 
-  // ========== INSTRUCTION DIALOG COMPONENTS ==========
+  // ===================== INSTRUCTION DIALOG COMPONENTS =====================
+  // Costruisce una riga con checkbox per dialog istruzioni
   static Widget buildCheckboxRow(
     StateSetter setState,
     bool value,
@@ -585,7 +611,8 @@ class DialogHelpers {
     ),
   );
 
-  // ========== DATE PICKER COMPONENTS ==========
+  // ===================== DATE PICKER COMPONENTS =====================
+  // Header per date picker stile Cupertino
   static Widget buildDatePickerHeader(
     BuildContext context,
     Color txtColor,
@@ -619,6 +646,7 @@ class DialogHelpers {
     ),
   );
 
+  // Mostra un time picker adattivo (iOS/Android)
   static Future<TimeOfDay?> showTimePickerAdaptive({
     required BuildContext context,
     required TimeOfDay initialTime,
@@ -748,6 +776,7 @@ class DialogHelpers {
     );
   }
 
+  // Stile per i bottoni del date picker
   static ButtonStyle datePickerButtonStyle(Color color, bool isConfirm) =>
       TextButton.styleFrom(
         foregroundColor: color,

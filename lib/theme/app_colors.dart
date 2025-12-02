@@ -18,45 +18,45 @@ class AppColors {
   // ---------------------------------------------------------------------------
   // 🌈 COLORI PRINCIPALI (brand palette)
   // ---------------------------------------------------------------------------
-  static Color primary = Colors.deepPurple.shade400;          // Colore principale
-  static Color secondaryLight = Colors.deepPurple.shade50;     // Variante chiara
-  static Color secondaryDark = Colors.deepPurple.shade200;     // Variante media-scura
-  static Color tertiary = Colors.deepPurple.shade900;          // Tonalità molto scura
+  static Color primary = Colors.deepPurple.shade400;         
+  static Color secondaryLight = Colors.deepPurple.shade50;    
+  static Color secondaryDark = Colors.deepPurple.shade200;  
+  static Color tertiary = Colors.deepPurple.shade900;         
 
   // ---------------------------------------------------------------------------
   // 🖼️ BACKGROUND (tema chiaro/scuro)
   // ---------------------------------------------------------------------------
-  static Color backgroundLight = Colors.white;                 // Sfondo light mode
-  static Color backgroundDark = Colors.grey.shade900;          // Sfondo dark mode
+  static Color backgroundLight = Colors.white;                 
+  static Color backgroundDark = Colors.grey.shade900;          
 
   // ---------------------------------------------------------------------------
   // ✍️ COLORI TESTO
   // ---------------------------------------------------------------------------
-  static Color textLight = Colors.white;                       // Testo su sfondo scuro
-  static Color textDark = Colors.black;                        // Testo principale su sfondo chiaro
-  static Color textDark2 = Colors.grey.shade900;               // Variante leggermente più scura
+  static Color textLight = Colors.white;          
+  static Color textDark = Colors.black;                 
+  static Color textDark2 = Colors.grey.shade900;              
 
   // ---------------------------------------------------------------------------
   // ⚙️ TONALITÀ DI GRIGIO (Light/Dark modes)
   // ---------------------------------------------------------------------------
-  static Color greyLight = Colors.grey[700]!;                  // Grigio scuro per testo/icone in light mode
-  static Color greyDark = Colors.grey[400]!;                   // Grigio chiaro per testo/icone in dark mode
+  static Color greyLight = Colors.grey[700]!;                 
+  static Color greyDark = Colors.grey[400]!;             
 
   // ---------------------------------------------------------------------------
   // 🍫 SNACKBAR & ALERT
   // ---------------------------------------------------------------------------
-  static Color snackBar = Colors.grey.shade800;                // Sfondo snackbar scuro
+  static Color snackBar = Colors.grey.shade800;           
 
   // ---------------------------------------------------------------------------
   // ❌ COLORI DI ERRORE / AZIONI DISTRUTTIVE
   // ---------------------------------------------------------------------------
-  static Color delete = Colors.red;                            // Feedback di eliminazione
+  static Color delete = Colors.red;                       
 
   // ---------------------------------------------------------------------------
   // 🧩 AVATAR E CHIP
   // ---------------------------------------------------------------------------
-  static Color backgroundAvatar = Colors.deepPurple.shade100;  // Sfondo avatar
-  static Color avatar = Colors.white;                          // Icona/avatar
+  static Color backgroundAvatar = Colors.deepPurple.shade100; 
+  static Color avatar = Colors.white;                        
 
   // ---------------------------------------------------------------------------
   // ✏️ COLORI PER EDIT PAGE (modalità personalizzata)
@@ -68,7 +68,7 @@ class AppColors {
   static Color textEditPage = Colors.deepPurple.shade200;
 
   // ---------------------------------------------------------------------------
-  // 🟣 FEEDBACK VISIVO TAPP (PRESSIONE BTN)
+  // 🟣 FEEDBACK VISIVO TAP
   // ---------------------------------------------------------------------------
   static Color textTappedDown = Colors.deepPurple.shade600;
 
@@ -81,14 +81,14 @@ class AppColors {
   // ---------------------------------------------------------------------------
   // 🖤 SHADOW & LINEE
   // ---------------------------------------------------------------------------
-  static Color shadow = Colors.black;                          // Ombre
+  static Color shadow = Colors.black;                        
 
-  static Color dividerDark = Colors.grey[700]!;                // Divider in dark mode
-  static Color dividerLight = Colors.grey[300]!;               // Divider in light mode
+  static Color dividerDark = Colors.grey[700]!;              
+  static Color dividerLight = Colors.grey[300]!;            
 
   // ---------------------------------------------------------------------------
   // ⬛ BORDER (borderInput, card, ecc…)
   // ---------------------------------------------------------------------------
-  static Color borderLight = Colors.grey[200]!;                // Bordo light mode
-  static Color borderDark = Colors.grey[800]!;                 // Bordo dark mode
+  static Color borderLight = Colors.grey[200]!;          
+  static Color borderDark = Colors.grey[800]!;                
 }

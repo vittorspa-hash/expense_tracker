@@ -4,7 +4,7 @@
 //
 // Questo widget costruisce il corpo principale della Home Page:
 // ✔️ Barra di ricerca flottante con SliverPersistentHeader
-// ✔️ Ordinamento tramite bottom sheet (DialogModel.showSortSheet)
+// ✔️ Ordinamento tramite bottom sheet (DialogUtils.showSortSheet)
 // ✔️ Integrazione con RefreshIndicator per pull-to-refresh
 // ✔️ Lista spese reattiva (Obx) con filtro per descrizione
 // ✔️ Supporto al MultiSelectController (selezione multipla)
@@ -18,8 +18,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import 'package:expense_tracker/controllers/multi_select_controller.dart';
-import 'package:expense_tracker/models/dialog_model.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/components/expense/expense_tile.dart';
@@ -42,14 +42,13 @@ class HomeContentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final MultiSelectController multiSelect =
-        Get.find(); // 🎯 Controller multiselezione
+    final MultiSelectController multiSelect = Get.find(); // 🎯 Controller multiselezione
 
     return Obx(() {
       // -----------------------------------------------------------------------
       // 🔍 FILTRAGGIO LISTA SPESE
       // -----------------------------------------------------------------------
-      final filteredExpenses = storeModel.value.expenses.where((expense) {
+      final filteredExpenses = expenseStore.value.expenses.where((expense) {
         final desc = expense.description?.toLowerCase() ?? "";
         return desc.contains(searchQuery.value.toLowerCase());
       }).toList();
@@ -152,7 +151,7 @@ class HomeContentList extends StatelessWidget {
                           // -----------------------------------------------------
                           GestureDetector(
                             onTap: () async {
-                              final selected = await DialogModel.showSortSheet(
+                              final selected = await DialogUtils.showSortSheet(
                                 context,
                                 isDark: isDark,
                                 options: [
@@ -178,7 +177,7 @@ class HomeContentList extends StatelessWidget {
                               // Aggiorna sorting e riordina lista
                               if (selected != null) {
                                 sortCriteria.value = selected;
-                                storeModel.value.sortBy(selected);
+                                expenseStore.value.sortBy(selected);
                               }
                             },
                             child: Container(
@@ -244,7 +243,7 @@ class HomeContentList extends StatelessWidget {
                         confirmDismiss: (_) async {
                           if (isSelectionMode) return false;
 
-                          final confirm = await DialogModel.showConfirmDialog(
+                          final confirm = await DialogUtils.showConfirmDialog(
                             context,
                             title: "Conferma eliminazione",
                             content: "Vuoi eliminare la spesa selezionata?",
@@ -284,8 +283,8 @@ class HomeContentList extends StatelessWidget {
                             message: "Spesa eliminata con successo.",
                             deletedItem: expense,
                             onDelete: (exp) =>
-                                storeModel.value.deleteExpense(exp),
-                            onRestore: (exp) => storeModel.value.createExpense(
+                                expenseStore.value.deleteExpense(exp),
+                            onRestore: (exp) => expenseStore.value.createExpense(
                               value: exp.value,
                               description: exp.description,
                               date: exp.createdOn,

@@ -7,20 +7,21 @@
 // - Password
 //
 // Include validazione dei campi, gestione dei FocusNode, toggle visibilità
-// password, integrazione con AuthModel per eseguire il login e pulsante per il
-// recupero della password. Tutto è stilizzato per mantenere coerenza con il tema.
+// password, integrazione con AuthService per eseguire il login e pulsante per il
+// recupero della password. 
 // -----------------------------------------------------------------------------
 
-import 'package:expense_tracker/components/auth/text_field.dart';
-import 'package:expense_tracker/models/auth_model.dart';
+import 'package:expense_tracker/components/auth/auth_button.dart';
+import 'package:expense_tracker/components/auth/auth_text_field.dart';
+import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginForm extends StatefulWidget {
-  final AuthModel authModel;
-  const LoginForm({super.key, required this.authModel});
+  final AuthService authService;
+  const LoginForm({super.key, required this.authService});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -114,7 +115,7 @@ class _LoginFormState extends State<LoginForm> {
                   // -------------------------------------------------------------
                   // 📧 Email
                   // -------------------------------------------------------------
-                  ModernTextField(
+                  AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
                     nextFocus: _passwordFocus,
@@ -137,7 +138,7 @@ class _LoginFormState extends State<LoginForm> {
                   // -------------------------------------------------------------
                   // 🔒 Password
                   // -------------------------------------------------------------
-                  ModernTextField(
+                  AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
                     hint: "Password",
@@ -161,7 +162,7 @@ class _LoginFormState extends State<LoginForm> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => widget.authModel.resetPassword(
+                      onPressed: () => widget.authService.resetPassword(
                         context,
                         _emailController.text,
                       ),
@@ -196,11 +197,10 @@ class _LoginFormState extends State<LoginForm> {
             // -------------------------------------------------------------------
             // 🚀 BOTTONE DI LOGIN
             // -------------------------------------------------------------------
-            ElevatedButton(
+            AuthButton(
               onPressed: () {
-                // Esegue la validazione dei campi
                 if (_formKey.currentState!.validate()) {
-                  widget.authModel.signIn(
+                  widget.authService.signIn(
                     context: context,
                     email: _emailController.text,
                     password: _passwordController.text,
@@ -208,36 +208,8 @@ class _LoginFormState extends State<LoginForm> {
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textLight,
-                elevation: 6,
-                shadowColor: AppColors.primary.withValues(alpha: 0.3),
-                minimumSize: Size(double.infinity, 50.h),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-              ),
-
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    FontAwesomeIcons.rightToBracket,
-                    size: 15.r,
-                    color: AppColors.textLight,
-                  ),
-                  SizedBox(width: 12.w),
-                  Text(
-                    "Accedi",
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
+              icon: FontAwesomeIcons.rightToBracket,
+              text: "Accedi",
             ),
 
             SizedBox(height: 18.h),

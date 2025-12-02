@@ -4,16 +4,15 @@
 // -----------------------------------------------------------------------------
 // Gestisce:
 // - Visualizzazione avatar, nome, email, UID
-// - Modifica dati utente tramite ProfileModel
+// - Modifica dati utente tramite ProfileService
 // - Cambio immagine profilo
-// - Tema scuro ON/OFF
 // - Eliminazione account
 // - Animazione fade-in iniziale
 // -----------------------------------------------------------------------------
 
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
-import 'package:expense_tracker/models/profile_model.dart';
+import 'package:expense_tracker/services/profile_service.dart';
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
@@ -29,8 +28,8 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  // 🔧 Modello profilo (gestisce immagine, dati utente, update)
-  final profileModel = ProfileModel();
+  // 🔧 Service profilo (gestisce immagine, dati utente, update)
+  final profileService = ProfileService();
 
   // 🔧 Getter per il vsync richiesto dal mixin
   @override
@@ -41,10 +40,7 @@ class _ProfilePageState extends State<ProfilePage>
     super.initState();
 
     // 📷 Carica immagine profilo locale
-    profileModel.loadLocalProfileImage(() {
-      if (!mounted) return;
-      setState(() {});
-    });
+    profileService.loadLocalProfileImage(_safeSetState);
 
     // 🎞️ Animazione fade-in iniziale
     initFadeAnimation();
@@ -56,10 +52,17 @@ class _ProfilePageState extends State<ProfilePage>
     super.dispose();
   }
 
+  // ⚡ Metodo sicuro per chiamare setState solo se il widget è ancora montato
+  void _safeSetState() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // 👤 Utente corrente Firebase
-    final user = profileModel.user;
+    final user = profileService.user;
 
     // 🌗 Tema attuale
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -90,10 +93,7 @@ class _ProfilePageState extends State<ProfilePage>
       // -------------------------------------------------------------------------
       body: RefreshIndicator(
         color: AppColors.primary,
-        onRefresh: () async => profileModel.refreshUser(context, () {
-          if (!mounted) return;
-          setState(() {});
-        }),
+        onRefresh: () async => profileService.refreshUser(context, _safeSetState),
 
         // -----------------------------------------------------------------------
         // 🎨 BACKGROUND + ANIMAZIONE
@@ -127,22 +127,16 @@ class _ProfilePageState extends State<ProfilePage>
                     ],
                   ),
                   child: ProfileAvatar(
-                    image: profileModel.localImage,
-                    isUploading: profileModel.isUploading,
+                    image: profileService.localImage,
+                    isUploading: profileService.isUploading,
 
                     // 📤 Cambia immagine
                     onChangePicture: () =>
-                        profileModel.changeProfilePicture(context, () {
-                          if (!mounted) return;
-                          setState(() {});
-                        }),
+                        profileService.changeProfilePicture(context, _safeSetState),
 
                     // ❌ Rimuovi immagine
                     onRemovePicture: () =>
-                        profileModel.removeProfilePicture(context, () {
-                          if (!mounted) return;
-                          setState(() {});
-                        }),
+                        profileService.removeProfilePicture(context, _safeSetState),
                   ),
                 ),
 
@@ -176,7 +170,7 @@ class _ProfilePageState extends State<ProfilePage>
                         value: user?.displayName,
                         tooltip: "Modifica nome",
                         onPressed: () =>
-                            profileModel.changeDisplayName(context),
+                            profileService.changeDisplayName(context),
                       ),
 
                       _buildDivider(isDark),
@@ -187,11 +181,11 @@ class _ProfilePageState extends State<ProfilePage>
                         title: "Email",
                         value: user?.email,
                         tooltip: "Modifica email",
-                        onPressed: () => profileModel.changeEmail(
+                        onPressed: () => profileService.changeEmail(
                           context,
-                          () => profileModel.refreshUser(
+                          () => profileService.refreshUser(
                             context,
-                            () => setState(() {}),
+                            _safeSetState,
                           ),
                         ),
                       ),
@@ -204,7 +198,7 @@ class _ProfilePageState extends State<ProfilePage>
                         title: "Password",
                         value: "••••••••••",
                         tooltip: "Modifica password",
-                        onPressed: () => profileModel.changePassword(context),
+                        onPressed: () => profileService.changePassword(context),
                       ),
 
                       _buildDivider(isDark),
@@ -216,7 +210,7 @@ class _ProfilePageState extends State<ProfilePage>
                         value: user?.uid,
                         trailingIcon: Icons.content_copy_rounded,
                         tooltip: "Copia ID",
-                        onPressed: () => profileModel.copyToClipboard(
+                        onPressed: () => profileService.copyToClipboard(
                           context,
                           user?.uid,
                           message: "ID copiato negli appunti",
@@ -232,7 +226,7 @@ class _ProfilePageState extends State<ProfilePage>
                 // 🗑️ ELIMINA ACCOUNT
                 // -----------------------------------------------------------------
                 ElevatedButton(
-                  onPressed: () => profileModel.deleteAccount(context),
+                  onPressed: () => profileService.deleteAccount(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.textLight,

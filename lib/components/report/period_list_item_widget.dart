@@ -15,10 +15,8 @@ import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class PeriodListItemWidget extends StatelessWidget {
-  final String
-  badgeText; // 🔹 Testo principale del badge (es. giorno o numero mese)
-  final String?
-  badgeSubtext; // 🔹 Sottotesto opzionale del badge (es. abbreviazione mese)
+  final String badgeText; // 🔹 Testo principale del badge (es. giorno o numero mese)
+  final String? badgeSubtext; // 🔹 Sottotesto opzionale del badge (es. abbreviazione mese)
   final String title; // 🔹 Titolo principale (es. nome giorno/mese)
   final String? subtitle; // 🔹 Sottotitolo opzionale (es. data completa)
   final double totalAmount; // 🔹 Totale spesa del periodo

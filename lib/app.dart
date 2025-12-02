@@ -1,7 +1,7 @@
 // app.dart
 // Configurazione principale dell'applicazione Expense Tracker.
 // Gestisce tema, localizzazione, routing e la struttura generale dell'app.
-import 'package:expense_tracker/components/auth/auth_wrapper.dart';
+import 'package:expense_tracker/pages/auth_wrapper.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/pages/edit_expense_page.dart';
 import 'package:expense_tracker/pages/home_page.dart';

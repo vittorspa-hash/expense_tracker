@@ -13,12 +13,12 @@ import 'package:expense_tracker/components/report/total_card_widget.dart';
 import 'package:expense_tracker/controllers/multi_select_controller.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:expense_tracker/components/expense/expense_tile.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -174,7 +174,7 @@ class _DaysPageState extends State<DaysPage>
           child: SafeArea(
             child: Obx(() {
               // 🔹 Lista spese del giorno
-              final expensesList = storeModel.value.expensesOfDay(
+              final expensesList = expenseStore.value.expensesOfDay(
                 widget.year,
                 widget.month,
                 widget.day,
@@ -281,7 +281,7 @@ class _DaysPageState extends State<DaysPage>
                         color: AppColors.primary,
                         onRefresh: () async {
                           multiSelect.cancelSelection();
-                          await storeModel.value.initialise();
+                          await expenseStore.value.initialise();
                         },
                         child: ListView.separated(
                           padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
@@ -301,7 +301,7 @@ class _DaysPageState extends State<DaysPage>
                               confirmDismiss: (_) async {
                                 if (isSelectionMode) return false;
                                 final confirm =
-                                    await DialogModel.showConfirmDialog(
+                                    await DialogUtils.showConfirmDialog(
                                       context,
                                       title: "Conferma eliminazione",
                                       content:
@@ -337,9 +337,9 @@ class _DaysPageState extends State<DaysPage>
                                   message: "Spesa eliminata con successo.",
                                   deletedItem: expense,
                                   onDelete: (exp) =>
-                                      storeModel.value.deleteExpense(exp),
+                                      expenseStore.value.deleteExpense(exp),
                                   onRestore: (exp) =>
-                                      storeModel.value.createExpense(
+                                      expenseStore.value.createExpense(
                                         value: exp.value,
                                         description: exp.description,
                                         date: exp.createdOn,

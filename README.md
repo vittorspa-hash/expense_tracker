@@ -36,18 +36,6 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 
 ---
 
-## 🧱 Stack Tecnologico
-- **Framework:** Flutter & Dart  
-- **State Management:** GetX, Provider  
-- **Database:** Firebase Firestore  
-- **Autenticazione:** Firebase Auth  
-- **Notifiche:** `flutter_local_notifications`  
-- **Gestione layout responsive:** `flutter_screenutil`  
-- **Grafici:** `fl_chart`  
-- **Localizzazione:** `intl`  
-
----
-
 ## ⚡ Screenshot
 **Login Page**  
 ![Login Page](assets/screenshots/auth_page.png)
@@ -57,6 +45,33 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 
 **Years Page**  
 ![Years Page Graph](assets/screenshots/years_page.png)
+
+---
+
+## 🗂️ Struttura del progetto
+- `lib/components/` →  Widget riutilizzabili e componenti UI custom
+- `lib/controllers/` → Controller GetX per la gestione dello stato UI (selezione multipla)
+- `lib/models/` → Data classes e modelli di dominio (ExpenseModel)
+- `lib/pages/` → Schermate dell'applicazione
+- `lib/providers/` → Provider per la gestione dello stato globale (settings, tema)
+- `lib/repositories/` → Pattern Repository per l'accesso ai dati (Firestore)
+- `lib/services/` → Servizi che incapsulano logica condivisa dell'app (autenticazione, profilo, notifiche)
+- `lib/stores/` → Store per la business logic e gestione dello stato delle spese
+- `lib/theme/` → Palette colori
+- `lib/utils/` → Utility, helper e mixin riutilizzabili (dialog, snackbar, animazioni)
+- `lib/firebase_options.dart` → Configurazione Firebase autogenerata
+
+---
+
+## 🧱 Stack Tecnologico
+- **Framework:** Flutter & Dart  
+- **State Management:** Provider (stato globale), GetX (stato UI specifico)
+- **Database:** Firebase Firestore  
+- **Autenticazione:** Firebase Auth  
+- **Notifiche:** `flutter_local_notifications`  
+- **Gestione layout responsive:** `flutter_screenutil`  
+- **Grafici:** `fl_chart`  
+- **Localizzazione:** `intl`  
 
 ---
 
@@ -82,20 +97,6 @@ Avvia l'app:
 ```bash
 flutter run
 ```
-
----
-
-## 🗂️ Struttura del progetto
-- `lib/components/` → Widget riutilizzabili
-- `lib/controllers/` → Controller GetX per selezione multipla
-- `lib/models/` → Modelli dati
-- `lib/pages/` → Pagine dell'app
-- `lib/providers/` → Provider per settings e tema
-- `lib/repositories/` → Gestione dati Firebase
-- `lib/services/` → Service per notifiche
-- `lib/theme/` → Color palette e tema
-- `lib/utils/` → Utils per animazioni e snackbar
-- `lib/firebase_options.dart` → Configurazione Firebase pubblica
 
 ---
 

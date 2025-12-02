@@ -7,9 +7,9 @@
 // - Mostra snackbar di conferma per creazione, modifica o eliminazione.
 
 import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -208,7 +208,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     backgroundColor: AppColors.delete.withValues(alpha: 0.3),
     foregroundColor: AppColors.delete,
     onPressed: () async {
-      final confirm = await DialogModel.showConfirmDialog(
+      final confirm = await DialogUtils.showConfirmDialog(
         context,
         title: "Conferma eliminazione",
         content: "Vuoi eliminare la spesa selezionata?",
@@ -228,8 +228,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               title: "Eliminata!",
               message: "Spesa eliminata con successo.",
               deletedItem: deletedExpense,
-              onDelete: (exp) => storeModel.value.deleteExpense(exp),
-              onRestore: (exp) => storeModel.value.createExpense(
+              onDelete: (exp) => expenseStore.value.deleteExpense(exp),
+              onRestore: (exp) => expenseStore.value.createExpense(
                 value: exp.value,
                 description: exp.description,
                 date: exp.createdOn,
@@ -273,7 +273,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
   // --- PICKER DATA ---
   Future<void> _pickDate(BuildContext context) async {
-    final DateTime? pickedDate = await DialogModel.showDatePickerAdaptive(
+    final DateTime? pickedDate = await DialogUtils.showDatePickerAdaptive(
       context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
@@ -303,7 +303,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     final shouldShow = prefs.getBool('showExpenseEditHint_$uid') ?? true;
 
     if (shouldShow && mounted) {
-      final dontShowAgain = await DialogModel.showInstructionDialog(
+      final dontShowAgain = await DialogUtils.showInstructionDialog(
         context,
         title: "Creazione o modifica di una spesa",
         message:

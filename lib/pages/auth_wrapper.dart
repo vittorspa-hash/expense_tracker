@@ -7,8 +7,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/pages/home_page.dart';
-import '../../../pages/auth_page.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import '../../pages/auth_page.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
@@ -32,7 +32,7 @@ class AuthWrapper extends StatelessWidget {
 
         // Se non autenticato → reindirizza alla pagina di login
         if (user == null) {
-          storeModel.value.clear(); // Reset dati locali all’uscita
+          expenseStore.value.clear(); // Reset dati locali all’uscita
           return const AuthPage();
         }
 
@@ -43,7 +43,7 @@ class AuthWrapper extends StatelessWidget {
 
         // Inizializza i dati dell’app prima di caricare la HomePage
         return FutureBuilder(
-          future: storeModel.value.initialise(),
+          future: expenseStore.value.initialise(),
           builder: (context, initSnapshot) {
             // Loader durante l’inizializzazione locale
             if (initSnapshot.connectionState == ConnectionState.waiting) {

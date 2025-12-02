@@ -1,14 +1,14 @@
 // multi_select_controller.dart
 // Controller responsabile della gestione della selezione multipla delle spese.
-// Utilizzato nella HomePage per selezionare, deselezionare ed eliminare più voci.
+// Utilizzato nella HomePage e DaysPage per selezionare, deselezionare ed eliminare più voci.
 // Funziona tramite GetX per mantenere lo stato reattivo dell’interfaccia.
 
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 
 class MultiSelectController extends GetxController {
   // --- STATO ---
@@ -52,7 +52,7 @@ class MultiSelectController extends GetxController {
     final count = selectedIds.length;
 
     // Conferma eliminazione
-    final confirm = await DialogModel.showConfirmDialog(
+    final confirm = await DialogUtils.showConfirmDialog(
       context,
       title: "Eliminazione ${count == 1 ? 'singola' : 'multipla'}",
       content:
@@ -68,13 +68,13 @@ class MultiSelectController extends GetxController {
     if (!context.mounted) return;
 
     // Recupera le spese selezionate
-    final deletedExpenses = storeModel.value.expenses
+    final deletedExpenses = expenseStore.value.expenses
         .where((e) => selectedIds.contains(e.uuid))
         .toList();
 
     // Elimina le spese da StoreModel
     for (var expense in deletedExpenses) {
-      storeModel.value.deleteExpense(expense);
+      expenseStore.value.deleteExpense(expense);
     }
 
     // Snackbar con supporto al ripristino
@@ -88,14 +88,14 @@ class MultiSelectController extends GetxController {
       // 🔻 Delete immediato (viene eseguito PRIMA dello snackbar)
       onDelete: (_) {
         for (var expense in deletedExpenses) {
-          storeModel.value.deleteExpense(expense);
+          expenseStore.value.deleteExpense(expense);
         }
       },
 
       // 🔻 Ripristino premendo "Annulla"
       onRestore: (_) {
         for (var expense in deletedExpenses) {
-          storeModel.value.restoreExpense(expense);
+          expenseStore.value.restoreExpense(expense);
         }
       },
     );

@@ -6,14 +6,13 @@
 // - Icona a sinistra
 // - Titolo e sottotitolo centrale
 // - Widget trailing personalizzabile (switch, icona, etc.)
-// - Hover animation per desktop/web
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
-class SettingsTile extends StatefulWidget {
+class SettingsTile extends StatelessWidget {
   // 🔧 Parametri principali
   final IconData icon; // Icona sinistra
   final String title; // Titolo della voce
@@ -31,13 +30,6 @@ class SettingsTile extends StatefulWidget {
     this.trailingIcon = Icons.chevron_right_rounded,
     this.trailingWidget,
   });
-
-  @override
-  State<SettingsTile> createState() => _SettingsTileState();
-}
-
-class _SettingsTileState extends State<SettingsTile> {
-  bool _isHovered = false; // 🖱 Stato hover per desktop/web
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +56,7 @@ class _SettingsTileState extends State<SettingsTile> {
                 ),
               ],
             ),
-            child: Icon(widget.icon, size: 24.r, color: AppColors.primary),
+            child: Icon(icon, size: 24.r, color: AppColors.primary),
           ),
 
           SizedBox(width: 16.w),
@@ -77,7 +69,7 @@ class _SettingsTileState extends State<SettingsTile> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.title,
+                  title,
                   style: TextStyle(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w600,
@@ -85,10 +77,10 @@ class _SettingsTileState extends State<SettingsTile> {
                     letterSpacing: 0.2,
                   ),
                 ),
-                if (widget.subtitle != null) ...[
+                if (subtitle != null) ...[
                   SizedBox(height: 4.h),
                   Text(
-                    widget.subtitle!,
+                    subtitle!,
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w400,
@@ -107,46 +99,32 @@ class _SettingsTileState extends State<SettingsTile> {
 
           // -----------------------------------------------------------------
           // 🖱 TRAILING WIDGET O ICONA
-          // - Supporta hover animation su desktop/web
           // - Può essere sovrascritto da trailingWidget personalizzato
           // -----------------------------------------------------------------
-          widget.trailingWidget ??
-              (widget.onPressed != null
-                  ? MouseRegion(
-                      onEnter: (_) => setState(() => _isHovered = true),
-                      onExit: (_) => setState(() => _isHovered = false),
-                      child: AnimatedScale(
-                        scale: _isHovered ? 1.1 : 1.0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Container(
-                          width: 36.w,
-                          height: 36.h,
-                          decoration: BoxDecoration(
-                            color: _isHovered
-                                ? AppColors.primary.withValues(alpha: 0.1)
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
-                              color: isDark
-                                  ? AppColors.borderLight.withValues(alpha: 0.2)
-                                  : AppColors.borderDark.withValues(alpha: 0.2),
-                              width: 1.5,
-                            ),
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              widget.trailingIcon,
-                              size: 20.r,
-                              color: _isHovered
-                                  ? AppColors.primary
-                                  : (isDark
-                                        ? AppColors.greyDark
-                                        : AppColors.greyLight),
-                            ),
-                            onPressed: widget.onPressed,
-                            padding: EdgeInsets.zero,
-                          ),
+          trailingWidget ??
+              (onPressed != null
+                  ? Container(
+                      width: 36.w,
+                      height: 36.h,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.borderLight.withValues(alpha: 0.2)
+                              : AppColors.borderDark.withValues(alpha: 0.2),
+                          width: 1.5,
                         ),
+                      ),
+                      child: IconButton(
+                        icon: Icon(
+                          trailingIcon,
+                          size: 20.r,
+                          color: isDark
+                              ? AppColors.greyDark
+                              : AppColors.greyLight,
+                        ),
+                        onPressed: onPressed,
+                        padding: EdgeInsets.zero,
                       ),
                     )
                   : const SizedBox.shrink()),

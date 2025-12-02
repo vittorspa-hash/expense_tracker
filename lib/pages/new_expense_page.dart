@@ -6,7 +6,7 @@
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 
 class NewExpensePage extends StatefulWidget {
   static const route = "/expense/new";
@@ -48,7 +48,7 @@ class _NewExpensePageState extends State<NewExpensePage>
     required DateTime date,
   }) {
     // Creazione della nuova spesa nello store
-    storeModel.value.createExpense(
+    expenseStore.value.createExpense(
       value: value,
       description: description,
       date: date,

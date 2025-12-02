@@ -1,4 +1,4 @@
-// store_model.dart
+// expense_store.dart
 // Store centrale per gestire tutte le spese dell'applicazione.
 // Include funzioni per creare, modificare, cancellare e raggruppare le spese.
 // Supporta anche i calcoli di totali giornalieri, settimanali, mensili e annuali.
@@ -11,10 +11,10 @@ import 'package:get/get.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 
-// Oggetto globale osservabile di StoreModel
-final storeModel = StoreModel().obs;
+// Oggetto globale osservabile di ExpenseStore
+final expenseStore = ExpenseStore().obs;
 
-class StoreModel {
+class ExpenseStore {
   // Lista interna di tutte le spese
   List<ExpenseModel> expenses = [];
 
@@ -23,7 +23,7 @@ class StoreModel {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       expenses = [];
-      storeModel.refresh();
+      expenseStore.refresh();
       return;
     }
 
@@ -34,13 +34,13 @@ class StoreModel {
     expenses.sort(
       (a, b) => b.createdOn.compareTo(a.createdOn),
     ); // Ordine decrescente per data
-    storeModel.refresh();
+    expenseStore.refresh();
   }
 
   // Pulisce tutte le spese dallo store
   void clear() {
     expenses = [];
-    storeModel.refresh();
+    expenseStore.refresh();
   }
 
   // Totale spese di oggi
@@ -109,7 +109,7 @@ class StoreModel {
     expenses.add(expense);
     expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
     GetIt.instance<FirebaseRepository>().createExpense(expense);
-    storeModel.refresh();
+    expenseStore.refresh();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -130,7 +130,7 @@ class StoreModel {
     expenses.add(expenseModel);
     expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
     GetIt.instance<FirebaseRepository>().createExpense(expenseModel);
-    storeModel.refresh();
+    expenseStore.refresh();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -156,7 +156,7 @@ class StoreModel {
 
     expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
     GetIt.instance<FirebaseRepository>().updateExpense(expenseModel);
-    storeModel.refresh();
+    expenseStore.refresh();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -173,7 +173,7 @@ class StoreModel {
 
     expenses.remove(expenseModel);
     GetIt.instance<FirebaseRepository>().deleteExpense(expenseModel);
-    storeModel.refresh();
+    expenseStore.refresh();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -197,7 +197,7 @@ class StoreModel {
         expenses.sort((a, b) => a.value.compareTo(b.value));
         break;
     }
-    storeModel.refresh();
+    expenseStore.refresh();
   }
 
   // Raggruppa le spese per mese (key: "YYYY-MM")

@@ -8,20 +8,20 @@
 // - Password + Conferma password
 //
 // Include validazione dei campi, gestione dei focus, gestione visibilità
-// password e integrazione diretta con AuthModel per eseguire la registrazione.
-// L’intero form è stilizzato per mantenere coerenza con il tema dell’app.
+// password e integrazione diretta con AuthService per eseguire la registrazione.
 // -----------------------------------------------------------------------------
 
-import 'package:expense_tracker/components/auth/text_field.dart';
-import 'package:expense_tracker/models/auth_model.dart';
+import 'package:expense_tracker/components/auth/auth_button.dart';
+import 'package:expense_tracker/components/auth/auth_text_field.dart';
+import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class RegisterForm extends StatefulWidget {
-  final AuthModel authModel;
-  const RegisterForm({super.key, required this.authModel});
+  final AuthService authService;
+  const RegisterForm({super.key, required this.authService});
 
   @override
   State<RegisterForm> createState() => _RegisterFormState();
@@ -123,7 +123,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   // -------------------------------------------------------------
                   // 🧑 Nome completo
                   // -------------------------------------------------------------
-                  ModernTextField(
+                  AuthTextField(
                     controller: _nameController,
                     focusNode: _nameFocus,
                     nextFocus: _emailFocus,
@@ -139,7 +139,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   // -------------------------------------------------------------
                   // 📧 Email
                   // -------------------------------------------------------------
-                  ModernTextField(
+                  AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
                     nextFocus: _passwordFocus,
@@ -160,7 +160,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   // -------------------------------------------------------------
                   // 🔒 Password
                   // -------------------------------------------------------------
-                  ModernTextField(
+                  AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
                     nextFocus: _confirmFocus,
@@ -185,7 +185,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   // -------------------------------------------------------------
                   // 🔒 Conferma password
                   // -------------------------------------------------------------
-                  ModernTextField(
+                  AuthTextField(
                     controller: _confirmController,
                     focusNode: _confirmFocus,
                     hint: "Conferma password",
@@ -213,11 +213,10 @@ class _RegisterFormState extends State<RegisterForm> {
             // -------------------------------------------------------------------
             // 🚀 BOTTONE DI REGISTRAZIONE
             // -------------------------------------------------------------------
-            ElevatedButton(
+            AuthButton(
               onPressed: () {
-                // Valida tutti i campi prima di procedere
                 if (_formKey.currentState!.validate()) {
-                  widget.authModel.signUp(
+                  widget.authService.signUp(
                     context: context,
                     email: _emailController.text,
                     password: _passwordController.text,
@@ -227,37 +226,8 @@ class _RegisterFormState extends State<RegisterForm> {
                   );
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textLight,
-                elevation: 6,
-                shadowColor: AppColors.primary.withValues(alpha: 0.3),
-                minimumSize: Size(double.infinity, 50.h),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16.r),
-                ),
-              ),
-
-              // Contenuto visivo del pulsante
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    FontAwesomeIcons.userPlus,
-                    size: 15.r,
-                    color: AppColors.textLight,
-                  ),
-                  SizedBox(width: 12.w),
-                  Text(
-                    "Registrati",
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
+              icon: FontAwesomeIcons.userPlus,
+              text: "Registrati",
             ),
 
             SizedBox(height: 18.h),

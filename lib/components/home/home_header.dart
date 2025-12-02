@@ -3,17 +3,17 @@
 // 🏠 HEADER DELLA HOME PAGE + STATISTICHE INLINE
 //
 // Questo file contiene:
-// - HomeHeader: header animato con avatar, bottone resoconto annuale
-//   e riepilogo delle spese del mese corrente.
+// - HomeHeader: header con avatar, bottone resoconto annuale
+//   e riepilogo delle spese.
 // - HeaderExpenseState: widget compatto per mostrare un valore (oggi/settimana/anno)
 //   con grafica moderna.
 //
-// Include animazioni fade, supporto dark mode, avatar locale, avatar remoto,
-// e integrazione con StoreModel via Obx. 
+// Include animazioni fade, supporto dark mode, avatar locale
+// e integrazione con ExpenseStore via Obx. 
 // -----------------------------------------------------------------------------
 
 import 'dart:io';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,9 +22,8 @@ import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeHeader extends StatelessWidget {
-  final Animation<double>
-  fadeAnimation; // ✨ Animazione fade-in del blocco header
-  final File? localAvatar; // 📁 Avatar salvata localmente
+  final Animation<double> fadeAnimation; // ✨ Animazione fade-in del blocco header
+  final File? localAvatar; // 📁 Avatar salvato localmente
   final User? user; // 👤 Utente Firebase loggato
   final bool isDark; // 🌙 Theme mode attuale
   final VoidCallback onTapProfile; // 🔘 Apertura sheet profilo
@@ -118,7 +117,7 @@ class HomeHeader extends StatelessWidget {
                         ),
                       ),
 
-                      // 👤 Avatar utente (locale → remoto → icona fallback)
+                      // 👤 Avatar utente
                       GestureDetector(
                         onTap: onTapProfile,
                         child: Container(
@@ -135,11 +134,6 @@ class HomeHeader extends StatelessWidget {
                             radius: 20.r,
                             backgroundColor: AppColors.backgroundLight
                                 .withValues(alpha: 0.3),
-
-                            // Priorità avatar:
-                            // 1. File locale
-                            // 2. Foto Firebase
-                            // 3. Icona
                             backgroundImage: localAvatar != null
                                 ? FileImage(localAvatar!)
                                 : (user?.photoURL != null
@@ -184,7 +178,7 @@ class HomeHeader extends StatelessWidget {
                       SizedBox(height: 4.h),
 
                       Text(
-                        "€ ${storeModel.value.totalExpenseMonth.toStringAsFixed(2)}",
+                        "€ ${expenseStore.value.totalExpenseMonth.toStringAsFixed(2)}",
                         style: TextStyle(
                           fontSize: 35.sp,
                           color: isDark
@@ -206,21 +200,21 @@ class HomeHeader extends StatelessWidget {
                     children: [
                       Expanded(
                         child: HeaderExpenseState(
-                          value: storeModel.value.totalExpenseToday,
+                          value: expenseStore.value.totalExpenseToday,
                           label: "Oggi",
                         ),
                       ),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: HeaderExpenseState(
-                          value: storeModel.value.totalExpenseWeek,
+                          value: expenseStore.value.totalExpenseWeek,
                           label: "Settimana",
                         ),
                       ),
                       SizedBox(width: 10.w),
                       Expanded(
                         child: HeaderExpenseState(
-                          value: storeModel.value.totalExpenseYear,
+                          value: expenseStore.value.totalExpenseYear,
                           label: "Anno",
                         ),
                       ),

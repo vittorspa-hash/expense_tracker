@@ -1,4 +1,4 @@
-// dialog_model.dart
+// dialog_utils.dart
 // Gestisce dialog, popup e bottom sheet adattivi (Material / Cupertino)
 // Questo file fornisce una serie di metodi statici per mostrare dialog, popup e bottom sheet che si adattano automaticamente allo stile della piattaforma (iOS/Android).
 // Include: info dialog, conferma, input multipli, istruzioni, date/anno picker, profile sheet.
@@ -13,7 +13,7 @@ import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dialog_helpers.dart';
 
-class DialogModel {
+class DialogUtils {
   /// ℹ️ Mostra un dialog informativo (OK)
   static Future<void> showInfoDialog(
     BuildContext context, {
@@ -52,12 +52,7 @@ class DialogModel {
       content: content,
       actions: (context, _) => [
         DialogHelpers.buildActionButton(context, cancelText, textColor, false),
-        DialogHelpers.buildActionButton(
-          context,
-          confirmText,
-          confirmColor,
-          true,
-        ),
+        DialogHelpers.buildActionButton(context, confirmText, confirmColor, true),
       ],
     );
   }

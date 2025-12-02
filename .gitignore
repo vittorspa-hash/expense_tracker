@@ -8,6 +8,8 @@
 coverage/
 .flutter-plugins
 .flutter-plugins-dependencies
+.flutter-plugins-dependencies 2
+.flutter-plugins-dependencies 3
 .pub-cache/
 **/doc/api/
 **/ios/Flutter/.last_build_id

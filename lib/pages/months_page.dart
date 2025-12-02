@@ -14,7 +14,7 @@ import 'package:expense_tracker/pages/days_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:intl/intl.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -114,7 +114,7 @@ class _MonthsPageState extends State<MonthsPage>
         child: SafeArea(
           child: Obx(() {
             // 🔹 Recupera spese giornaliere per mese selezionato
-            final dailyExpenses = storeModel.value.expensesByDay(
+            final dailyExpenses = expenseStore.value.expensesByDay(
               widget.year,
               widget.month,
             );

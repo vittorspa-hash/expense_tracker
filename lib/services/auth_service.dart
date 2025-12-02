@@ -1,5 +1,5 @@
-// auth_model.dart
-// Modello che gestisce l’intera logica di autenticazione dell’app.
+// auth_service.dart
+// Service che gestisce l’intera logica di autenticazione dell’app.
 // Include:
 // • Registrazione di un nuovo utente con email e password
 // • Login con controllo della verifica email
@@ -7,12 +7,12 @@
 // • Prevenzione dell’invio eccessivo di email tramite rate-limit
 // • Gestione uniforme degli errori e notifiche tramite SnackBar e dialog personalizzati
 
-import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
-class AuthModel {
+class AuthService {
   // Istanza principale per gestire l’autenticazione tramite Firebase
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -66,7 +66,7 @@ class AuthModel {
       _lastEmailSent = DateTime.now();
 
       if (!context.mounted) return;
-      await DialogModel.showInfoDialog(
+      await DialogUtils.showInfoDialog(
         context,
         title: "Verifica Email",
         content:
@@ -144,7 +144,7 @@ class AuthModel {
       _lastEmailSent = DateTime.now();
 
       if (!context.mounted) return;
-      await DialogModel.showInfoDialog(
+      await DialogUtils.showInfoDialog(
         context,
         title: "Email inviata",
         content:
@@ -162,7 +162,7 @@ class AuthModel {
   Future<void> _showUnverifiedDialog(BuildContext context, User user) async {
     if (!context.mounted) return;
 
-    final confirmed = await DialogModel.showConfirmDialog(
+    final confirmed = await DialogUtils.showConfirmDialog(
       context,
       title: "Email non verificata",
       content: "Devi confermare la tua email prima di accedere.",

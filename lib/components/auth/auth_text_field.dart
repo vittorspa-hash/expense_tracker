@@ -1,8 +1,8 @@
-// modern_text_field.dart
+// auth_text_field.dart
 // -----------------------------------------------------------------------------
-// 📝 TEXTFIELD MODERNO RIUTILIZZABILE
+// 📝 TEXTFIELD RIUTILIZZABILE
 //
-// Campo di testo personalizzato utilizzato nel Login, Signup e altri form.
+// Campo di testo personalizzato utilizzato nel Login e Register form.
 // Comprende: icona, hint, gestione del focus, validazione, modalità password,
 // supporto al tema scuro e animazioni fluide.
 // -----------------------------------------------------------------------------
@@ -13,23 +13,22 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // -----------------------------------------------------------------------------
-// 🧱 ModernTextField – Widget riutilizzabile
+// 🧱 AuthTextField – Widget riutilizzabile
 // -----------------------------------------------------------------------------
-class ModernTextField extends StatelessWidget {
+class AuthTextField extends StatelessWidget {
   final TextEditingController controller; // Controller del campo
   final String hint; // Testo segnaposto
   final IconData icon; // Icona a sinistra
   final String? Function(String?)? validator; // Validazione personalizzata
   final bool obscure; // Obscure text per password
-  final VoidCallback?
-  onToggleObscure; // Funzione per cambiare visibilità password
+  final VoidCallback? onToggleObscure; // Funzione per cambiare visibilità password
   final TextInputType keyboardType; // Tipo tastiera (email, testo, numeri)
   final TextCapitalization capitalization; // Comportamento di capitalizzazione
   final FocusNode? focusNode; // Focus attuale
   final FocusNode? nextFocus; // Focus del campo successivo
   final bool isLast; // Ultimo campo del form?
 
-  const ModernTextField({
+  const AuthTextField({
     super.key,
     required this.controller,
     required this.hint,
@@ -52,12 +51,12 @@ class ModernTextField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       focusNode: focusNode,
-      obscureText: obscure, // Testo nascosto per password
+      obscureText: obscure,
       keyboardType: keyboardType,
       textCapitalization: capitalization,
       validator: validator,
       textInputAction:
-          isLast // Tasto invio diverso se ultimo campo
+          isLast 
           ? TextInputAction.done
           : TextInputAction.next,
       style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
@@ -104,7 +103,7 @@ class ModernTextField extends StatelessWidget {
 
         // 🎨 Colore di sfondo diverso per light/dark mode
         filled: true,
-        fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+        fillColor: isDark ? AppColors.borderDark : AppColors.borderLight,
 
         // 🔲 Bordi moderni
         border: OutlineInputBorder(

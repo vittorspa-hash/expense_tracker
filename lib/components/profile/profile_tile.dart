@@ -1,19 +1,18 @@
 // profile_tile.dart
 // -----------------------------------------------------------------------------
-// 📝 WIDGET PROFILE TILE
+// 📝 WIDGET PROFILE TILE (MOBILE ONLY)
 // -----------------------------------------------------------------------------
 // Gestisce la visualizzazione di una singola voce del profilo utente:
 // - Icona a sinistra
 // - Titolo e valore centrale
 // - Pulsante azione / icona modificabile a destra
-// - Hover animation per desktop/web
 // -----------------------------------------------------------------------------
 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
-class ProfileTile extends StatefulWidget {
+class ProfileTile extends StatelessWidget {
   // 🔧 Parametri principali
   final IconData icon; // Icona sinistra
   final String title; // Titolo della voce
@@ -33,13 +32,6 @@ class ProfileTile extends StatefulWidget {
     required this.tooltip,
     this.trailingWidget,
   });
-
-  @override
-  State<ProfileTile> createState() => _ProfileTileState();
-}
-
-class _ProfileTileState extends State<ProfileTile> {
-  bool _isHovered = false; // 🖱 Stato hover per desktop/web
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +65,7 @@ class _ProfileTileState extends State<ProfileTile> {
                 ),
               ],
             ),
-            child: Icon(widget.icon, size: 24.r, color: AppColors.primary),
+            child: Icon(icon, size: 24.r, color: AppColors.primary),
           ),
 
           SizedBox(width: 16.w),
@@ -86,7 +78,7 @@ class _ProfileTileState extends State<ProfileTile> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.title,
+                  title,
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
@@ -96,7 +88,7 @@ class _ProfileTileState extends State<ProfileTile> {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  widget.value ?? "Non disponibile",
+                  value ?? "Non disponibile",
                   style: TextStyle(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w500,
@@ -114,46 +106,29 @@ class _ProfileTileState extends State<ProfileTile> {
 
           // -----------------------------------------------------------------
           // 🖱 BOTTONE/TRAILING WIDGET
-          // - Supporta hover animation su desktop/web
-          // - Può essere sovrascritto da trailingWidget personalizzato
           // -----------------------------------------------------------------
-          widget.trailingWidget ??
-              MouseRegion(
-                onEnter: (_) => setState(() => _isHovered = true),
-                onExit: (_) => setState(() => _isHovered = false),
-                child: AnimatedScale(
-                  scale: _isHovered ? 1.1 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: Container(
-                    width: 36.w,
-                    height: 36.h,
-                    decoration: BoxDecoration(
-                      color: _isHovered
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12.r),
-                      border: Border.all(
-                        color: isDark
-                            ? AppColors.borderLight.withValues(alpha: 0.2)
-                            : AppColors.borderDark.withValues(alpha: 0.2),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        widget.trailingIcon,
-                        size: 20.r,
-                        color: _isHovered
-                            ? AppColors.primary
-                            : (isDark
-                                  ? AppColors.greyDark
-                                  : AppColors.greyLight),
-                      ),
-                      tooltip: widget.tooltip,
-                      onPressed: widget.onPressed,
-                      padding: EdgeInsets.zero,
-                    ),
+          trailingWidget ??
+              Container(
+                width: 36.w,
+                height: 36.h,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.borderLight.withValues(alpha: 0.2)
+                        : AppColors.borderDark.withValues(alpha: 0.2),
+                    width: 1.5,
                   ),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    trailingIcon,
+                    size: 20.r,
+                    color: isDark ? AppColors.greyDark : AppColors.greyLight,
+                  ),
+                  tooltip: tooltip,
+                  onPressed: onPressed,
+                  padding: EdgeInsets.zero,
                 ),
               ),
         ],

@@ -12,7 +12,7 @@ import 'package:expense_tracker/components/auth/register_form.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:expense_tracker/models/auth_model.dart';
+import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -29,8 +29,8 @@ class _AuthPageState extends State<AuthPage>
   // Controller per la TabBar (Login / Registrazione)
   late TabController _tabController;
 
-  // Modello che gestisce tutta la logica di autenticazione
-  final _authModel = AuthModel();
+  // Service che gestisce tutta la logica di autenticazione
+  final _authService = AuthService();
 
   // Getter per il vsync richiesto dal mixin
   @override
@@ -100,10 +100,10 @@ class _AuthPageState extends State<AuthPage>
                       Container(
                         padding: EdgeInsets.all(20.w),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: AppColors.avatar.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
+                            color: AppColors.avatar.withValues(alpha: 0.3),
                             width: 2,
                           ),
                         ),
@@ -230,10 +230,10 @@ class _AuthPageState extends State<AuthPage>
                     controller: _tabController,
                     children: [
                       // Form di login
-                      LoginForm(authModel: _authModel),
+                      LoginForm(authService: _authService),
 
                       // Form di registrazione
-                      RegisterForm(authModel: _authModel),
+                      RegisterForm(authService: _authService),
                     ],
                   ),
                 ),

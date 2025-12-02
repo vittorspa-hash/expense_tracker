@@ -3,11 +3,10 @@
 // 🏠 HOME PAGE PRINCIPALE DELL’APPLICAZIONE
 //
 // Include:
-//  • Header animato con avatar, nome utente e pulsanti scorciatoia
+//  • header con avatar, bottone resoconto annuale e riepilogo delle spese.
 //  • Lista delle spese con ricerca, filtro e ordinamento
 //  • Selezione multipla con eliminazione
 //  • FAB per aggiungere una nuova spesa
-//  • Gestione avatar locale
 //
 // La pagina usa GetX per reattività (Obx) e animazioni fluide.
 // -----------------------------------------------------------------------------
@@ -16,8 +15,8 @@ import 'dart:io';
 import 'package:expense_tracker/components/home/home_content_list.dart';
 import 'package:expense_tracker/components/home/home_header.dart';
 import 'package:expense_tracker/controllers/multi_select_controller.dart';
-import 'package:expense_tracker/models/dialog_model.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:expense_tracker/pages/new_expense_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -238,6 +237,7 @@ class _HomePageState extends State<HomePage>
   // -----------------------------------------------------------------------------
   Future<void> _loadLocalAvatar() async {
     final appDir = await getApplicationDocumentsDirectory();
+    if (!mounted) return;  
     final file = File('${appDir.path}/profile_picture.jpg');
     setState(() {
       _localAvatar = file.existsSync() ? file : null;
@@ -249,9 +249,9 @@ class _HomePageState extends State<HomePage>
   // -----------------------------------------------------------------------------
   Future<void> _refreshExpenses() async {
     multiSelect.cancelSelection();
-    await storeModel.value.initialise();
+    await expenseStore.value.initialise();
     if (_sortCriteria.value.isNotEmpty) {
-      storeModel.value.sortBy(_sortCriteria.value);
+      expenseStore.value.sortBy(_sortCriteria.value);
     }
   }
 
@@ -259,7 +259,7 @@ class _HomePageState extends State<HomePage>
   // 👤 MOSTRA MODALE PROFILO UTENTE
   // -----------------------------------------------------------------------------
   Future<void> _showProfileSheet(BuildContext context, User? user) async {
-    await DialogModel.showProfileSheet(
+    await DialogUtils.showProfileSheet(
       context,
       user: user,
       localAvatar: _localAvatar,

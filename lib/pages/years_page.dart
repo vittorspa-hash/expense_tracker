@@ -12,12 +12,12 @@
 import 'package:expense_tracker/components/report/bar_chart_widget.dart';
 import 'package:expense_tracker/components/report/period_list_item_widget.dart';
 import 'package:expense_tracker/components/report/total_card_widget.dart';
-import 'package:expense_tracker/models/dialog_model.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/pages/months_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:expense_tracker/models/store_model.dart';
+import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -100,9 +100,9 @@ class _YearsPageState extends State<YearsPage>
         ),
         child: SafeArea(
           child: Obx(() {
-            // 🔹 Recupera spese mensili dal modello globale
+            // 🔹 Recupera spese mensili dallo store globale
             final Map<String, double> monthlyExpenses =
-                storeModel.value.expensesByMonth;
+                expenseStore.value.expensesByMonth;
 
             // 🔹 Estrae anni disponibili e ordina
             final years =
@@ -168,7 +168,7 @@ class _YearsPageState extends State<YearsPage>
                       padding: EdgeInsets.symmetric(horizontal: 20.w),
                       child: InkWell(
                         onTap: () async {
-                          final year = await DialogModel.showYearPickerAdaptive(
+                          final year = await DialogUtils.showYearPickerAdaptive(
                             context,
                             years: years,
                             selectedYear: selectedYear!,
