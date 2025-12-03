@@ -11,7 +11,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dialog_helpers.dart';
+import 'dialog/dialog_helpers.dart';
 
 class DialogUtils {
   /// ℹ️ Mostra un dialog informativo (OK)
