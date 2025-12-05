@@ -61,15 +61,15 @@ class DialogProfile {
   // 🔹 AVATAR UTENTE
   // ---------------------------------------------------------------------------
   static Widget buildAvatar(User? user, File? localAvatar) => CircleAvatar(
-        radius: 34.r,
-        backgroundColor: AppColors.backgroundAvatar,
-        backgroundImage: localAvatar != null
-            ? FileImage(localAvatar)
-            : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
-        child: localAvatar == null && user?.photoURL == null
-            ? Icon(Icons.person, size: 50.sp, color: AppColors.avatar)
-            : null,
-      );
+    radius: 34.r,
+    backgroundColor: AppColors.backgroundAvatar,
+    backgroundImage: localAvatar != null
+        ? FileImage(localAvatar)
+        : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
+    child: localAvatar == null && user?.photoURL == null
+        ? Icon(Icons.person, size: 50.sp, color: AppColors.avatar)
+        : null,
+  );
 
   // ---------------------------------------------------------------------------
   // 🔹 PULSANTE "Profilo" (Cupertino / iOS)
@@ -82,31 +82,23 @@ class DialogProfile {
     File? localAvatar,
     Future<void> Function() reloadAvatar,
     bool isDark,
-  ) =>
-      CupertinoActionSheetAction(
-        onPressed: () async {
-          Navigator.pop(context);
-          await Navigator.pushNamed(context, ProfilePage.route);
-          await reloadAvatar(); // Aggiorna eventuale nuovo avatar
-        },
-        child: Text(
-          "Profilo",
-          style: TextStyle(
-            color: isDark ? AppColors.textLight : AppColors.textDark,
-            fontSize: 17.sp,
-          ),
-        ),
-      );
+  ) => CupertinoActionSheetAction(
+    onPressed: () => _handleProfileNavigation(context, reloadAvatar),
+    child: Text(
+      "Profilo",
+      style: TextStyle(
+        color: isDark ? AppColors.textLight : AppColors.textDark,
+        fontSize: 17.sp,
+      ),
+    ),
+  );
 
   // ---------------------------------------------------------------------------
   // 🔹 PULSANTE "Impostazioni" (Cupertino / iOS)
   // ---------------------------------------------------------------------------
   static Widget buildSettingsAction(BuildContext context, bool isDark) =>
       CupertinoActionSheetAction(
-        onPressed: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, SettingsPage.route);
-        },
+        onPressed: () => _handleSettingsNavigation(context),  
         child: Text(
           "Impostazioni",
           style: TextStyle(
@@ -124,9 +116,9 @@ class DialogProfile {
   static Widget buildLogoutAction(
     BuildContext context,
     bool isDark,
-    bool isCupertino,
+    
   ) {
-    if (!isCupertino) return const SizedBox.shrink();
+    if (!DialogCommons.isIOS) return const SizedBox.shrink();
 
     return CupertinoActionSheetAction(
       isDestructiveAction: true,
@@ -149,18 +141,12 @@ class DialogProfile {
     File? localAvatar,
     Future<void> Function() reloadAvatar,
     bool isDark,
-  ) =>
-      ListTile(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        leading: Icon(Icons.person, color: AppColors.primary, size: 24.sp),
-        title: Text("Profilo", style: TextStyle(fontSize: 16.sp)),
-        onTap: () async {
-          Navigator.pop(context);
-          await Navigator.pushNamed(context, ProfilePage.route);
-          await reloadAvatar();
-        },
-      );
+  ) => ListTile(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+    leading: Icon(Icons.person, color: AppColors.primary, size: 24.sp),
+    title: Text("Profilo", style: TextStyle(fontSize: 16.sp)),
+    onTap: () => _handleProfileNavigation(context, reloadAvatar),
+  );
 
   // ---------------------------------------------------------------------------
   // 🔹 LIST TILE "Impostazioni" (Android)
@@ -172,10 +158,7 @@ class DialogProfile {
         ),
         leading: Icon(Icons.settings, color: AppColors.primary, size: 24.sp),
         title: Text("Impostazioni", style: TextStyle(fontSize: 16.sp)),
-        onTap: () {
-          Navigator.pop(context);
-          Navigator.pushNamed(context, SettingsPage.route);
-        },
+        onTap: () => _handleSettingsNavigation(context),
       );
 
   // ---------------------------------------------------------------------------
@@ -194,6 +177,60 @@ class DialogProfile {
         onTap: () => handleLogout(context),
       );
 
+  // ========== NAVIGATION HANDLERS (Private) ==========
+
+  /// Gestisce la navigazione al profilo con context safety
+  /// ✅ Error handling per reloadAvatar
+  static Future<void> _handleProfileNavigation(
+    BuildContext context,
+    Future<void> Function() reloadAvatar,
+  ) async {
+    // Chiudi il dialog/sheet corrente
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
+
+    // Aspetta un frame per assicurarsi che il pop sia completato
+    await Future.delayed(Duration.zero);
+
+    // Naviga alla pagina profilo
+    if (context.mounted) {
+      await Navigator.pushNamed(context, ProfilePage.route);
+    }
+
+    // Ricarica l'avatar con error handling
+    if (context.mounted) {
+      try {
+        await reloadAvatar();
+      } catch (e) {
+        debugPrint('⚠️ Errore durante il reload dell\'avatar: $e');
+        // Opzionale: mostra snackbar all'utente
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Impossibile aggiornare l\'avatar'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Gestisce la navigazione alle impostazioni con context safety
+  static void _handleSettingsNavigation(BuildContext context) {
+    if (context.mounted) {
+      Navigator.pop(context);
+    }
+
+    // Aspetta che il pop sia completato
+    Future.delayed(Duration.zero, () {
+      if (context.mounted) {
+        Navigator.pushNamed(context, SettingsPage.route);
+      }
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // 🔻 LOGOUT (Dialog di conferma)
   // ---------------------------------------------------------------------------
@@ -204,7 +241,13 @@ class DialogProfile {
   // - Logout Firebase
   // ---------------------------------------------------------------------------
   static Future<void> handleLogout(BuildContext context) async {
-    Navigator.pop(context); // Chiude eventuale dialog precedente
+    if (!context.mounted) return;
+
+    Navigator.pop(context);
+
+    await Future.delayed(Duration.zero);
+
+    if (!context.mounted) return;
 
     final textColor = DialogCommons.textColor(context);
     const title = "Conferma logout";
@@ -216,6 +259,7 @@ class DialogProfile {
 
     // ----------------------------- iOS ---------------------------------------
     if (DialogCommons.isIOS) {
+      if (!context.mounted) return;
       confirm = await showCupertinoDialog<bool>(
         context: context,
         builder: (_) => CupertinoAlertDialog(
@@ -226,15 +270,24 @@ class DialogProfile {
           ),
           actions: [
             DialogCommons.buildActionButton(
-                context, cancelText, textColor, false),
+              context,
+              cancelText,
+              textColor,
+              false,
+            ),
             DialogCommons.buildActionButton(
-                context, confirmText, AppColors.delete, true),
+              context,
+              confirmText,
+              AppColors.delete,
+              true,
+            ),
           ],
         ),
       );
     }
     // ----------------------------- ANDROID -----------------------------------
     else {
+      if (!context.mounted) return;
       confirm = await showDialog<bool>(
         context: context,
         builder: (_) => AlertDialog(
@@ -246,17 +299,41 @@ class DialogProfile {
           content: Text(content, style: TextStyle(fontSize: 14.sp)),
           actions: [
             DialogCommons.buildActionButton(
-                context, cancelText, textColor, false),
+              context,
+              cancelText,
+              textColor,
+              false,
+            ),
             DialogCommons.buildActionButton(
-                context, confirmText, AppColors.delete, true),
+              context,
+              confirmText,
+              AppColors.delete,
+              true,
+            ),
           ],
         ),
       );
     }
 
     // Se l’utente conferma → logout da Firebase
-    if (confirm == true) {
-      await FirebaseAuth.instance.signOut();
+    if (confirm == true && context.mounted) {
+      try {
+        await FirebaseAuth.instance.signOut();
+        debugPrint('✅ Logout completato con successo');
+      } catch (e) {
+        debugPrint('❌ Errore durante il logout: $e');
+
+        // ✅ Mostra errore all'utente
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Errore durante il logout: ${e.toString()}'),
+              backgroundColor: AppColors.delete,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
     }
   }
 }

@@ -1,9 +1,6 @@
 // dialog_utils.dart
 // Gestisce dialog, popup e bottom sheet adattivi (Material / Cupertino)
-// Questo file fornisce una serie di metodi statici per mostrare dialog, popup e bottom sheet che si adattano automaticamente allo stile della piattaforma (iOS/Android).
-// Include: info dialog, conferma, input multipli, istruzioni, date/anno picker, profile sheet.
-// Tutte le funzioni sono pensate per essere chiamate da qualsiasi punto dell'applicazione.
-// Utilizza DialogHelpers per componenti riutilizzabili e logica di stile.
+// ✅ Versione con gestione corretta del context.mounted per prevenire crash
 
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,7 +8,13 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'dialog/dialog_helpers.dart';
+
+// ✅ Importa direttamente i moduli specializzati
+import 'dialogs/dialog_commons.dart';
+import 'dialogs/dialog_sheets.dart';
+import 'dialogs/dialog_profile.dart';
+import 'dialogs/dialog_inputs.dart';
+import 'dialogs/dialog_pickers.dart';
 
 class DialogUtils {
   /// ℹ️ Mostra un dialog informativo (OK)
@@ -22,12 +25,12 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return;
 
-    return _showDialog(
+    await _showDialog(
       context: context,
       title: title,
       content: content,
       actions: (context, textColor) => [
-        DialogHelpers.buildActionButton(context, "OK", textColor),
+        DialogCommons.buildActionButton(context, "OK", textColor),
       ],
     );
   }
@@ -42,17 +45,22 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return false;
 
-    final textColor = DialogHelpers.textColor(context);
-    final isDestructive = DialogHelpers.isDestructiveAction(confirmText);
+    final textColor = DialogCommons.textColor(context);
+    final isDestructive = DialogCommons.isDestructiveAction(confirmText);
     final confirmColor = isDestructive ? AppColors.delete : textColor;
 
-    return _showDialog<bool>(
+    return await _showDialog<bool>(
       context: context,
       title: title,
       content: content,
       actions: (context, _) => [
-        DialogHelpers.buildActionButton(context, cancelText, textColor, false),
-        DialogHelpers.buildActionButton(context, confirmText, confirmColor, true),
+        DialogCommons.buildActionButton(context, cancelText, textColor, false),
+        DialogCommons.buildActionButton(
+          context,
+          confirmText,
+          confirmColor,
+          true,
+        ),
       ],
     );
   }
@@ -65,7 +73,7 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return null;
 
-    return DialogHelpers.showAdaptiveSheet(
+    return await DialogSheets.showAdaptiveSheet(
       context: context,
       title: 'Ordina spese',
       isDark: isDark,
@@ -82,31 +90,34 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return;
 
-    final isDark = DialogHelpers.isDark(context);
-    final header = DialogHelpers.buildProfileHeader(
+    final isDark = DialogCommons.isDark(context);
+    final header = DialogProfile.buildProfileHeader(
       context,
       user,
       localAvatar,
       isDark,
     );
 
-    if (DialogHelpers.isIOS) {
+    if (DialogCommons.isIOS) {
+      // ✅ Check aggiuntivo prima di showCupertinoModalPopup
+      if (!context.mounted) return;
+
       await showCupertinoModalPopup(
         context: context,
         builder: (_) => CupertinoActionSheet(
           title: header,
           actions: [
-            DialogHelpers.buildProfileAction(
+            DialogProfile.buildProfileAction(
               context,
               user,
               localAvatar,
               reloadAvatar,
               isDark,
             ),
-            DialogHelpers.buildSettingsAction(context, isDark),
-            DialogHelpers.buildLogoutAction(context, isDark, true),
+            DialogProfile.buildSettingsAction(context, isDark),
+            DialogProfile.buildLogoutAction(context, isDark),
           ],
-          cancelButton: DialogHelpers.buildCupertinoSheetButton(
+          cancelButton: DialogSheets.buildCupertinoSheetButton(
             context,
             "Chiudi",
             isDark,
@@ -115,6 +126,9 @@ class DialogUtils {
         ),
       );
     } else {
+      // ✅ Check aggiuntivo prima di showModalBottomSheet
+      if (!context.mounted) return;
+
       await showModalBottomSheet(
         context: context,
         shape: RoundedRectangleBorder(
@@ -129,17 +143,17 @@ class DialogUtils {
               children: [
                 header,
                 SizedBox(height: 20.h),
-                DialogHelpers.buildProfileListTile(
+                DialogProfile.buildProfileListTile(
                   context,
                   user,
                   localAvatar,
                   reloadAvatar,
                   isDark,
                 ),
-                DialogHelpers.buildSettingsListTile(context, isDark),
-                DialogHelpers.buildLogoutListTile(context, isDark),
+                DialogProfile.buildSettingsListTile(context, isDark),
+                DialogProfile.buildLogoutListTile(context, isDark),
                 SizedBox(height: 12.h),
-                DialogHelpers.buildCloseButton(context),
+                DialogCommons.buildCloseButton(context),
               ],
             ),
           ),
@@ -149,6 +163,7 @@ class DialogUtils {
   }
 
   /// ✏️ Dialog adattivo per inserimento campi di testo
+  /// ✅ Ora usa InputDialogWidget che gestisce correttamente il dispose
   static Future<List<String>?> showInputDialogAdaptive(
     BuildContext context, {
     required String title,
@@ -159,76 +174,35 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return null;
 
-    final textColor = DialogHelpers.textColor(context);
-    final controllers = fields
-        .map((f) => TextEditingController(text: f["initialValue"] ?? ""))
-        .toList();
-    final obscureStates = fields
-        .map((f) => ValueNotifier<bool>(f["obscureText"] ?? false))
-        .toList();
-    final focusNodes = List.generate(fields.length, (_) => FocusNode());
+    final isCupertino = DialogCommons.isIOS;
 
-    Widget buildFields(BuildContext dialogCtx) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ...List.generate(
-          fields.length,
-          (i) => DialogHelpers.buildTextField(
-            dialogCtx,
-            fields[i],
-            controllers[i],
-            obscureStates[i],
-            focusNodes,
-            i,
-            fields.length,
-            textColor,
-          ),
-        ),
-        if (onForgotPassword != null)
-          DialogHelpers.buildForgotPasswordButton(onForgotPassword, textColor),
-      ],
-    );
+    if (isCupertino) {
+      // ✅ Check aggiuntivo prima di showCupertinoDialog
+      if (!context.mounted) return null;
 
-    if (DialogHelpers.isIOS) {
       return await showCupertinoDialog<List<String>>(
         context: context,
-        builder: (ctx) => CupertinoAlertDialog(
-          title: Text(title, style: TextStyle(fontSize: 16.sp)),
-          content: Padding(
-            padding: EdgeInsets.only(top: 8.h),
-            child: Material(color: Colors.transparent, child: buildFields(ctx)),
-          ),
-          actions: DialogHelpers.buildDialogActions(
-            ctx,
-            cancelText,
-            confirmText,
-            controllers,
-            textColor,
-            true,
-          ),
+        builder: (ctx) => InputDialogWidget(
+          title: title,
+          fields: fields,
+          confirmText: confirmText,
+          cancelText: cancelText,
+          onForgotPassword: onForgotPassword,
         ),
       );
     }
 
+    // ✅ Check aggiuntivo prima di showDialog
+    if (!context.mounted) return null;
+
     return await showDialog<List<String>>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20.r),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(fontSize: 17.sp, fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(child: buildFields(ctx)),
-        actions: DialogHelpers.buildDialogActions(
-          ctx,
-          cancelText,
-          confirmText,
-          controllers,
-          textColor,
-          false,
-        ),
+      builder: (ctx) => InputDialogWidget(
+        title: title,
+        fields: fields,
+        confirmText: confirmText,
+        cancelText: cancelText,
+        onForgotPassword: onForgotPassword,
       ),
     );
   }
@@ -243,7 +217,7 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return false;
 
-    final textColor = DialogHelpers.textColor(context);
+    final textColor = DialogCommons.textColor(context);
     bool dontShowAgain = false;
 
     Widget buildContent(StateSetter setState) => Column(
@@ -251,11 +225,11 @@ class DialogUtils {
       children: [
         Text(
           message,
-          style: TextStyle(fontSize: DialogHelpers.isIOS ? 13.sp : 14.sp),
+          style: TextStyle(fontSize: DialogCommons.isIOS ? 13.sp : 14.sp),
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 16.h),
-        DialogHelpers.buildCheckboxRow(
+        DialogInputs.buildCheckboxRow(
           setState,
           dontShowAgain,
           checkboxLabel,
@@ -264,7 +238,10 @@ class DialogUtils {
       ],
     );
 
-    if (DialogHelpers.isIOS) {
+    if (DialogCommons.isIOS) {
+      // ✅ Check aggiuntivo prima di showCupertinoDialog
+      if (!context.mounted) return false;
+
       await showCupertinoDialog(
         context: context,
         builder: (_) => StatefulBuilder(
@@ -278,24 +255,27 @@ class DialogUtils {
               ),
             ),
             actions: [
-              DialogHelpers.buildActionButton(context, confirmText, textColor),
+              DialogCommons.buildActionButton(context, confirmText, textColor),
             ],
           ),
         ),
       );
     } else {
+      // ✅ Check aggiuntivo prima di showDialog
+      if (!context.mounted) return false;
+
       await showDialog(
         context: context,
         builder: (_) => StatefulBuilder(
           builder: (context, setState) => AlertDialog(
-            shape: DialogHelpers.roundedRectangleBorder(),
+            shape: DialogCommons.roundedRectangleBorder(),
             title: Text(
               title,
               style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
             ),
             content: buildContent(setState),
             actions: [
-              DialogHelpers.buildActionButton(context, confirmText, textColor),
+              DialogCommons.buildActionButton(context, confirmText, textColor),
             ],
           ),
         ),
@@ -314,12 +294,15 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return null;
 
-    final isDark = DialogHelpers.isDark(context);
-    final textColor = DialogHelpers.textColor(context);
+    final isDark = DialogCommons.isDark(context);
+    final textColor = DialogCommons.textColor(context);
     final minDate = firstDate ?? DateTime(2000);
     final maxDate = lastDate ?? DateTime.now();
 
-    if (DialogHelpers.isIOS) {
+    if (DialogCommons.isIOS) {
+      // ✅ Check aggiuntivo prima di showCupertinoModalPopup
+      if (!context.mounted) return null;
+
       DateTime tempPicked = initialDate;
 
       return await showCupertinoModalPopup<DateTime>(
@@ -327,12 +310,12 @@ class DialogUtils {
         builder: (_) => Container(
           height: 300.h,
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[900] : Colors.white,
+            color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
           child: Column(
             children: [
-              DialogHelpers.buildDatePickerHeader(
+              DialogPickers.buildDatePickerHeader(
                 context,
                 textColor,
                 () => tempPicked,
@@ -353,6 +336,9 @@ class DialogUtils {
       );
     }
 
+    // ✅ Check aggiuntivo prima di showDatePicker
+    if (!context.mounted) return null;
+
     return await showDatePicker(
       context: context,
       initialDate: initialDate,
@@ -361,12 +347,12 @@ class DialogUtils {
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           datePickerTheme: DatePickerThemeData(
-            shape: DialogHelpers.roundedRectangleBorder(),
-            cancelButtonStyle: DialogHelpers.datePickerButtonStyle(
+            shape: DialogCommons.roundedRectangleBorder(),
+            cancelButtonStyle: DialogPickers.datePickerButtonStyle(
               textColor,
               false,
             ),
-            confirmButtonStyle: DialogHelpers.datePickerButtonStyle(
+            confirmButtonStyle: DialogPickers.datePickerButtonStyle(
               textColor,
               true,
             ),
@@ -385,11 +371,11 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return null;
 
-    return DialogHelpers.showAdaptiveYearPicker(
+    return await DialogSheets.showAdaptiveYearPicker(
       context: context,
       years: years,
       selectedYear: selectedYear,
-      isDark: DialogHelpers.isDark(context),
+      isDark: DialogCommons.isDark(context),
     );
   }
 
@@ -400,7 +386,7 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return null;
 
-    return await DialogHelpers.showTimePickerAdaptive(
+    return await DialogPickers.showTimePickerAdaptive(
       context: context,
       initialTime: initialTime,
     );
@@ -408,15 +394,22 @@ class DialogUtils {
 
   // ========== METODO HELPER PRIVATO ==========
   /// Metodo unificato per mostrare dialog semplici (info/conferma)
+  /// ✅ Con controllo context.mounted interno
   static Future<T?> _showDialog<T>({
     required BuildContext context,
     required String title,
     required String content,
     required List<Widget> Function(BuildContext, Color) actions,
   }) async {
-    final textColor = DialogHelpers.textColor(context);
+    // ✅ Check all'inizio del metodo
+    if (!context.mounted) return null;
 
-    if (DialogHelpers.isIOS) {
+    final textColor = DialogCommons.textColor(context);
+
+    if (DialogCommons.isIOS) {
+      // ✅ Check aggiuntivo prima di showCupertinoDialog
+      if (!context.mounted) return null;
+
       return await showCupertinoDialog<T>(
         context: context,
         builder: (_) => CupertinoAlertDialog(
@@ -430,10 +423,13 @@ class DialogUtils {
       );
     }
 
+    // ✅ Check aggiuntivo prima di showDialog
+    if (!context.mounted) return null;
+
     return await showDialog<T>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: DialogHelpers.roundedRectangleBorder(),
+        shape: DialogCommons.roundedRectangleBorder(),
         title: Text(title, style: TextStyle(fontSize: 15.sp)),
         content: Text(content, style: TextStyle(fontSize: 14.sp)),
         actions: actions(context, textColor),

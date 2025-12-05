@@ -1,11 +1,10 @@
-// dialog_sheets.dart 
+// dialog_sheets.dart
 // Questo file contiene funzioni dedicate alla creazione di bottom sheet e
 // action sheet adattivi tra iOS e Android. Gestisce:
 // - Pulsanti in stile Cupertino e Material
 // - Bottom sheet personalizzati
 // - Selettore anni adattivo
 // Le funzioni sono pure e restituiscono widget pronti all'uso.
-
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,18 +21,18 @@ class DialogSheets {
     String text,
     bool isDark,
     String? returnValue,
-  ) =>
-      CupertinoActionSheetAction(
-        isDefaultAction: returnValue == null, // evidenziazione del pulsante principale
-        onPressed: () => Navigator.pop(context, returnValue),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isDark ? AppColors.textLight : AppColors.textDark,
-            fontSize: 17.sp,
-          ),
-        ),
-      );
+  ) => CupertinoActionSheetAction(
+    isDefaultAction:
+        returnValue == null, // evidenziazione del pulsante principale
+    onPressed: () => Navigator.pop(context, returnValue),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: isDark ? AppColors.textLight : AppColors.textDark,
+        fontSize: 17.sp,
+      ),
+    ),
+  );
 
   // Pulsante in stile Material per bottom sheet Android
   static Widget buildMaterialSheetButton(
@@ -41,17 +40,16 @@ class DialogSheets {
     String text,
     bool isDark,
     String? returnValue,
-  ) =>
-      TextButton(
-        onPressed: () => Navigator.pop(context, returnValue),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isDark ? AppColors.textLight : AppColors.textDark,
-            fontSize: 17.sp,
-          ),
-        ),
-      );
+  ) => TextButton(
+    onPressed: () => Navigator.pop(context, returnValue),
+    child: Text(
+      text,
+      style: TextStyle(
+        color: isDark ? AppColors.textLight : AppColors.textDark,
+        fontSize: 17.sp,
+      ),
+    ),
+  );
 
   // ---------------------------------------------------------------------------
   // 📋 BOTTOM SHEET ADATTIVO
@@ -68,21 +66,25 @@ class DialogSheets {
     required bool isDark,
     required List<Map<String, String>> options,
   }) async {
+    if (!context.mounted) return null;
     const cancelLabel = 'Annulla';
 
     // Modal stile iOS
     if (DialogCommons.isIOS) {
+      if (!context.mounted) return null;
       return await showCupertinoModalPopup<String>(
         context: context,
         builder: (_) => CupertinoActionSheet(
           title: DialogCommons.buildSheetTitle(title),
           actions: options
-              .map((opt) => buildCupertinoSheetButton(
-                    context,
-                    opt["title"] ?? "",
-                    isDark,
-                    opt["criteria"],
-                  ))
+              .map(
+                (opt) => buildCupertinoSheetButton(
+                  context,
+                  opt["title"] ?? "",
+                  isDark,
+                  opt["criteria"],
+                ),
+              )
               .toList(),
           cancelButton: buildCupertinoSheetButton(
             context,
@@ -95,6 +97,7 @@ class DialogSheets {
     }
 
     // BottomSheet stile Material
+    if (!context.mounted) return null;
     return await showModalBottomSheet<String>(
       context: context,
       shape: DialogCommons.roundedRectangleBorder(),
@@ -138,32 +141,36 @@ class DialogSheets {
     required String selectedYear,
     required bool isDark,
   }) async {
+    if (!context.mounted) return null;
+
     const title = "Seleziona anno";
     const cancelLabel = "Annulla";
     final txtColor = isDark ? AppColors.textLight : AppColors.textDark;
 
     // Costruisce il widget visuale per ogni anno
     Widget buildYearItem(String year) => Text(
-          year,
-          style: TextStyle(
-            color: txtColor,
-            fontWeight:
-                year == selectedYear ? FontWeight.bold : FontWeight.normal,
-            fontSize: DialogCommons.isIOS ? 17.sp : 16.sp,
-          ),
-        );
+      year,
+      style: TextStyle(
+        color: txtColor,
+        fontWeight: year == selectedYear ? FontWeight.bold : FontWeight.normal,
+        fontSize: DialogCommons.isIOS ? 17.sp : 16.sp,
+      ),
+    );
 
     // Versione iOS Cupertino
     if (DialogCommons.isIOS) {
+      if (!context.mounted) return null;
       return await showCupertinoModalPopup<String>(
         context: context,
         builder: (_) => CupertinoActionSheet(
           title: DialogCommons.buildSheetTitle(title),
           actions: years
-              .map((year) => CupertinoActionSheetAction(
-                    onPressed: () => Navigator.pop(context, year),
-                    child: buildYearItem(year),
-                  ))
+              .map(
+                (year) => CupertinoActionSheetAction(
+                  onPressed: () => Navigator.pop(context, year),
+                  child: buildYearItem(year),
+                ),
+              )
               .toList(),
           cancelButton: buildCupertinoSheetButton(
             context,
@@ -176,6 +183,7 @@ class DialogSheets {
     }
 
     // Versione Android Material
+    if (!context.mounted) return null;
     return await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
@@ -193,11 +201,20 @@ class DialogSheets {
                 child: DialogCommons.buildSheetTitle(title),
               ),
 
-              // Elenco anni
-              ...years.map((year) => ListTile(
-                    title: Center(child: buildYearItem(year)),
-                    onTap: () => Navigator.pop(context, year),
-                  )),
+              // Elenco anni con altezza massima per evitare overflow
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: years.length,
+                  itemBuilder: (context, index) {
+                    final year = years[index];
+                    return ListTile(
+                      title: Center(child: buildYearItem(year)),
+                      onTap: () => Navigator.pop(context, year),
+                    );
+                  },
+                ),
+              ),
 
               Divider(height: 16.h),
 

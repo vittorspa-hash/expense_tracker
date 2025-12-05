@@ -229,7 +229,7 @@ class _ProfilePageState extends State<ProfilePage>
                   onPressed: () => profileService.deleteAccount(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.textLight,
+                    foregroundColor: isDark ? AppColors.textDark : AppColors.textLight,
                     elevation: 6,
                     shadowColor: AppColors.primary.withValues(alpha: 0.3),
                     minimumSize: Size(double.infinity, 50.h),
@@ -243,7 +243,7 @@ class _ProfilePageState extends State<ProfilePage>
                       Icon(
                         Icons.delete_outline_rounded,
                         size: 22.r,
-                        color: AppColors.textLight,
+                        color: isDark ? AppColors.textDark : AppColors.textLight,
                       ),
                       SizedBox(width: 12.w),
                       Text(

@@ -46,7 +46,8 @@ class DialogCommons {
   ]) {
     if (isIOS) {
       return CupertinoDialogAction(
-        isDefaultAction: returnValue != false, // evidenziazione azione principale
+        isDefaultAction:
+            returnValue != false, // evidenziazione azione principale
         isDestructiveAction: returnValue == true && isDestructiveAction(text),
         onPressed: () => Navigator.pop(context, returnValue),
         child: Text(
@@ -66,29 +67,29 @@ class DialogCommons {
 
   // Titolo generico per bottom sheet o sezioni di dialog
   static Widget buildSheetTitle(String title) => Text(
-        title,
-        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
-      );
+    title,
+    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
+  );
 
   // ---------------------------------------------------------------------------
   // ❌ PULSANTE DI CHIUSURA
   // ---------------------------------------------------------------------------
   // Crea un pulsante di chiusura grande e ben visibile, usato spesso in bottom sheet
-  static Widget buildCloseButton(BuildContext context) => SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: AppColors.textDark,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.r),
-            ),
-          ),
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            "Chiudi",
-            style: TextStyle(fontSize: 16.sp, color: AppColors.textLight),
+  static Widget buildCloseButton(BuildContext context) {
+    final isDarkMode = isDark(context);
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: isDarkMode ? AppColors.textDark : AppColors.textLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.r),
           ),
         ),
-      );
+        onPressed: () => Navigator.pop(context),
+        child: Text("Chiudi", style: TextStyle(fontSize: 16.sp)),
+      ),
+    );
+  }
 }

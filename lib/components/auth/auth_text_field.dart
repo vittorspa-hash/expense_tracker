@@ -87,7 +87,7 @@ class AuthTextField extends StatelessWidget {
             ? null
             : IconButton(
                 icon: Icon(
-                  obscure ? FontAwesomeIcons.eye : FontAwesomeIcons.eyeSlash,
+                  obscure ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
                   size: 14.sp,
                   color: isDark ? AppColors.greyDark : AppColors.greyLight,
                 ),

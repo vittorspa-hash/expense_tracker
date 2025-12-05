@@ -1,3 +1,13 @@
 {
-	"cmake.ignoreCMakeListsMissing": true
+    "cmake.ignoreCMakeListsMissing": true,
+
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#282c34",
+        "statusBar.foreground": "#abb2bf",
+
+        "statusBar.noFolderBackground": "#282c34",
+
+        "statusBar.debuggingBackground": "#3a3f4b",
+        "statusBar.debuggingForeground": "#eceff4"
+    }
 }
