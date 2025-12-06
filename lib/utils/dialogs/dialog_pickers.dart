@@ -1,7 +1,6 @@
 // dialog_pickers.dart
-// Questo file contiene metodi statici per la gestione dei picker nei dialog,
-// adattivi tra iOS e Android.
-// ✅ Versione migliorata con context safety, DRY e costanti centralizzate
+// Contiene utility per la costruzione di picker di data e ora adattivi (Material/Cupertino).
+// Fornisce metodi per costruire l'header dei picker e per la visualizzazione dei dialoghi di selezione.
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,20 +9,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dialog_commons.dart';
 
 class DialogPickers {
-  // ========== PICKER HEADER BUILDER ==========
-
-  /// Costruisce l'header standard per i picker Cupertino
-  ///
-  /// **Parametri:**
-  /// - [onCancel]: Callback quando si preme "Annulla" (default: pop con null)
-  /// - [onConfirm]: Callback quando si preme "OK" (deve restituire il valore)
-  ///
-  /// ✅ Estratto per evitare duplicazione codice
+  // Costruisce l'header standard per i picker modali (utilizzato in stile Cupertino).
   static Widget buildPickerHeader(
     BuildContext context,
     Color txtColor, {
-    VoidCallback? onCancel,
-    required VoidCallback onConfirm,
+    VoidCallback? onCancel, // Azione specifica per il pulsante Annulla.
+    required VoidCallback
+    onConfirm, // Azione specifica per il pulsante OK/Conferma.
   }) => Padding(
     padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
     child: Row(
@@ -32,13 +24,14 @@ class DialogPickers {
         // Pulsante Annulla
         CupertinoButton(
           padding: EdgeInsets.zero,
+          // Se onCancel è fornito, lo usa, altrimenti chiude restituendo null.
           onPressed: onCancel ?? () => Navigator.pop(context, null),
           child: Text(
             "Annulla",
             style: TextStyle(color: txtColor, fontSize: 14.sp),
           ),
         ),
-        // Pulsante OK
+        // Pulsante OK/Conferma
         CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: onConfirm,
@@ -47,7 +40,7 @@ class DialogPickers {
             style: TextStyle(
               color: txtColor,
               fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w600, 
             ),
           ),
         ),
@@ -55,58 +48,45 @@ class DialogPickers {
     ),
   );
 
-  // ========== DATE PICKER HEADER ==========
-
-  /// Header per date picker con callback per ottenere la data selezionata
-  /// ✅ Ora usa il builder generico
+  // Costruisce l'header specifico per il DatePicker (usa buildPickerHeader).
   static Widget buildDatePickerHeader(
     BuildContext context,
     Color txtColor,
-    DateTime Function() getSelectedDate,
+    DateTime Function()
+    getSelectedDate, // Funzione per recuperare la data selezionata.
   ) => buildPickerHeader(
     context,
     txtColor,
+    // L'azione di conferma chiude il popup restituendo la data selezionata.
     onConfirm: () => Navigator.pop(context, getSelectedDate()),
   );
 
-  // ========== TIME PICKER ADAPTIVE ==========
-
-  /// Mostra un picker per selezionare l'orario adattivo alla piattaforma
-  ///
-  /// **Parametri:**
-  /// - [initialTime]: Orario iniziale mostrato nel picker
-  /// - [primaryColor]: Colore primario per il tema (opzionale)
-  /// - [onSurfaceColor]: Colore del testo (opzionale)
-  ///
-  /// **Comportamento:**
-  /// - iOS: CupertinoDatePicker con header personalizzato
-  /// - Android: showTimePicker Material con tema scuro/chiaro
-  ///
-  /// ✅ Ora con context.mounted check per prevenire crash
+  // Mostra un picker di ora adattivo (TimePicker).
   static Future<TimeOfDay?> showTimePickerAdaptive({
     required BuildContext context,
     required TimeOfDay initialTime,
     Color? primaryColor,
     Color? onSurfaceColor,
   }) async {
-    // ✅ Check iniziale
+    // Verifica se il widget è montato.
     if (!context.mounted) return null;
 
     final isDarkMode = DialogCommons.isDark(context);
+    // Imposta i colori predefiniti o utilizza quelli forniti.
     final themePrimary = primaryColor ?? AppColors.primary;
     final themeOnSurface =
         onSurfaceColor ??
         (isDarkMode ? AppColors.textLight : AppColors.textDark);
 
-    // ========== iOS CUPERTINO ==========
+    // Gestione specifica per iOS (CupertinoDatePicker in modalità time).
     if (DialogCommons.isIOS) {
-      // ✅ Check aggiuntivo prima di showCupertinoModalPopup
       if (!context.mounted) return null;
 
-      // Variabile per catturare la selezione
-      TimeOfDay picked = initialTime;
+      TimeOfDay picked =
+          initialTime; // Variabile per tracciare l'ora selezionata.
 
       final now = DateTime.now();
+      // Converte TimeOfDay in DateTime per inizializzare il CupertinoDatePicker.
       final initialDateTime = DateTime(
         now.year,
         now.month,
@@ -120,6 +100,7 @@ class DialogPickers {
         builder: (_) => Container(
           height: 300.h,
           decoration: BoxDecoration(
+            // Sfondo adattivo.
             color: isDarkMode
                 ? AppColors.backgroundDark
                 : AppColors.backgroundLight,
@@ -127,10 +108,11 @@ class DialogPickers {
           ),
           child: Column(
             children: [
-              // ✅ Usa il builder generico invece di duplicare codice
+              // Header con i pulsanti OK e Annulla.
               buildPickerHeader(
                 context,
                 themeOnSurface,
+                // Al tocco di OK, chiude restituendo l'ora tracciata.
                 onConfirm: () => Navigator.pop(context, picked),
               ),
               Divider(height: 0, thickness: 1.h),
@@ -141,6 +123,7 @@ class DialogPickers {
                   mode: CupertinoDatePickerMode.time,
                   initialDateTime: initialDateTime,
                   use24hFormat: true,
+                  // Aggiorna la variabile 'picked' al cambio di ora.
                   onDateTimeChanged: (dateTime) {
                     picked = TimeOfDay(
                       hour: dateTime.hour,
@@ -155,20 +138,22 @@ class DialogPickers {
       );
     }
 
-    // ========== ANDROID MATERIAL ==========
-    // ✅ Check aggiuntivo prima di showTimePicker
+    // Gestione specifica per Android/Material (showTimePicker).
     if (!context.mounted) return null;
 
     return await showTimePicker(
       context: context,
       initialTime: initialTime,
+      // Personalizzazione del tema del TimePicker di Material.
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
+          // Schema colori personalizzato.
           colorScheme: _buildTimePickerColorScheme(
             isDarkMode,
             themePrimary,
             themeOnSurface,
           ),
+          // Tema specifico per il TimePicker.
           timePickerTheme: _buildTimePickerTheme(
             isDarkMode,
             themePrimary,
@@ -180,10 +165,7 @@ class DialogPickers {
     );
   }
 
-  // ========== THEME BUILDERS (Private) ==========
-
-  /// Costruisce il ColorScheme per il time picker Material
-  /// ✅ Estratto per ridurre complessità
+  // Costruisce uno schema di colori (ColorScheme) personalizzato per il TimePicker.
   static ColorScheme _buildTimePickerColorScheme(
     bool isDarkMode,
     Color primary,
@@ -192,50 +174,55 @@ class DialogPickers {
     return ColorScheme(
       brightness: isDarkMode ? Brightness.dark : Brightness.light,
       primary: primary,
-      onPrimary: AppColors.textLight,
+      onPrimary: AppColors.textLight, // Testo sul colore primario.
       secondary: primary,
       onSecondary: AppColors.textLight,
+      // Colore di superficie (sfondo del dialogo).
       surface: isDarkMode
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
-      onSurface: onSurface,
+      onSurface: onSurface, // Testo sulla superficie.
       error: AppColors.delete,
       onError: AppColors.textLight,
     );
   }
 
-  /// Costruisce il TimePickerThemeData per il time picker Material
-  /// ✅ Estratto per ridurre complessità
+  // Costruisce i dati del tema (TimePickerThemeData) per il TimePicker.
   static TimePickerThemeData _buildTimePickerTheme(
     bool isDarkMode,
     Color primary,
     Color onSurface,
   ) {
     return TimePickerThemeData(
+      // Sfondo del TimePicker.
       backgroundColor: isDarkMode
           ? AppColors.backgroundDark
           : AppColors.backgroundLight,
+      // Colore del testo di ore/minuti.
       hourMinuteTextColor: WidgetStateColor.resolveWith(
         (states) => states.contains(WidgetState.selected)
-            ? AppColors.textLight
-            : onSurface,
+            ? AppColors
+                  .textLight // Se selezionato, usa testo chiaro.
+            : onSurface, // Altrimenti usa colore onSurface.
       ),
+      // Colore del testo AM/PM.
       dayPeriodTextColor: WidgetStateColor.resolveWith((_) => onSurface),
+      // Sfondo del quadrante dell'orologio.
       dialBackgroundColor: isDarkMode
           ? AppColors.cardDark
           : AppColors.cardLight,
-      entryModeIconColor: primary,
+      entryModeIconColor:
+          primary, // Colore dell'icona per cambiare modalità (orologio/input).
     );
   }
 
-  // ========== BUTTON STYLES ==========
-
-  /// Stile standard per i pulsanti dei date/time picker Material
+  // Stile dei pulsanti per il DatePicker di Material.
   static ButtonStyle datePickerButtonStyle(Color color, bool isConfirm) =>
       TextButton.styleFrom(
-        foregroundColor: color,
+        foregroundColor: color, // Colore del testo del pulsante.
         textStyle: TextStyle(
           fontSize: 14.sp,
+          // Grassetto se è il pulsante di conferma.
           fontWeight: isConfirm ? FontWeight.w600 : FontWeight.normal,
         ),
       );

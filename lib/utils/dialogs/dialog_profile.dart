@@ -1,9 +1,7 @@
 // dialog_profile.dart
-// Questo file contiene una serie di metodi statici per la costruzione di:
-// - Header del profilo (avatar, nome, email)
-// - Azioni relative al profilo (Profilo, Impostazioni, Logout)
-// - Versioni sia per Cupertino (iOS) che per Material (Android)
-// - Funzioni di supporto per logout con dialog di conferma
+// Contiene utility per la costruzione degli elementi UI (header, azioni, list tile)
+// relativi al profilo utente all'interno dei bottom sheet o dialoghi adattivi.
+// Gestisce anche la logica di navigazione verso le pagine Profilo/Impostazioni e il processo di Logout.
 
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
@@ -16,27 +14,23 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dialog_commons.dart';
 
 class DialogProfile {
-  // ---------------------------------------------------------------------------
-  // 🔹 HEADER PROFILO (Avatar + Nome + Email)
-  // ---------------------------------------------------------------------------
-  // Mostra le informazioni base dell'utente all'interno di un dialog o sheet.
-  // Include avatar locale, foto o icona di fallback.
+  // Costruisce l'header del profilo utente (avatar, nome, email).
   static Widget buildProfileHeader(
     BuildContext context,
-    User? user,
-    File? localAvatar,
+    User? user, // L'oggetto utente di Firebase.
+    File? localAvatar, // L'avatar scaricato localmente.
     bool isDark,
   ) {
     final txtColor = DialogCommons.textColor(context);
 
     return Column(
       children: [
-        buildAvatar(user, localAvatar),
+        buildAvatar(user, localAvatar), // Widget per l'avatar.
         SizedBox(height: DialogCommons.isIOS ? 10.h : 12.h),
 
         // Nome utente
         Text(
-          user?.displayName ?? "Account",
+          user?.displayName ?? "Account", // Mostra il nome o "Account".
           style: TextStyle(
             color: txtColor,
             fontWeight: FontWeight.bold,
@@ -47,7 +41,7 @@ class DialogProfile {
 
         // Email utente
         Text(
-          user?.email ?? "",
+          user?.email ?? "", // Mostra l'email.
           style: TextStyle(
             color: txtColor,
             fontSize: DialogCommons.isIOS ? 13.sp : 15.sp,
@@ -57,32 +51,30 @@ class DialogProfile {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔹 AVATAR UTENTE
-  // ---------------------------------------------------------------------------
+  // Costruisce il widget CircleAvatar, gestendo l'immagine locale, di rete o l'icona di default.
   static Widget buildAvatar(User? user, File? localAvatar) => CircleAvatar(
     radius: 34.r,
     backgroundColor: AppColors.backgroundAvatar,
+    // Imposta l'immagine: prima locale, poi di rete, altrimenti null.
     backgroundImage: localAvatar != null
         ? FileImage(localAvatar)
         : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
+    // Se non ci sono foto, mostra l'icona di default.
     child: localAvatar == null && user?.photoURL == null
         ? Icon(Icons.person, size: 50.sp, color: AppColors.avatar)
         : null,
   );
 
-  // ---------------------------------------------------------------------------
-  // 🔹 PULSANTE "Profilo" (Cupertino / iOS)
-  // ---------------------------------------------------------------------------
-  // Apre la pagina del profilo e aggiorna l'avatar al ritorno.
-  // ---------------------------------------------------------------------------
+  // Costruisce l'azione "Profilo" per il CupertinoActionSheet.
   static Widget buildProfileAction(
     BuildContext context,
     User? user,
     File? localAvatar,
-    Future<void> Function() reloadAvatar,
+    Future<void> Function()
+    reloadAvatar, // Callback per aggiornare l'avatar dopo la modifica.
     bool isDark,
   ) => CupertinoActionSheetAction(
+    // Gestisce la navigazione verso la pagina ProfilePage.
     onPressed: () => _handleProfileNavigation(context, reloadAvatar),
     child: Text(
       "Profilo",
@@ -93,12 +85,11 @@ class DialogProfile {
     ),
   );
 
-  // ---------------------------------------------------------------------------
-  // 🔹 PULSANTE "Impostazioni" (Cupertino / iOS)
-  // ---------------------------------------------------------------------------
+  // Costruisce l'azione "Impostazioni" per il CupertinoActionSheet.
   static Widget buildSettingsAction(BuildContext context, bool isDark) =>
       CupertinoActionSheetAction(
-        onPressed: () => _handleSettingsNavigation(context),  
+        // Gestisce la navigazione verso la pagina SettingsPage.
+        onPressed: () => _handleSettingsNavigation(context),
         child: Text(
           "Impostazioni",
           style: TextStyle(
@@ -108,21 +99,16 @@ class DialogProfile {
         ),
       );
 
-  // ---------------------------------------------------------------------------
-  // 🔹 PULSANTE "Logout" (Cupertino / iOS)
-  // ---------------------------------------------------------------------------
-  // Mostra l’azione distruttiva solo per iOS.
-  // ---------------------------------------------------------------------------
-  static Widget buildLogoutAction(
-    BuildContext context,
-    bool isDark,
-    
-  ) {
+  // Costruisce l'azione "Logout" per il CupertinoActionSheet.
+  static Widget buildLogoutAction(BuildContext context, bool isDark) {
+    // Questo pulsante è rilevante solo per iOS, in Material si usa ListTile.
     if (!DialogCommons.isIOS) return const SizedBox.shrink();
 
     return CupertinoActionSheetAction(
-      isDestructiveAction: true,
-      onPressed: () => handleLogout(context),
+      isDestructiveAction:
+          true, // Rende il testo rosso per segnalare un'azione pericolosa.
+      onPressed: () =>
+          handleLogout(context), // Avvia la procedura di logout con conferma.
       child: Text(
         "Logout",
         style: TextStyle(color: AppColors.delete, fontSize: 17.sp),
@@ -130,11 +116,7 @@ class DialogProfile {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔹 LIST TILE "Profilo" (Android)
-  // ---------------------------------------------------------------------------
-  // Alternativa al CupertinoActionSheet per dispositivi Material.
-  // ---------------------------------------------------------------------------
+  // Costruisce la ListTile "Profilo" per il ModalBottomSheet (Material style).
   static Widget buildProfileListTile(
     BuildContext context,
     User? user,
@@ -148,9 +130,7 @@ class DialogProfile {
     onTap: () => _handleProfileNavigation(context, reloadAvatar),
   );
 
-  // ---------------------------------------------------------------------------
-  // 🔹 LIST TILE "Impostazioni" (Android)
-  // ---------------------------------------------------------------------------
+  // Costruisce la ListTile "Impostazioni" per il ModalBottomSheet (Material style).
   static Widget buildSettingsListTile(BuildContext context, bool isDark) =>
       ListTile(
         shape: RoundedRectangleBorder(
@@ -161,9 +141,7 @@ class DialogProfile {
         onTap: () => _handleSettingsNavigation(context),
       );
 
-  // ---------------------------------------------------------------------------
-  // 🔹 LIST TILE "Logout" (Android)
-  // ---------------------------------------------------------------------------
+  // Costruisce la ListTile "Logout" per il ModalBottomSheet (Material style).
   static Widget buildLogoutListTile(BuildContext context, bool isDark) =>
       ListTile(
         shape: RoundedRectangleBorder(
@@ -174,42 +152,41 @@ class DialogProfile {
           "Logout",
           style: TextStyle(color: AppColors.delete, fontSize: 16.sp),
         ),
-        onTap: () => handleLogout(context),
+        onTap: () =>
+            handleLogout(context), // Avvia la procedura di logout con conferma.
       );
 
-  // ========== NAVIGATION HANDLERS (Private) ==========
-
-  /// Gestisce la navigazione al profilo con context safety
-  /// ✅ Error handling per reloadAvatar
+  // Gestisce la navigazione verso la pagina del profilo e il ricaricamento dell'avatar al ritorno.
   static Future<void> _handleProfileNavigation(
     BuildContext context,
     Future<void> Function() reloadAvatar,
   ) async {
-    // Chiudi il dialog/sheet corrente
+    // Chiudi il dialog/sheet corrente.
     if (context.mounted) {
       Navigator.pop(context);
     }
 
-    // Aspetta un frame per assicurarsi che il pop sia completato
+    // Aspetta un ciclo per permettere la chiusura del sheet.
     await Future.delayed(Duration.zero);
 
-    // Naviga alla pagina profilo
+    // Naviga alla ProfilePage.
     if (context.mounted) {
       await Navigator.pushNamed(context, ProfilePage.route);
     }
 
-    // Ricarica l'avatar con error handling
+    // Al ritorno, prova a ricaricare l'avatar.
     if (context.mounted) {
       try {
         await reloadAvatar();
       } catch (e) {
         debugPrint('⚠️ Errore durante il reload dell\'avatar: $e');
-        // Opzionale: mostra snackbar all'utente
+        // Opzionale: mostra una SnackBar in caso di errore.
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Impossibile aggiornare l\'avatar'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: const Text('Impossibile aggiornare l\'avatar'),
+              duration: const Duration(seconds: 3),
+              backgroundColor: AppColors.snackBar,
             ),
           );
         }
@@ -217,13 +194,14 @@ class DialogProfile {
     }
   }
 
-  /// Gestisce la navigazione alle impostazioni con context safety
+  // Gestisce la navigazione verso la pagina delle impostazioni.
   static void _handleSettingsNavigation(BuildContext context) {
+    // Chiudi il dialog/sheet corrente.
     if (context.mounted) {
       Navigator.pop(context);
     }
 
-    // Aspetta che il pop sia completato
+    // Aspetta un ciclo per permettere la chiusura del sheet prima di navigare.
     Future.delayed(Duration.zero, () {
       if (context.mounted) {
         Navigator.pushNamed(context, SettingsPage.route);
@@ -231,18 +209,11 @@ class DialogProfile {
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔻 LOGOUT (Dialog di conferma)
-  // ---------------------------------------------------------------------------
-  // Gestisce:
-  // - Chiusura sheet/list
-  // - Dialog Cupertino o Material
-  // - Conferma utente
-  // - Logout Firebase
-  // ---------------------------------------------------------------------------
+  // Gestisce l'intera procedura di logout, inclusa la richiesta di conferma.
   static Future<void> handleLogout(BuildContext context) async {
     if (!context.mounted) return;
 
+    // Chiude il sheet/dialog del profilo.
     Navigator.pop(context);
 
     await Future.delayed(Duration.zero);
@@ -257,7 +228,7 @@ class DialogProfile {
 
     bool? confirm;
 
-    // ----------------------------- iOS ---------------------------------------
+    // Richiesta di conferma adattiva (Cupertino).
     if (DialogCommons.isIOS) {
       if (!context.mounted) return;
       confirm = await showCupertinoDialog<bool>(
@@ -269,12 +240,14 @@ class DialogProfile {
             child: Text(content, style: TextStyle(fontSize: 14.sp)),
           ),
           actions: [
+            // Pulsante Annulla.
             DialogCommons.buildActionButton(
               context,
               cancelText,
               textColor,
               false,
             ),
+            // Pulsante Logout (distruttivo).
             DialogCommons.buildActionButton(
               context,
               confirmText,
@@ -285,7 +258,7 @@ class DialogProfile {
         ),
       );
     }
-    // ----------------------------- ANDROID -----------------------------------
+    // Richiesta di conferma adattiva (Material).
     else {
       if (!context.mounted) return;
       confirm = await showDialog<bool>(
@@ -298,12 +271,14 @@ class DialogProfile {
           ),
           content: Text(content, style: TextStyle(fontSize: 14.sp)),
           actions: [
+            // Pulsante Annulla.
             DialogCommons.buildActionButton(
               context,
               cancelText,
               textColor,
               false,
             ),
+            // Pulsante Logout (distruttivo).
             DialogCommons.buildActionButton(
               context,
               confirmText,
@@ -315,20 +290,21 @@ class DialogProfile {
       );
     }
 
-    // Se l’utente conferma → logout da Firebase
+    // Se l'utente conferma, procede con il logout effettivo.
     if (confirm == true && context.mounted) {
       try {
-        await FirebaseAuth.instance.signOut();
+        await FirebaseAuth.instance
+            .signOut(); // Chiama il metodo di logout di Firebase.
         debugPrint('✅ Logout completato con successo');
       } catch (e) {
         debugPrint('❌ Errore durante il logout: $e');
 
-        // ✅ Mostra errore all'utente
+        // Mostra un errore all'utente tramite SnackBar.
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Errore durante il logout: ${e.toString()}'),
-              backgroundColor: AppColors.delete,
+              backgroundColor: AppColors.snackBar,
               duration: const Duration(seconds: 3),
             ),
           );

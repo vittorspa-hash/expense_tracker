@@ -1,6 +1,7 @@
 // dialog_utils.dart
-// Gestisce dialog, popup e bottom sheet adattivi (Material / Cupertino)
-// ✅ Versione con gestione corretta del context.mounted per prevenire crash
+// Classe centralizzata che gestisce tutti i dialog e i popup dell’app adattivi (Material/Cupertino).
+// Contiene metodi statici per mostrare alert, conferme, sheet di ordinamento,
+// sheet profilo, dialoghi di input, istruzioni e picker di data/ora/anno.
 
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,8 +9,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-
-// ✅ Importa direttamente i moduli specializzati
 import 'dialogs/dialog_commons.dart';
 import 'dialogs/dialog_sheets.dart';
 import 'dialogs/dialog_profile.dart';
@@ -17,25 +16,28 @@ import 'dialogs/dialog_inputs.dart';
 import 'dialogs/dialog_pickers.dart';
 
 class DialogUtils {
-  /// ℹ️ Mostra un dialog informativo (OK)
+  // Mostra un dialogo informativo semplice (InfoDialog) con un solo pulsante "OK".
   static Future<void> showInfoDialog(
     BuildContext context, {
     required String title,
     required String content,
   }) async {
+    // Verifica se il widget è montato prima di mostrare il dialogo.
     if (!context.mounted) return;
 
     await _showDialog(
       context: context,
       title: title,
       content: content,
+      // Definisce l'azione: un pulsante "OK".
       actions: (context, textColor) => [
         DialogCommons.buildActionButton(context, "OK", textColor),
       ],
     );
   }
 
-  /// ❓ Dialog di conferma (Annulla / Conferma)
+  // Mostra un dialogo di conferma (ConfirmDialog) con pulsanti "Conferma" e "Annulla".
+  // Restituisce true se l'utente conferma, false se annulla o null se il dialogo viene chiuso.
   static Future<bool?> showConfirmDialog(
     BuildContext context, {
     required String title,
@@ -43,16 +45,20 @@ class DialogUtils {
     String confirmText = "Conferma",
     String cancelText = "Annulla",
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return false;
 
     final textColor = DialogCommons.textColor(context);
+    // Controlla se l'azione di conferma è considerata "distruttiva" (es. "Elimina").
     final isDestructive = DialogCommons.isDestructiveAction(confirmText);
+    // Imposta il colore del testo per l'azione di conferma: rosso per distruttiva, altrimenti normale.
     final confirmColor = isDestructive ? AppColors.delete : textColor;
 
     return await _showDialog<bool>(
       context: context,
       title: title,
       content: content,
+      // Definisce le azioni: pulsante Annulla (false) e pulsante Conferma (true).
       actions: (context, _) => [
         DialogCommons.buildActionButton(context, cancelText, textColor, false),
         DialogCommons.buildActionButton(
@@ -65,12 +71,14 @@ class DialogUtils {
     );
   }
 
-  /// 📊 Bottom sheet adattivo per selezione ordinamento
+  // Mostra un bottom sheet adattivo per la selezione di opzioni di ordinamento.
+  // Restituisce la chiave dell'opzione selezionata.
   static Future<String?> showSortSheet(
     BuildContext context, {
     required bool isDark,
     required List<Map<String, String>> options,
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return null;
 
     return await DialogSheets.showAdaptiveSheet(
@@ -81,16 +89,18 @@ class DialogUtils {
     );
   }
 
-  /// 👤 Bottom sheet adattivo con informazioni profilo e azioni
+  // Mostra un bottom sheet adattivo con le opzioni del profilo utente.
   static Future<void> showProfileSheet(
     BuildContext context, {
     required User? user,
     required File? localAvatar,
     required Future<void> Function() reloadAvatar,
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return;
 
     final isDark = DialogCommons.isDark(context);
+    // Costruisce l'intestazione del profilo (header).
     final header = DialogProfile.buildProfileHeader(
       context,
       user,
@@ -98,15 +108,16 @@ class DialogUtils {
       isDark,
     );
 
+    // Gestione specifica per iOS (CupertinoActionSheet).
     if (DialogCommons.isIOS) {
-      // ✅ Check aggiuntivo prima di showCupertinoModalPopup
       if (!context.mounted) return;
 
       await showCupertinoModalPopup(
         context: context,
         builder: (_) => CupertinoActionSheet(
-          title: header,
+          title: header, // L'header come titolo del sheet.
           actions: [
+            // Azione per modificare/visualizzare il profilo.
             DialogProfile.buildProfileAction(
               context,
               user,
@@ -114,9 +125,12 @@ class DialogUtils {
               reloadAvatar,
               isDark,
             ),
+            // Azione per le impostazioni.
             DialogProfile.buildSettingsAction(context, isDark),
+            // Azione di logout.
             DialogProfile.buildLogoutAction(context, isDark),
           ],
+          // Pulsante Annulla/Chiudi.
           cancelButton: DialogSheets.buildCupertinoSheetButton(
             context,
             "Chiudi",
@@ -126,23 +140,25 @@ class DialogUtils {
         ),
       );
     } else {
-      // ✅ Check aggiuntivo prima di showModalBottomSheet
+      // Gestione specifica per Android/Material (showModalBottomSheet).
       if (!context.mounted) return;
 
       await showModalBottomSheet(
         context: context,
+        // Forma con angoli arrotondati solo in alto.
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
         builder: (_) => Padding(
           padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
           child: SafeArea(
-            top: false,
+            top: false, // Esclude l'area di sicurezza superiore.
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 header,
                 SizedBox(height: 20.h),
+                // ListTile per il profilo.
                 DialogProfile.buildProfileListTile(
                   context,
                   user,
@@ -150,9 +166,12 @@ class DialogUtils {
                   reloadAvatar,
                   isDark,
                 ),
+                // ListTile per le impostazioni.
                 DialogProfile.buildSettingsListTile(context, isDark),
+                // ListTile per il logout.
                 DialogProfile.buildLogoutListTile(context, isDark),
                 SizedBox(height: 12.h),
+                // Pulsante di chiusura esplicito per Material.
                 DialogCommons.buildCloseButton(context),
               ],
             ),
@@ -162,8 +181,8 @@ class DialogUtils {
     }
   }
 
-  /// ✏️ Dialog adattivo per inserimento campi di testo
-  /// ✅ Ora usa InputDialogWidget che gestisce correttamente il dispose
+  // Mostra un dialogo adattivo per l'inserimento di dati (Input Dialog).
+  // Restituisce una lista di stringhe con i valori inseriti, o null.
   static Future<List<String>?> showInputDialogAdaptive(
     BuildContext context, {
     required String title,
@@ -172,12 +191,13 @@ class DialogUtils {
     String cancelText = "Annulla",
     VoidCallback? onForgotPassword,
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return null;
 
     final isCupertino = DialogCommons.isIOS;
 
+    // Mostra un CupertinoDialog su iOS.
     if (isCupertino) {
-      // ✅ Check aggiuntivo prima di showCupertinoDialog
       if (!context.mounted) return null;
 
       return await showCupertinoDialog<List<String>>(
@@ -192,7 +212,7 @@ class DialogUtils {
       );
     }
 
-    // ✅ Check aggiuntivo prima di showDialog
+    // Mostra un AlertDialog standard su Android/Material.
     if (!context.mounted) return null;
 
     return await showDialog<List<String>>(
@@ -207,7 +227,8 @@ class DialogUtils {
     );
   }
 
-  /// 💡 Dialog informativo con checkbox "Non mostrare più"
+  // Mostra un dialogo di istruzioni con un'opzione "Non mostrare più" (checkbox).
+  // Restituisce true se l'utente ha selezionato la checkbox.
   static Future<bool> showInstructionDialog(
     BuildContext context, {
     required String title,
@@ -215,57 +236,66 @@ class DialogUtils {
     String confirmText = "OK",
     String checkboxLabel = "Non mostrare più",
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return false;
 
     final textColor = DialogCommons.textColor(context);
-    bool dontShowAgain = false;
+    bool dontShowAgain = false; // Stato iniziale della checkbox.
 
+    // Funzione per costruire il contenuto (messaggio e checkbox).
     Widget buildContent(StateSetter setState) => Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Messaggio del dialogo.
         Text(
           message,
           style: TextStyle(fontSize: DialogCommons.isIOS ? 13.sp : 14.sp),
           textAlign: TextAlign.center,
         ),
         SizedBox(height: 16.h),
+        // Riga con la checkbox.
         DialogInputs.buildCheckboxRow(
           setState,
           dontShowAgain,
           checkboxLabel,
+          // Callback per aggiornare lo stato interno quando la checkbox cambia.
           (value) => dontShowAgain = value,
         ),
       ],
     );
 
+    // Gestione specifica per iOS (CupertinoAlertDialog).
     if (DialogCommons.isIOS) {
-      // ✅ Check aggiuntivo prima di showCupertinoDialog
       if (!context.mounted) return false;
 
       await showCupertinoDialog(
         context: context,
+        // Usa StatefulBuilder per gestire lo stato della checkbox.
         builder: (_) => StatefulBuilder(
           builder: (context, setState) => CupertinoAlertDialog(
             title: Text(title, style: TextStyle(fontSize: 15.sp)),
             content: Padding(
               padding: EdgeInsets.only(top: 8.h),
+              // Inserisce Material per permettere al testo di buildContent di avere uno stile corretto.
               child: Material(
                 color: Colors.transparent,
                 child: buildContent(setState),
               ),
             ),
             actions: [
+              // Pulsante di conferma.
               DialogCommons.buildActionButton(context, confirmText, textColor),
             ],
           ),
         ),
       );
     } else {
-      // ✅ Check aggiuntivo prima di showDialog
+      // Gestione specifica per Android/Material (AlertDialog).
       if (!context.mounted) return false;
 
       await showDialog(
         context: context,
+        // Usa StatefulBuilder per gestire lo stato della checkbox.
         builder: (_) => StatefulBuilder(
           builder: (context, setState) => AlertDialog(
             shape: DialogCommons.roundedRectangleBorder(),
@@ -275,58 +305,68 @@ class DialogUtils {
             ),
             content: buildContent(setState),
             actions: [
+              // Pulsante di conferma.
               DialogCommons.buildActionButton(context, confirmText, textColor),
             ],
           ),
         ),
       );
     }
-
+    // Restituisce lo stato finale della checkbox.
     return dontShowAgain;
   }
 
-  /// 📅 Date picker adattivo (Material / Cupertino)
+  // Mostra un picker di data adattivo.
+  // Restituisce la data selezionata o null.
   static Future<DateTime?> showDatePickerAdaptive(
     BuildContext context, {
     required DateTime initialDate,
     DateTime? firstDate,
     DateTime? lastDate,
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return null;
 
     final isDark = DialogCommons.isDark(context);
     final textColor = DialogCommons.textColor(context);
+    // Imposta le date minime e massime di default.
     final minDate = firstDate ?? DateTime(2000);
     final maxDate = lastDate ?? DateTime.now();
 
+    // Gestione specifica per iOS (CupertinoDatePicker in un ModalPopup).
     if (DialogCommons.isIOS) {
-      // ✅ Check aggiuntivo prima di showCupertinoModalPopup
       if (!context.mounted) return null;
 
-      DateTime tempPicked = initialDate;
+      DateTime tempPicked =
+          initialDate; // Variabile temporanea per la data selezionata.
 
       return await showCupertinoModalPopup<DateTime>(
         context: context,
         builder: (_) => Container(
           height: 300.h,
+          // Stile del container per il picker.
           decoration: BoxDecoration(
-            color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+            color: isDark
+                ? AppColors.backgroundDark
+                : AppColors.backgroundLight,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
           ),
           child: Column(
             children: [
+              // Header con i pulsanti di azione (es. "Fatto").
               DialogPickers.buildDatePickerHeader(
                 context,
                 textColor,
-                () => tempPicked,
+                () => tempPicked, // Funzione per ottenere il valore corrente.
               ),
               Divider(height: 0, thickness: 1.h),
               Expanded(
                 child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
+                  mode: CupertinoDatePickerMode.date, // Modalità solo data.
                   initialDateTime: initialDate,
                   minimumDate: minDate,
                   maximumDate: maxDate,
+                  // Aggiorna la variabile temporanea al cambio di data.
                   onDateTimeChanged: (newDate) => tempPicked = newDate,
                 ),
               ),
@@ -336,18 +376,19 @@ class DialogUtils {
       );
     }
 
-    // ✅ Check aggiuntivo prima di showDatePicker
+    // Gestione specifica per Android/Material (showDatePicker).
     if (!context.mounted) return null;
-
     return await showDatePicker(
       context: context,
       initialDate: initialDate,
       firstDate: minDate,
       lastDate: maxDate,
+      // Personalizzazione del tema del DatePicker di Material.
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           datePickerTheme: DatePickerThemeData(
             shape: DialogCommons.roundedRectangleBorder(),
+            // Stile personalizzato per i pulsanti Annulla e Conferma.
             cancelButtonStyle: DialogPickers.datePickerButtonStyle(
               textColor,
               false,
@@ -363,12 +404,14 @@ class DialogUtils {
     );
   }
 
-  /// 📆 Bottom sheet / Action sheet adattivo per selezione anno
+  // Mostra un picker di anno adattivo (usando un sheet).
+  // Restituisce l'anno selezionato (String) o null.
   static Future<String?> showYearPickerAdaptive(
     BuildContext context, {
     required List<String> years,
     required String selectedYear,
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return null;
 
     return await DialogSheets.showAdaptiveYearPicker(
@@ -379,37 +422,38 @@ class DialogUtils {
     );
   }
 
-  /// 🕐 Dialog/Sheet adattivo per selezione orario
+  // Mostra un picker di ora adattivo.
+  // Restituisce l'ora selezionata (TimeOfDay) o null.
   static Future<TimeOfDay?> showTimePickerAdaptive(
     BuildContext context, {
     required TimeOfDay initialTime,
   }) async {
+    // Verifica se il widget è montato.
     if (!context.mounted) return null;
 
+    // La logica adattiva è delegata a DialogPickers.
     return await DialogPickers.showTimePickerAdaptive(
       context: context,
       initialTime: initialTime,
     );
   }
 
-  // ========== METODO HELPER PRIVATO ==========
-  /// Metodo unificato per mostrare dialog semplici (info/conferma)
-  /// ✅ Con controllo context.mounted interno
+  // Funzione interna generica per mostrare un dialogo adattivo (Cupertino o Material).
   static Future<T?> _showDialog<T>({
     required BuildContext context,
     required String title,
     required String content,
+    // La funzione actions definisce i pulsanti del dialogo.
     required List<Widget> Function(BuildContext, Color) actions,
   }) async {
-    // ✅ Check all'inizio del metodo
+    // Verifica se il widget è montato.
     if (!context.mounted) return null;
 
     final textColor = DialogCommons.textColor(context);
 
+    // Mostra un CupertinoAlertDialog su iOS.
     if (DialogCommons.isIOS) {
-      // ✅ Check aggiuntivo prima di showCupertinoDialog
       if (!context.mounted) return null;
-
       return await showCupertinoDialog<T>(
         context: context,
         builder: (_) => CupertinoAlertDialog(
@@ -418,21 +462,26 @@ class DialogUtils {
             padding: EdgeInsets.only(top: 8.h),
             child: Text(content, style: TextStyle(fontSize: 14.sp)),
           ),
-          actions: actions(context, textColor),
+          actions: actions(
+            context,
+            textColor,
+          ), // Inietta le azioni personalizzate.
         ),
       );
     }
 
-    // ✅ Check aggiuntivo prima di showDialog
+    // Mostra un AlertDialog standard su Android/Material.
     if (!context.mounted) return null;
-
     return await showDialog<T>(
       context: context,
       builder: (_) => AlertDialog(
         shape: DialogCommons.roundedRectangleBorder(),
         title: Text(title, style: TextStyle(fontSize: 15.sp)),
         content: Text(content, style: TextStyle(fontSize: 14.sp)),
-        actions: actions(context, textColor),
+        actions: actions(
+          context,
+          textColor,
+        ), // Inietta le azioni personalizzate.
       ),
     );
   }
