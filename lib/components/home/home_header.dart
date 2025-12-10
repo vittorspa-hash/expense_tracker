@@ -9,7 +9,7 @@
 //   con grafica moderna.
 //
 // Include animazioni fade, supporto dark mode, avatar locale
-// e integrazione con ExpenseStore via Obx. 
+// e integrazione con ExpenseStore via Obx.
 // -----------------------------------------------------------------------------
 
 import 'dart:io';
@@ -22,7 +22,8 @@ import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeHeader extends StatelessWidget {
-  final Animation<double> fadeAnimation; // ✨ Animazione fade-in del blocco header
+  final Animation<double>
+  fadeAnimation; // ✨ Animazione fade-in del blocco header
   final File? localAvatar; // 📁 Avatar salvato localmente
   final User? user; // 👤 Utente Firebase loggato
   final bool isDark; // 🌙 Theme mode attuale
@@ -177,15 +178,19 @@ class HomeHeader extends StatelessWidget {
 
                       SizedBox(height: 4.h),
 
-                      Text(
-                        "€ ${expenseStore.value.totalExpenseMonth.toStringAsFixed(2)}",
-                        style: TextStyle(
-                          fontSize: 35.sp,
-                          color: isDark
-                              ? AppColors.textDark
-                              : AppColors.textLight,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1,
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        child: Text(
+                          "€ ${expenseStore.value.totalExpenseMonth.toStringAsFixed(2)}",
+                          style: TextStyle(
+                            fontSize: 35.sp,
+                            color: isDark
+                                ? AppColors.textDark
+                                : AppColors.textLight,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -1,
+                          ),
                         ),
                       ),
                     ],
@@ -271,16 +276,20 @@ class HeaderExpenseState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 💶 Valore spesa formattato
-          Text(
-            "€ ${value.toStringAsFixed(2)}",
-            style: TextStyle(
-              fontSize: 14.sp,
-              color: isDark ? AppColors.textDark : AppColors.textLight,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Text(
+              "€ ${value.toStringAsFixed(2)}",
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: isDark ? AppColors.textDark : AppColors.textLight,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
 
           SizedBox(height: 2.h),

@@ -118,6 +118,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                 // 🔹 CONTAINER IMPORTO SPESA
                 // -----------------------------------------------------------------
                 Container(
+                  width: 90.w,
                   padding: EdgeInsets.symmetric(
                     horizontal: 16.w,
                     vertical: 10.h,
@@ -135,14 +136,19 @@ class _ExpenseTileState extends State<ExpenseTile> {
                       ),
                     ],
                   ),
-                  child: Text(
-                    "€ ${widget.expenseModel.value.toStringAsFixed(2)}",
-                    style: TextStyle(
-                      color: isDark ? AppColors.textDark : AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12.sp,
-                      letterSpacing: -0.3,
-                    ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(
+                        "€ ${widget.expenseModel.value.toStringAsFixed(2)}",
+                        style: TextStyle(
+                          color: isDark ? AppColors.textDark : AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12.sp,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                    
                   ),
                 ),
 

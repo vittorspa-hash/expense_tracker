@@ -87,18 +87,24 @@ class TotalCardWidget extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4.h),
-                Text(
-                  "€ ${totalAmount.toStringAsFixed(2)}",
-                  style: TextStyle(
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
-                    letterSpacing: -0.5,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Text(
+                    "€ ${totalAmount.toStringAsFixed(2)}",
+                    style: TextStyle(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                      letterSpacing: -0.5,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+
+          SizedBox(width: 16.w),
 
           // -------------------------------------------------------------------
           // 🔹 CONTEGGIO OPZIONALE ELEMENTI

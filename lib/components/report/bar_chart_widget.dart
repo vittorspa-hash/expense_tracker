@@ -82,12 +82,18 @@ class BarChartWidget extends StatelessWidget {
                 interval: safeInterval,
                 getTitlesWidget: (value, meta) {
                   if (value == 0) return const SizedBox.shrink();
-                  return Text(
-                    "€${value.toInt()}",
-                    style: TextStyle(
-                      fontSize: 9.sp,
-                      color: isDark ? AppColors.greyDark : AppColors.greyLight,
-                      fontWeight: FontWeight.w600,
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(
+                      "€${value.toInt()}",
+                      style: TextStyle(
+                        fontSize: 9.sp,
+                        color: isDark
+                            ? AppColors.greyDark
+                            : AppColors.greyLight,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   );
                 },

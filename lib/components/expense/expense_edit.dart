@@ -81,7 +81,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
             : AppColors.editPageBackgroundLight,
         focusColor: Colors.transparent,
         highlightColor: AppColors.primary,
-        onTap: () {},
+        onTap: () {
+          FocusScope.of(context).unfocus();
+        },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -100,25 +102,13 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
   // --- WIDGET INPUT ---
 
-  Widget inputPrice() => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Text(
-        "€",
-        style: TextStyle(
-          fontSize: 50.sp,
-          color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      SizedBox(width: 20.w),
-      IntrinsicWidth(
-        child: TextField(
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          controller: priceController,
-          cursorColor: isTappedDown
-              ? AppColors.textLight
-              : AppColors.textTappedDown,
+  Widget inputPrice() => Padding(
+    padding: EdgeInsets.symmetric(horizontal: 24.w),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          "€",
           style: TextStyle(
             fontSize: 50.sp,
             color: isTappedDown
@@ -126,32 +116,61 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                 : AppColors.textTappedDown,
             fontWeight: FontWeight.w600,
           ),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
-            TextInputFormatter.withFunction((oldValue, newValue) {
-              String text = newValue.text.replaceAll(',', '.');
-              return newValue.copyWith(
-                text: text,
-                selection: newValue.selection,
-              );
-            }),
-          ],
-          decoration: InputDecoration(
-            hintText: "0.00",
-            border: InputBorder.none,
-            hintStyle: TextStyle(
-              color: AppColors.textEditPage,
-              fontSize: 50.sp,
+        ),
+
+        SizedBox(width: 20.w),
+
+        Flexible(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: IntrinsicWidth(
+              child: TextField(
+                controller: priceController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                cursorColor: isTappedDown
+                    ? AppColors.textLight
+                    : AppColors.textTappedDown,
+                style: TextStyle(
+                  fontSize: 50.sp,
+                  color: isTappedDown
+                      ? AppColors.textLight
+                      : AppColors.textTappedDown,
+                  fontWeight: FontWeight.w600,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+                  TextInputFormatter.withFunction((oldValue, newValue) {
+                    final text = newValue.text.replaceAll(',', '.');
+                    return newValue.copyWith(
+                      text: text,
+                      selection: newValue.selection,
+                    );
+                  }),
+                ],
+                decoration: InputDecoration(
+                  hintText: "0.00",
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(
+                    color: AppColors.textEditPage,
+                    fontSize: 50.sp,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 
-  Widget inputDescription() => IntrinsicWidth(
+  Widget inputDescription() => Padding(
+    padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: TextField(
       keyboardType: TextInputType.text,
+      maxLines: null,
       controller: descriptionController,
       cursorColor: isTappedDown
           ? AppColors.textLight

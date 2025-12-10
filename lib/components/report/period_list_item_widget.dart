@@ -141,15 +141,22 @@ class PeriodListItemWidget extends StatelessWidget {
             // 🔹 COLONNA CON TOTALE E PERCENTUALE
             // -----------------------------------------------------------------
             Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "€ ${totalAmount.toStringAsFixed(2)}",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14.sp,
-                    color: AppColors.primary,
-                    letterSpacing: -0.3,
+                SizedBox(
+                  width: 70.w,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(
+                      "€ ${totalAmount.toStringAsFixed(2)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.sp,
+                        color: AppColors.primary,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
                   ),
                 ),
                 if (totalAmount > 0) ...[
