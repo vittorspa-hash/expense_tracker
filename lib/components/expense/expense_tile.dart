@@ -123,6 +123,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                     horizontal: 16.w,
                     vertical: 10.h,
                   ),
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: isDark
                         ? AppColors.secondaryDark

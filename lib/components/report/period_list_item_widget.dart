@@ -141,9 +141,10 @@ class PeriodListItemWidget extends StatelessWidget {
             // 🔹 COLONNA CON TOTALE E PERCENTUALE
             // -----------------------------------------------------------------
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                SizedBox(
+                Container(
+                  alignment: Alignment.centerRight,
                   width: 70.w,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
