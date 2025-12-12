@@ -1,9 +1,11 @@
 // dialog_profile.dart
 // Contiene utility per la costruzione degli elementi UI (header, azioni, list tile)
 // relativi al profilo utente all'interno dei bottom sheet o dialoghi adattivi.
-// Gestisce anche la logica di navigazione verso le pagine Profilo/Impostazioni e il processo di Logout.
+// Gestisce anche la navigazione verso le pagine Profilo/Impostazioni e il processo di Logout.
 
 import 'dart:io';
+import 'package:expense_tracker/services/auth_service.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -108,7 +110,7 @@ class DialogProfile {
       isDestructiveAction:
           true, // Rende il testo rosso per segnalare un'azione pericolosa.
       onPressed: () =>
-          handleLogout(context), // Avvia la procedura di logout con conferma.
+          handleLogout(context, AuthService()), // Avvia la procedura di logout con conferma.
       child: Text(
         "Logout",
         style: TextStyle(color: AppColors.delete, fontSize: 17.sp),
@@ -153,7 +155,7 @@ class DialogProfile {
           style: TextStyle(color: AppColors.delete, fontSize: 16.sp),
         ),
         onTap: () =>
-            handleLogout(context), // Avvia la procedura di logout con conferma.
+            handleLogout(context, AuthService()), // Avvia la procedura di logout con conferma.
       );
 
   // Gestisce la navigazione verso la pagina del profilo e il ricaricamento dell'avatar al ritorno.
@@ -209,107 +211,30 @@ class DialogProfile {
     });
   }
 
-  // Gestisce l'intera procedura di logout, inclusa la richiesta di conferma.
-  static Future<void> handleLogout(BuildContext context) async {
+  // Gestisce la procedura di logout, inclusa la richiesta di conferma.
+  static Future<void> handleLogout(
+    BuildContext context,
+    AuthService authService,
+  ) async {
     if (!context.mounted) return;
-
-    // Chiude il sheet/dialog del profilo.
     Navigator.pop(context);
-
     await Future.delayed(Duration.zero);
 
     if (!context.mounted) return;
 
-    final textColor = DialogCommons.textColor(context);
-    const title = "Conferma logout";
-    const content = "Sei sicuro di voler uscire dall'account?";
-    const cancelText = "Annulla";
-    const confirmText = "Logout";
+    final confirmed = await DialogUtils.showConfirmDialog(
+      context,
+      title: "Conferma logout",
+      content: "Sei sicuro di voler uscire dall'account?",
+      confirmText: "Logout",
+      cancelText: "Annulla",
+    );
 
-    bool? confirm;
-
-    // Richiesta di conferma adattiva (Cupertino).
-    if (DialogCommons.isIOS) {
-      if (!context.mounted) return;
-      confirm = await showCupertinoDialog<bool>(
+    if (confirmed == true && context.mounted) {
+      await authService.signOut(
         context: context,
-        builder: (_) => CupertinoAlertDialog(
-          title: Text(title, style: TextStyle(fontSize: 15.sp)),
-          content: Padding(
-            padding: EdgeInsets.only(top: 8.h),
-            child: Text(content, style: TextStyle(fontSize: 14.sp)),
-          ),
-          actions: [
-            // Pulsante Annulla.
-            DialogCommons.buildActionButton(
-              context,
-              cancelText,
-              textColor,
-              false,
-            ),
-            // Pulsante Logout (distruttivo).
-            DialogCommons.buildActionButton(
-              context,
-              confirmText,
-              AppColors.delete,
-              true,
-            ),
-          ],
-        ),
+        onSuccess: () {}, // Gestito automaticamente da FirebaseAuth stream
       );
-    }
-    // Richiesta di conferma adattiva (Material).
-    else {
-      if (!context.mounted) return;
-      confirm = await showDialog<bool>(
-        context: context,
-        builder: (_) => AlertDialog(
-          shape: DialogCommons.roundedRectangleBorder(),
-          title: Text(
-            title,
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-          ),
-          content: Text(content, style: TextStyle(fontSize: 14.sp)),
-          actions: [
-            // Pulsante Annulla.
-            DialogCommons.buildActionButton(
-              context,
-              cancelText,
-              textColor,
-              false,
-            ),
-            // Pulsante Logout (distruttivo).
-            DialogCommons.buildActionButton(
-              context,
-              confirmText,
-              AppColors.delete,
-              true,
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Se l'utente conferma, procede con il logout effettivo.
-    if (confirm == true && context.mounted) {
-      try {
-        await FirebaseAuth.instance
-            .signOut(); // Chiama il metodo di logout di Firebase.
-        debugPrint('✅ Logout completato con successo');
-      } catch (e) {
-        debugPrint('❌ Errore durante il logout: $e');
-
-        // Mostra un errore all'utente tramite SnackBar.
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Errore durante il logout: ${e.toString()}'),
-              backgroundColor: AppColors.snackBar,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
     }
   }
 }

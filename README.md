@@ -49,6 +49,8 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 ---
 
 ## 🗂️ Struttura del progetto
+- `lib/main.dart` → Entry point: inizializza Firebase, localizzazione e registra i servizi tramite GetIt
+- `lib/app.dart` → Configurazione app: tema, localizzazione, routing e gestione notifiche
 - `lib/components/` →  Widget riutilizzabili e componenti UI custom
 - `lib/controllers/` → Controller GetX per la gestione dello stato UI (selezione multipla)
 - `lib/models/` → Data classes e modelli di dominio (ExpenseModel)

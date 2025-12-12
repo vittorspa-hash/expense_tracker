@@ -118,6 +118,23 @@ class AuthService {
   }
 
   // ---------------------------------------------------------------------------
+  // 🟦 LOGOUT UTENTE
+  // ---------------------------------------------------------------------------
+  Future<void> signOut({
+    required BuildContext context,
+    required VoidCallback onSuccess,
+  }) async {
+    try {
+      await _auth.signOut();
+      debugPrint('✅ Logout completato con successo');
+      onSuccess();
+    } on FirebaseAuthException catch (e) {
+      if (!context.mounted) return;
+      _showSnack(context, 'Errore durante il logout: ${e.message ?? e.code}');
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // 🟦 RESET PASSWORD
   // ---------------------------------------------------------------------------
   Future<void> resetPassword(BuildContext context, String email) async {
