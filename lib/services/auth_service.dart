@@ -1,10 +1,10 @@
 // auth_service.dart
-// Service che gestisce l’intera logica di autenticazione dell’app.
+// Service che gestisce l'intera logica di autenticazione dell'app.
 // Include:
 // • Registrazione di un nuovo utente con email e password
 // • Login con controllo della verifica email
 // • Invio email di reset password
-// • Prevenzione dell’invio eccessivo di email tramite rate-limit
+// • Prevenzione dell'invio eccessivo di email tramite rate-limit
 // • Gestione uniforme degli errori e notifiche tramite SnackBar e dialog personalizzati
 
 import 'package:expense_tracker/utils/dialog_utils.dart';
@@ -13,10 +13,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
 class AuthService {
-  // Istanza principale per gestire l’autenticazione tramite Firebase
+  // Istanza principale per gestire l'autenticazione tramite Firebase
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Timestamp dell’ultima email inviata (verifica o reset), usato per limitare gli invii
+  // Timestamp dell'ultima email inviata (verifica o reset), usato per limitare gli invii
   DateTime? _lastEmailSent;
 
   // ---------------------------------------------------------------------------
@@ -44,12 +44,12 @@ class AuthService {
       var user = userCredential.user;
       if (user == null) return;
 
-      // Imposta il nome e aggiorna l’istanza utente
+      // Imposta il nome e aggiorna l'istanza utente
       await user.updateDisplayName(nome.trim());
       await user.reload();
       user = _auth.currentUser;
 
-      // Limita l’invio eccessivo delle email di verifica
+      // Limita l'invio eccessivo delle email di verifica
       if (_lastEmailSent != null &&
           DateTime.now().difference(_lastEmailSent!) <
               const Duration(seconds: 60)) {
@@ -98,7 +98,7 @@ class AuthService {
       var user = userCredential.user;
       if (user == null) return;
 
-      // Aggiorna lo stato dell’utente
+      // Aggiorna lo stato dell'utente
       await user.reload();
       user = _auth.currentUser;
 
@@ -137,9 +137,19 @@ class AuthService {
   // ---------------------------------------------------------------------------
   // 🟦 RESET PASSWORD
   // ---------------------------------------------------------------------------
-  Future<void> resetPassword(BuildContext context, String email) async {
-    final trimmed = email.trim();
-    if (trimmed.isEmpty) {
+  /// Invia email di reset password.
+  /// 
+  /// Se l'email non viene fornita, usa l'email dell'utente corrente.
+  /// Applica rate-limiting per prevenire invii eccessivi.
+  Future<void> resetPassword(
+    BuildContext context, {
+    String? email,
+    String? customSuccessMessage,
+  }) async {
+    // Se email non è fornita, usa quella dell'utente corrente
+    final targetEmail = email?.trim() ?? _auth.currentUser?.email;
+    
+    if (targetEmail == null || targetEmail.isEmpty) {
       _showSnack(context, "Inserisci l'email.");
       return;
     }
@@ -157,16 +167,16 @@ class AuthService {
 
     try {
       // Invio email di ripristino password
-      await _auth.sendPasswordResetEmail(email: trimmed);
+      await _auth.sendPasswordResetEmail(email: targetEmail);
       _lastEmailSent = DateTime.now();
 
       if (!context.mounted) return;
-      await DialogUtils.showInfoDialog(
-        context,
-        title: "Email inviata",
-        content:
-            "Se l'email è registrata, riceverai un link per reimpostare la password.",
-      );
+      
+      // Mostra messaggio personalizzato o quello di default
+      final message = customSuccessMessage ??
+          "Se l'email è registrata, riceverai un link per reimpostare la password.";
+      
+      _showSnack(context, message);
     } on FirebaseAuthException catch (e) {
       if (!context.mounted) return;
       _showSnack(context, _errorMessageReset(e));
@@ -188,7 +198,7 @@ class AuthService {
     );
 
     if (confirmed == true) {
-      // Rate-limit dell’invio email
+      // Rate-limit dell'invio email
       if (_lastEmailSent != null &&
           DateTime.now().difference(_lastEmailSent!) <
               const Duration(seconds: 60)) {

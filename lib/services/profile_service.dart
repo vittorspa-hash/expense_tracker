@@ -5,16 +5,17 @@
 // Responsabilità principali:
 // - Gestione immagine profilo: caricamento locale, cambio e rimozione
 // - Aggiornamento dati account: nome, email e password
-// - Reset password via email
 // - Eliminazione account con conferma
 // - Funzioni ausiliarie: refresh dati utente, copia ID negli appunti
 // -----------------------------------------------------------------------------
 // NOTE:
 // Questo service utilizza callback per aggiornare la UI (setState) e SnackBar
 // per mostrare messaggi di conferma o errore.
+// La funzione di reset password è stata delegata ad AuthService
 // -----------------------------------------------------------------------------
 
 import 'dart:io';
+import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
@@ -39,6 +40,9 @@ class ProfileService {
 
   /// Flag stato caricamento immagine
   bool isUploading = false;
+
+  /// Istanza di AuthService per delegare operazioni di autenticazione
+  final AuthService _authService = AuthService();
 
   // ---------------------------------------------------------------------------
   // 🔄 Aggiorna dati utente da Firebase
@@ -364,38 +368,15 @@ class ProfileService {
   }
 
   // ---------------------------------------------------------------------------
-  // 📩 Reset password via email
+  // 📩 Reset password via email - DELEGA AD AuthService
   // ---------------------------------------------------------------------------
+  /// Invia email di reset password usando AuthService.
+  /// Questo metodo delega completamente la logica ad AuthService.
   Future<void> showForgotPasswordAction(BuildContext context) async {
-    try {
-      await fb_auth.FirebaseAuth.instance.sendPasswordResetEmail(
-        email: user!.email!,
-      );
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Email di recupero inviata a ${user!.email!}",
-              style: TextStyle(color: AppColors.textLight),
-            ),
-            backgroundColor: AppColors.snackBar,
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Errore durante il reset: $e",
-              style: TextStyle(color: AppColors.textLight),
-            ),
-            backgroundColor: AppColors.snackBar,
-          ),
-        );
-      }
-    }
+    await _authService.resetPassword(
+      context,
+      customSuccessMessage: "Email di recupero inviata a ${user!.email!}",
+    );
   }
 
   // ---------------------------------------------------------------------------

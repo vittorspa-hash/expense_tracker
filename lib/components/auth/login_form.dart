@@ -164,7 +164,7 @@ class _LoginFormState extends State<LoginForm> {
                     child: TextButton(
                       onPressed: () => widget.authService.resetPassword(
                         context,
-                        _emailController.text,
+                        email: _emailController.text.trim(),
                       ),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(
