@@ -4,7 +4,7 @@
 //
 // Campo di testo personalizzato utilizzato nel Login e Register form.
 // Comprende: icona, hint, gestione del focus, validazione, modalità password,
-// supporto al tema scuro e animazioni fluide.
+// supporto al tema scuro, animazioni fluide e possibilità di disabilitazione.
 // -----------------------------------------------------------------------------
 
 import 'package:expense_tracker/theme/app_colors.dart';
@@ -27,6 +27,7 @@ class AuthTextField extends StatelessWidget {
   final FocusNode? focusNode; // Focus attuale
   final FocusNode? nextFocus; // Focus del campo successivo
   final bool isLast; // Ultimo campo del form?
+  final bool enabled; // Abilita/disabilita il campo
 
   const AuthTextField({
     super.key,
@@ -41,6 +42,7 @@ class AuthTextField extends StatelessWidget {
     this.focusNode,
     this.nextFocus,
     this.isLast = false,
+    this.enabled = true, 
   });
 
   @override
@@ -55,13 +57,23 @@ class AuthTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textCapitalization: capitalization,
       validator: validator,
+      enabled: enabled,
       textInputAction:
           isLast 
           ? TextInputAction.done
           : TextInputAction.next,
-      style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500),
+      style: TextStyle(
+        fontSize: 14.sp,
+        fontWeight: FontWeight.w500,
+        // Colore testo ridotto quando disabilitato
+        color: enabled
+            ? null
+            : (isDark
+                ? AppColors.greyDark.withValues(alpha: 0.5)
+                : AppColors.greyLight.withValues(alpha: 0.5)),
+      ),
 
-      // 🔄 Gestione del focus quando l’utente preme "invio"
+      // 🔄 Gestione del focus quando l'utente preme "invio"
       onFieldSubmitted: (_) {
         if (nextFocus != null) {
           // Sposta il focus al prossimo
@@ -79,7 +91,16 @@ class AuthTextField extends StatelessWidget {
         // 📌 Icona principale a sinistra
         prefixIcon: Container(
           margin: EdgeInsets.only(right: 12.w),
-          child: Icon(icon, size: 16.sp, color: AppColors.primary),
+          child: Icon(
+            icon,
+            size: 16.sp,
+            //  Icona più scura quando disabilitato
+            color: enabled
+                ? AppColors.primary
+                : (isDark
+                    ? AppColors.greyDark.withValues(alpha: 0.4)
+                    : AppColors.greyLight.withValues(alpha: 0.4)),
+          ),
         ),
 
         // 👁‍🗨 Icona per mostra/nascondi password
@@ -89,9 +110,13 @@ class AuthTextField extends StatelessWidget {
                 icon: Icon(
                   obscure ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
                   size: 14.sp,
-                  color: isDark ? AppColors.greyDark : AppColors.greyLight,
+                  color: enabled
+                      ? (isDark ? AppColors.greyDark : AppColors.greyLight)
+                      : (isDark
+                          ? AppColors.greyDark.withValues(alpha: 0.3)
+                          : AppColors.greyLight.withValues(alpha: 0.3)),
                 ),
-                onPressed: onToggleObscure,
+                onPressed: enabled ? onToggleObscure : null, //  Disabilita il toggle quando il campo è disabilitato
               ),
 
         // 💬 Hint text
@@ -103,7 +128,11 @@ class AuthTextField extends StatelessWidget {
 
         // 🎨 Colore di sfondo diverso per light/dark mode
         filled: true,
-        fillColor: isDark ? AppColors.borderDark : AppColors.borderLight,
+        fillColor: enabled
+            ? (isDark ? AppColors.borderDark : AppColors.borderLight)
+            : (isDark
+                ? AppColors.borderDark.withValues(alpha: 0.5)
+                : AppColors.borderLight.withValues(alpha: 0.5)), //  Sfondo più chiaro quando disabilitato
 
         // 🔲 Bordi moderni
         border: OutlineInputBorder(
@@ -116,6 +145,17 @@ class AuthTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(14.r),
           borderSide: BorderSide(
             color: isDark ? AppColors.backgroundDark : AppColors.borderLight,
+            width: 1,
+          ),
+        ),
+
+        //  Bordo quando disabilitato
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14.r),
+          borderSide: BorderSide(
+            color: isDark
+                ? AppColors.backgroundDark.withValues(alpha: 0.5)
+                : AppColors.borderLight.withValues(alpha: 0.5),
             width: 1,
           ),
         ),

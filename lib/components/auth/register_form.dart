@@ -7,8 +7,8 @@
 // - Email
 // - Password + Conferma password
 //
-// Include validazione dei campi, gestione dei focus, gestione visibilità
-// password e integrazione diretta con AuthService per eseguire la registrazione.
+// Include validazione dei campi, gestione dei focus, gestione visibilità password e
+// feedback di caricamento. Integrazione diretta con AuthService per eseguire la registrazione.
 // -----------------------------------------------------------------------------
 
 import 'package:expense_tracker/components/auth/auth_button.dart';
@@ -47,6 +47,9 @@ class _RegisterFormState extends State<RegisterForm> {
   bool _obscure1 = true;
   bool _obscure2 = true;
 
+  // Stato di caricamento
+  bool _isLoading = false;
+
   @override
   void dispose() {
     // Libera tutte le risorse dei controller e focus node
@@ -59,6 +62,32 @@ class _RegisterFormState extends State<RegisterForm> {
     _passwordFocus.dispose();
     _confirmFocus.dispose();
     super.dispose();
+  }
+
+  //  Funzione per gestire la registrazione con feedback di caricamento
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await widget.authService.signUp(
+        context: context,
+        email: _emailController.text,
+        password: _passwordController.text,
+        confermaPassword: _confirmController.text,
+        nome: _nameController.text,
+        onSuccess: () {
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -130,6 +159,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Nome completo",
                     icon: FontAwesomeIcons.user,
                     capitalization: TextCapitalization.words,
+                    enabled: !_isLoading,
                     validator: (v) =>
                         v!.trim().isEmpty ? "Inserisci il tuo nome" : null,
                   ),
@@ -146,6 +176,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Email",
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
+                    enabled: !_isLoading,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
                         return "Inserisci l'email";
@@ -167,6 +198,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Password",
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure1,
+                    enabled: !_isLoading,
                     onToggleObscure: () =>
                         setState(() => _obscure1 = !_obscure1),
                     validator: (v) {
@@ -192,6 +224,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure2,
                     isLast: true,
+                    enabled: !_isLoading,
                     onToggleObscure: () =>
                         setState(() => _obscure2 = !_obscure2),
                     validator: (v) {
@@ -214,20 +247,29 @@ class _RegisterFormState extends State<RegisterForm> {
             // 🚀 BOTTONE DI REGISTRAZIONE
             // -------------------------------------------------------------------
             AuthButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  widget.authService.signUp(
-                    context: context,
-                    email: _emailController.text,
-                    password: _passwordController.text,
-                    confermaPassword: _confirmController.text,
-                    nome: _nameController.text,
-                    onSuccess: () => setState(() {}),
-                  );
-                }
-              },
-              icon: FontAwesomeIcons.userPlus,
-              text: "Registrati",
+              onPressed: _isLoading
+                  ? null
+                  : _handleRegister, // Disabilita durante il caricamento
+              icon: _isLoading
+                  ? null
+                  : FontAwesomeIcons
+                        .userPlus, // Nasconde icona durante caricamento
+              text: _isLoading
+                  ? ""
+                  : "Registrati", // Nasconde testo durante caricamento
+              //  Mostra loading indicator
+              child: _isLoading
+                  ? SizedBox(
+                      height: 20.h,
+                      width: 20.h,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5.w,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.textLight,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
 
             SizedBox(height: 18.h),

@@ -65,6 +65,8 @@ class AuthService {
       await user!.sendEmailVerification();
       _lastEmailSent = DateTime.now();
 
+      onSuccess();
+
       if (!context.mounted) return;
       await DialogUtils.showInfoDialog(
         context,
@@ -73,7 +75,6 @@ class AuthService {
             "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
       );
 
-      onSuccess();
     } on FirebaseAuthException catch (e) {
       if (!context.mounted) return;
       _showSnack(context, _errorMessageSignup(e));
@@ -104,13 +105,14 @@ class AuthService {
 
       if (!context.mounted) return;
 
+      onSuccess();
+
       // Blocca l'accesso se l'email non è ancora verificata
       if (!user!.emailVerified) {
         await _showUnverifiedDialog(context, user);
         return;
       }
 
-      onSuccess();
     } on FirebaseAuthException catch (e) {
       if (!context.mounted) return;
       _showSnack(context, _errorMessageLogin(e));

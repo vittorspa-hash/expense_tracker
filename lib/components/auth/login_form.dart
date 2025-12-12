@@ -2,13 +2,13 @@
 // -----------------------------------------------------------------------------
 // 🔐 FORM DI LOGIN UTENTE
 //
-// Gestisce l’accesso dell’utente tramite:
+// Gestisce l'accesso dell'utente tramite:
 // - Email
 // - Password
 //
 // Include validazione dei campi, gestione dei FocusNode, toggle visibilità
-// password, integrazione con AuthService per eseguire il login e pulsante per il
-// recupero della password. 
+// password, integrazione con AuthService per eseguire il login, feedback di
+// caricamento e pulsante per il recupero della password. 
 // -----------------------------------------------------------------------------
 
 import 'package:expense_tracker/components/auth/auth_button.dart';
@@ -42,6 +42,9 @@ class _LoginFormState extends State<LoginForm> {
   // Gestione visibilità password
   bool _obscure = true;
 
+  // Stato di caricamento
+  bool _isLoading = false;
+
   @override
   void dispose() {
     // Libera i controller e i focus node
@@ -50,6 +53,30 @@ class _LoginFormState extends State<LoginForm> {
     _emailFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
+  }
+
+  //  Funzione per gestire il login con feedback di caricamento
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await widget.authService.signIn(
+        context: context,
+        email: _emailController.text,
+        password: _passwordController.text,
+        onSuccess: () {
+          if (mounted) {
+            setState(() => _isLoading = false);
+          }
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -122,6 +149,7 @@ class _LoginFormState extends State<LoginForm> {
                     hint: "Email",
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
+                    enabled: !_isLoading, 
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Inserisci l'email";
@@ -145,6 +173,7 @@ class _LoginFormState extends State<LoginForm> {
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure,
                     isLast: true,
+                    enabled: !_isLoading, 
                     onToggleObscure: () => setState(() => _obscure = !_obscure),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -162,10 +191,12 @@ class _LoginFormState extends State<LoginForm> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => widget.authService.resetPassword(
-                        context,
-                        email: _emailController.text.trim(),
-                      ),
+                      onPressed: _isLoading
+                          ? null 
+                          : () => widget.authService.resetPassword(
+                                context,
+                                email: _emailController.text.trim(),
+                              ),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(
                           horizontal: 8.w,
@@ -175,15 +206,23 @@ class _LoginFormState extends State<LoginForm> {
                       child: Text(
                         "Password dimenticata?",
                         style: TextStyle(
-                          color: isDark
-                              ? AppColors.textLight
-                              : AppColors.textDark2,
+                          color: _isLoading
+                              ? (isDark
+                                  ? AppColors.greyDark
+                                  : AppColors.greyLight)
+                              : (isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textDark),
                           fontWeight: FontWeight.w600,
                           fontSize: 12.sp,
                           decoration: TextDecoration.underline,
-                          decorationColor: isDark
-                              ? AppColors.textLight
-                              : AppColors.textDark2,
+                          decorationColor: _isLoading
+                              ? (isDark
+                                  ? AppColors.greyDark
+                                  : AppColors.greyLight)
+                              : (isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textDark),
                         ),
                       ),
                     ),
@@ -195,21 +234,25 @@ class _LoginFormState extends State<LoginForm> {
             SizedBox(height: 10.h),
 
             // -------------------------------------------------------------------
-            // 🚀 BOTTONE DI LOGIN
+            // 🚀 BOTTONE DI LOGIN CON INDICATORE DI CARICAMENTO
             // -------------------------------------------------------------------
             AuthButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  widget.authService.signIn(
-                    context: context,
-                    email: _emailController.text,
-                    password: _passwordController.text,
-                    onSuccess: () => setState(() {}),
-                  );
-                }
-              },
-              icon: FontAwesomeIcons.rightToBracket,
-              text: "Accedi",
+              onPressed: _isLoading ? null : _handleLogin, // Disabilita durante il caricamento
+              icon: _isLoading ? null : FontAwesomeIcons.rightToBracket, // Nasconde icona durante caricamento
+              text: _isLoading ? "" : "Accedi", // Nasconde testo durante caricamento
+              //  Mostra loading indicator
+              child: _isLoading
+                  ? SizedBox(
+                      height: 20.h,
+                      width: 20.h,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.textLight,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
 
             SizedBox(height: 18.h),
