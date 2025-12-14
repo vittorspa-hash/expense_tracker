@@ -9,6 +9,7 @@
 // - Animazione fade-in iniziale
 // -----------------------------------------------------------------------------
 
+import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
@@ -56,23 +57,10 @@ class _SettingsPageState extends State<SettingsPage>
       // -------------------------------------------------------------------------
       // 🔝 APPBAR IMPOSTAZIONI
       // -------------------------------------------------------------------------
-      appBar: AppBar(
-        elevation: 0,
-        iconTheme: IconThemeData(
-          color: isDark ? AppColors.textDark : AppColors.textLight,
-        ),
-        title: Text(
-          "Impostazioni",
-          style: TextStyle(
-            color: isDark ? AppColors.textDark : AppColors.textLight,
-            fontSize: 22.sp,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(color: AppColors.primary),
-        ),
+      appBar: CustomAppBar(
+        title: "Impostazioni",
+        icon: Icons.settings_rounded,
+        isDark: isDark,
       ),
 
       // -------------------------------------------------------------------------

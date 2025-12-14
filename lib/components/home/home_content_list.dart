@@ -22,7 +22,7 @@ import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
-import 'package:expense_tracker/components/expense/expense_tile.dart';
+import 'package:expense_tracker/components/shared/expense_tile.dart';
 
 class HomeContentList extends StatelessWidget {
   final bool isDark; // 🌙 Tema attuale (dark / light)

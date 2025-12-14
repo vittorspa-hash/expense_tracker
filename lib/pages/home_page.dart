@@ -14,6 +14,7 @@
 import 'dart:io';
 import 'package:expense_tracker/components/home/home_content_list.dart';
 import 'package:expense_tracker/components/home/home_header.dart';
+import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/controllers/multi_select_controller.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/stores/expense_store.dart';
@@ -111,48 +112,13 @@ class _HomePageState extends State<HomePage>
         // 🟥 APPBAR MODE SELEZIONE MULTIPLA
         // ---------------------------------------------------------------------
         appBar: isSelectionMode
-            ? AppBar(
-                elevation: 0,
-                flexibleSpace: Container(
-                  decoration: BoxDecoration(color: AppColors.primary),
-                ),
-
-                // ❌ Pulsante annulla selezione
-                leading: IconButton(
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: isDark ? AppColors.textDark : AppColors.textLight,
-                    size: 26.sp,
-                  ),
-                  onPressed: multiSelect.cancelSelection,
-                ),
-
-                // 📌 Conteggio elementi selezionati
-                title: Text(
-                  "$selectedCount ${selectedCount == 1 ? "selezionata" : "selezionate"}",
-                  style: TextStyle(
-                    color: isDark ? AppColors.textDark : AppColors.textLight,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20.sp,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-
-                // 🗑️ Pulsante elimina selezionati
-                actions: [
-                  Container(
-                    margin: EdgeInsets.only(right: 8.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.delete.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.delete_rounded, size: 24.sp),
-                      color: AppColors.delete,
-                      onPressed: () => multiSelect.deleteSelected(context),
-                    ),
-                  ),
-                ],
+            ? CustomAppBar(
+                title: "",
+                isDark: isDark,
+                isSelectionMode: true,
+                selectedCount: selectedCount,
+                onCancelSelection: multiSelect.cancelSelection,
+                onDeleteSelected: () => multiSelect.deleteSelected(context),
               )
             : null,
 
@@ -237,7 +203,7 @@ class _HomePageState extends State<HomePage>
   // -----------------------------------------------------------------------------
   Future<void> _loadLocalAvatar() async {
     final appDir = await getApplicationDocumentsDirectory();
-    if (!mounted) return;  
+    if (!mounted) return;
     final file = File('${appDir.path}/profile_picture.jpg');
     setState(() {
       _localAvatar = file.existsSync() ? file : null;

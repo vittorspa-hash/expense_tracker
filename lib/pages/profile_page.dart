@@ -10,6 +10,7 @@
 // - Animazione fade-in iniziale
 // -----------------------------------------------------------------------------
 
+import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/services/profile_service.dart';
@@ -71,29 +72,15 @@ class _ProfilePageState extends State<ProfilePage>
       // -------------------------------------------------------------------------
       // 🔝 APPBAR PROFILO
       // -------------------------------------------------------------------------
-      appBar: AppBar(
-        elevation: 0,
-        iconTheme: IconThemeData(color: isDark ? AppColors.textDark : AppColors.textLight,),
-        title: Text(
-          "Profilo",
-          style: TextStyle(
-            color: isDark ? AppColors.textDark : AppColors.textLight,
-            fontSize: 22.sp,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(color: AppColors.primary),
-        ),
-      ),
+      appBar: CustomAppBar(title: "Profilo", icon: Icons.person_rounded, isDark: isDark),
 
       // -------------------------------------------------------------------------
       // 🔄 PULL-TO-REFRESH (aggiorna user Firebase)
       // -------------------------------------------------------------------------
       body: RefreshIndicator(
         color: AppColors.primary,
-        onRefresh: () async => profileService.refreshUser(context, _safeSetState),
+        onRefresh: () async =>
+            profileService.refreshUser(context, _safeSetState),
 
         // -----------------------------------------------------------------------
         // 🎨 BACKGROUND + ANIMAZIONE
@@ -131,12 +118,16 @@ class _ProfilePageState extends State<ProfilePage>
                     isUploading: profileService.isUploading,
 
                     // 📤 Cambia immagine
-                    onChangePicture: () =>
-                        profileService.changeProfilePicture(context, _safeSetState),
+                    onChangePicture: () => profileService.changeProfilePicture(
+                      context,
+                      _safeSetState,
+                    ),
 
                     // ❌ Rimuovi immagine
-                    onRemovePicture: () =>
-                        profileService.removeProfilePicture(context, _safeSetState),
+                    onRemovePicture: () => profileService.removeProfilePicture(
+                      context,
+                      _safeSetState,
+                    ),
                   ),
                 ),
 
@@ -229,7 +220,9 @@ class _ProfilePageState extends State<ProfilePage>
                   onPressed: () => profileService.deleteAccount(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: isDark ? AppColors.textDark : AppColors.textLight,
+                    foregroundColor: isDark
+                        ? AppColors.textDark
+                        : AppColors.textLight,
                     elevation: 6,
                     shadowColor: AppColors.primary.withValues(alpha: 0.3),
                     minimumSize: Size(double.infinity, 50.h),
@@ -243,7 +236,9 @@ class _ProfilePageState extends State<ProfilePage>
                       Icon(
                         Icons.delete_outline_rounded,
                         size: 22.r,
-                        color: isDark ? AppColors.textDark : AppColors.textLight,
+                        color: isDark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
                       ),
                       SizedBox(width: 12.w),
                       Text(

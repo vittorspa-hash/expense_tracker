@@ -12,6 +12,7 @@
 import 'package:expense_tracker/components/report/bar_chart_widget.dart';
 import 'package:expense_tracker/components/report/period_list_item_widget.dart';
 import 'package:expense_tracker/components/report/total_card_widget.dart';
+import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/pages/months_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -74,21 +75,10 @@ class _YearsPageState extends State<YearsPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        iconTheme: IconThemeData(color: isDark ? AppColors.textDark : AppColors.textLight),
-        title: Text(
-          "Resoconto Annuale",
-          style: TextStyle(
-            color: isDark ? AppColors.textDark : AppColors.textLight,
-            fontSize: 22.sp,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          ),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(color: AppColors.primary),
-        ),
+      appBar: CustomAppBar(
+        title: "Resoconto Annuale",
+        isDark: isDark,
+        icon: Icons.bar_chart_rounded
       ),
 
       // ---------------------------------------------------------------------

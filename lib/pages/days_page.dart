@@ -10,6 +10,7 @@
 // -----------------------------------------------------------------------------
 
 import 'package:expense_tracker/components/report/total_card_widget.dart';
+import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/controllers/multi_select_controller.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
@@ -19,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:expense_tracker/stores/expense_store.dart';
-import 'package:expense_tracker/components/expense/expense_tile.dart';
+import 'package:expense_tracker/components/shared/expense_tile.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class DaysPage extends StatefulWidget {
@@ -94,72 +95,19 @@ class _DaysPageState extends State<DaysPage>
         // 🗂 APPBAR DINAMICA (SELEZIONE MULTIPLA / NORMALE)
         // -----------------------------------------------------------------------
         appBar: isSelectionMode
-            ? AppBar(
-                elevation: 0,
-                flexibleSpace: Container(
-                  decoration: BoxDecoration(color: AppColors.primary),
-                ),
-                leading: IconButton(
-                  icon: Icon(
-                    Icons.close_rounded,
-                    color: isDark ? AppColors.textDark : AppColors.textLight,
-                    size: 26.sp,
-                  ),
-                  onPressed: multiSelect.cancelSelection,
-                ),
-                title: Text(
-                  "$selectedCount ${selectedCount == 1 ? "selezionata" : "selezionate"}",
-                  style: TextStyle(
-                    color: isDark ? AppColors.textDark : AppColors.textLight,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 20.sp,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                actions: [
-                  Container(
-                    margin: EdgeInsets.only(right: 8.w),
-                    decoration: BoxDecoration(
-                      color: AppColors.delete.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: IconButton(
-                      icon: Icon(Icons.delete_rounded, size: 24.sp),
-                      color: AppColors.delete,
-                      onPressed: () => multiSelect.deleteSelected(context),
-                    ),
-                  ),
-                ],
+            ? CustomAppBar(
+                title: "",
+                isDark: isDark,
+                isSelectionMode: true,
+                selectedCount: selectedCount,
+                onCancelSelection: multiSelect.cancelSelection,
+                onDeleteSelected: () => multiSelect.deleteSelected(context),
               )
-            : AppBar(
-                elevation: 0,
-                iconTheme: IconThemeData(color: isDark ? AppColors.textDark : AppColors.textLight),
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dayOfWeek,
-                      style: TextStyle(
-                        color: isDark ? AppColors.textDark : AppColors.textLight,
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    Text(
-                      dateLabel,
-                      style: TextStyle(
-                        color: isDark ? AppColors.textDark.withValues(alpha: 0.85) : AppColors.textLight.withValues(alpha: 0.85),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                  ],
-                ),
-                flexibleSpace: Container(
-                  decoration: BoxDecoration(color: AppColors.primary),
-                ),
+            : CustomAppBar(
+                title: dayOfWeek,
+                subtitle: dateLabel,
+                isDark: isDark,
+                icon: Icons.calendar_today_rounded,
               ),
 
         // -----------------------------------------------------------------------
@@ -192,7 +140,9 @@ class _DaysPageState extends State<DaysPage>
                         Container(
                           padding: EdgeInsets.all(24.w),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.secondaryDark : AppColors.secondaryLight,
+                            color: isDark
+                                ? AppColors.secondaryDark
+                                : AppColors.secondaryLight,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
