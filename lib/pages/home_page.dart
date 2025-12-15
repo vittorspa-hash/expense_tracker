@@ -1,6 +1,6 @@
 // home_page.dart
 // -----------------------------------------------------------------------------
-// 🏠 HOME PAGE PRINCIPALE DELL’APPLICAZIONE
+// 🏠 HOME PAGE PRINCIPALE DELL'APPLICAZIONE
 //
 // Include:
 //  • header con avatar, bottone resoconto annuale e riepilogo delle spese.
@@ -16,6 +16,7 @@ import 'package:expense_tracker/components/home/home_content_list.dart';
 import 'package:expense_tracker/components/home/home_header.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/controllers/multi_select_controller.dart';
+import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/stores/expense_store.dart';
 import 'package:expense_tracker/pages/new_expense_page.dart';
@@ -95,17 +96,33 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
+  // -----------------------------------------------------------------------------
+  // 🔍 FILTRA LE SPESE IN BASE ALLA RICERCA
+  // Applica lo stesso filtro utilizzato in HomeContentList (cerca nella description)
+  // -----------------------------------------------------------------------------
+  List<ExpenseModel> _getFilteredExpenses() {
+    final query = _searchQuery.value.toLowerCase();
+
+    return expenseStore.value.expenses.where((expense) {
+      final desc = expense.description?.toLowerCase() ?? "";
+      return desc.contains(query);
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // -------------------------------------------------------------------------
-    // 🟣 Obx → aggiorna l’interfaccia al cambio dello stato di selezione multipla
+    // 🟣 Obx → aggiorna l'interfaccia al cambio dello stato di selezione multipla
     // -------------------------------------------------------------------------
     return Obx(() {
       final isSelectionMode = multiSelect.isSelectionMode.value;
       final selectedCount = multiSelect.selectedIds.length;
+
+      // 📋 Lista spese filtrate (visibili)
+      final filteredExpenses = _getFilteredExpenses();
 
       return Scaffold(
         // ---------------------------------------------------------------------
@@ -119,6 +136,9 @@ class _HomePageState extends State<HomePage>
                 selectedCount: selectedCount,
                 onCancelSelection: multiSelect.cancelSelection,
                 onDeleteSelected: () => multiSelect.deleteSelected(context),
+                onSelectAll: () => multiSelect.selectAll(filteredExpenses),
+                onDeselectAll: () => multiSelect.deselectAll(),
+                totalCount: filteredExpenses.length,
               )
             : null,
 

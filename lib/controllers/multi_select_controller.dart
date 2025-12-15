@@ -1,7 +1,7 @@
 // multi_select_controller.dart
 // Controller responsabile della gestione della selezione multipla delle spese.
 // Utilizzato nella HomePage e DaysPage per selezionare, deselezionare ed eliminare più voci.
-// Funziona tramite GetX per mantenere lo stato reattivo dell’interfaccia.
+// Funziona tramite GetX per mantenere lo stato reattivo dell'interfaccia.
 
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
@@ -27,8 +27,8 @@ class MultiSelectController extends GetxController {
   }
 
   // --- TOGGLE SELEZIONE ---
-  /// Aggiunge o rimuove una spesa dall’elenco selezionato.
-  /// Se l’ultimo elemento viene deselezionato, la modalità di selezione si disattiva.
+  /// Aggiunge o rimuove una spesa dall'elenco selezionato.
+  /// Se l'ultimo elemento viene deselezionato, la modalità di selezione si disattiva.
   void onToggleSelect(ExpenseModel expense) {
     if (selectedIds.contains(expense.uuid)) {
       selectedIds.remove(expense.uuid);
@@ -38,16 +38,32 @@ class MultiSelectController extends GetxController {
     }
   }
 
+  // --- SELEZIONA TUTTO ---
+  /// Seleziona tutte le spese disponibili nella lista fornita.
+  /// Utile per selezionare tutte le spese in una volta sola.
+  void selectAll(List<ExpenseModel> expenses) {
+    for (var expense in expenses) {
+      selectedIds.add(expense.uuid);
+    }
+  }
+
+  // --- DESELEZIONA TUTTO ---
+  /// Deseleziona tutte le spese e disattiva la modalità selezione.
+  void deselectAll() {
+    selectedIds.clear();
+    isSelectionMode.value = false;
+  }
+
   // --- ANNULLA SELEZIONE ---
-  /// Disattiva la modalità di selezione e svuota l’elenco.
+  /// Disattiva la modalità di selezione e svuota l'elenco.
   void cancelSelection() {
     isSelectionMode.value = false;
     selectedIds.clear();
   }
 
   // --- ELIMINAZIONE MASSIVA ---
-  /// Elimina tutte le spese selezionate, previa conferma dell’utente.
-  /// Mostra una snackbar che permette anche di annullare l’eliminazione.
+  /// Elimina tutte le spese selezionate, previa conferma dell'utente.
+  /// Mostra una snackbar che permette anche di annullare l'eliminazione.
   Future<void> deleteSelected(BuildContext context) async {
     final count = selectedIds.length;
 
@@ -84,14 +100,12 @@ class MultiSelectController extends GetxController {
       message:
           "$count ${count == 1 ? 'spesa eliminata' : 'spese eliminate'} con successo.",
       deletedItem: deletedExpenses,
-
       // 🔻 Delete immediato (viene eseguito PRIMA dello snackbar)
       onDelete: (_) {
         for (var expense in deletedExpenses) {
           expenseStore.value.deleteExpense(expense);
         }
       },
-
       // 🔻 Ripristino premendo "Annulla"
       onRestore: (_) {
         for (var expense in deletedExpenses) {
@@ -100,7 +114,7 @@ class MultiSelectController extends GetxController {
       },
     );
 
-    // Pulisce la selezione dopo l’eliminazione
+    // Pulisce la selezione dopo l'eliminazione
     cancelSelection();
   }
 }

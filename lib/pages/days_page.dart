@@ -90,6 +90,13 @@ class _DaysPageState extends State<DaysPage>
       final isSelectionMode = multiSelect.isSelectionMode.value;
       final selectedCount = multiSelect.selectedIds.length;
 
+      // 🔹 Lista spese del giorno (per passarla all'AppBar)
+      final expensesList = expenseStore.value.expensesOfDay(
+        widget.year,
+        widget.month,
+        widget.day,
+      );
+
       return Scaffold(
         // -----------------------------------------------------------------------
         // 🗂 APPBAR DINAMICA (SELEZIONE MULTIPLA / NORMALE)
@@ -100,8 +107,11 @@ class _DaysPageState extends State<DaysPage>
                 isDark: isDark,
                 isSelectionMode: true,
                 selectedCount: selectedCount,
+                totalCount: expensesList.length,
                 onCancelSelection: multiSelect.cancelSelection,
                 onDeleteSelected: () => multiSelect.deleteSelected(context),
+                onSelectAll: () => multiSelect.selectAll(expensesList),
+                onDeselectAll: multiSelect.deselectAll,
               )
             : CustomAppBar(
                 title: dayOfWeek,

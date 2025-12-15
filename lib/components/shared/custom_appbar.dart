@@ -15,8 +15,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool isDark;
   final bool isSelectionMode;
   final int selectedCount;
+  final int? totalCount;
   final VoidCallback? onCancelSelection;
   final VoidCallback? onDeleteSelected;
+  final VoidCallback? onSelectAll;
+  final VoidCallback? onDeselectAll;
   final Widget? leading;
   final List<Widget>? actions;
 
@@ -28,8 +31,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.isDark,
     this.isSelectionMode = false,
     this.selectedCount = 0,
+    this.totalCount,
     this.onCancelSelection,
     this.onDeleteSelected,
+    this.onSelectAll,
+    this.onDeselectAll,
     this.leading,
     this.actions,
   });
@@ -44,13 +50,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       // Leading personalizzato o pulsante di chiusura in modalità selezione
       leading: isSelectionMode
-          ? IconButton(
-              icon: Icon(
-                Icons.close_rounded,
-                color: isDark ? AppColors.textDark : AppColors.textLight,
-                size: 26.sp,
+          ? Container(
+              margin: EdgeInsets.only(left: 20.w),
+              child: IconButton(
+                icon: Icon(
+                  Icons.close_rounded,
+                  color: isDark ? AppColors.textDark : AppColors.textLight,
+                  size: 26.sp,
+                ),
+                onPressed: onCancelSelection,
               ),
-              onPressed: onCancelSelection,
             )
           : leading,
 
@@ -73,12 +82,33 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
 
       // Azioni della AppBar:
-      // - pulsante di eliminazione in modalità selezione
+      // - pulsante "seleziona tutto" + pulsante di eliminazione in modalità selezione
       // - azioni personalizzate in modalità normale
       actions: isSelectionMode
           ? [
+              // Toggle Seleziona/Deseleziona Tutto
+              IconButton(
+                icon: Icon(
+                  // Se sono già tutti selezionati, mostra l'icona per deselezionare
+                  (totalCount != null && selectedCount == totalCount)
+                      ? Icons.remove_done_rounded
+                      : Icons.done_all_rounded,
+                  size: 28.sp,
+                  color: isDark ? AppColors.textDark : AppColors.textLight,
+                ),
+                tooltip: (totalCount != null && selectedCount == totalCount)
+                    ? "Deseleziona tutto"
+                    : "Seleziona tutto",
+                onPressed: (totalCount != null && selectedCount == totalCount)
+                    ? onDeselectAll
+                    : onSelectAll,
+              ),
+
+              SizedBox(width: 8.w),
+
+              // Pulsante eliminazione
               Container(
-                margin: EdgeInsets.only(right: 8.w),
+                margin: EdgeInsets.only(right: 20.w),
                 decoration: BoxDecoration(
                   color: AppColors.delete.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12.r),
@@ -86,6 +116,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 child: IconButton(
                   icon: Icon(Icons.delete_rounded, size: 24.sp),
                   color: AppColors.delete,
+                  tooltip: "Elimina selezionate",
                   onPressed: onDeleteSelected,
                 ),
               ),
