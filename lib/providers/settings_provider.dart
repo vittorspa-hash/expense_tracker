@@ -13,7 +13,7 @@ import 'package:expense_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SettingsProvider with ChangeNotifier {
+class SettingsProvider extends ChangeNotifier {
   // 🔧 SharedPreferences
   late SharedPreferences _prefs;
 

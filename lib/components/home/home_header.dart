@@ -9,17 +9,17 @@
 //   con grafica moderna.
 //
 // Include animazioni fade, supporto dark mode, avatar locale
-// e integrazione con ExpenseStore via Obx.
+// e integrazione con ExpenseStore tramite Consumer.
 // -----------------------------------------------------------------------------
 
 import 'dart:io';
-import 'package:expense_tracker/stores/expense_store.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 
 class HomeHeader extends StatelessWidget {
   final Animation<double>
@@ -40,197 +40,200 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => FadeTransition(
-        opacity: fadeAnimation, // 🎞️ Header fade-in
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppColors.primary, // 🎨 Background principale dell’header
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
+    return Consumer<ExpenseProvider>(
+      builder: (context, expenseProvider, child) {
+        return FadeTransition(
+          opacity: fadeAnimation, // 🎞️ Header fade-in
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.primary, // 🎨 Background principale dell'header
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
 
-          // Evita overlap con notch, dinamiche, barra di stato
-          child: SafeArea(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
+            // Evita overlap con notch, dinamiche, barra di stato
+            child: SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // -----------------------------------------------------------------
-                  // 🔷 RIGA SUPERIORE: Bottone resoconto annuale + Avatar profilo
-                  // -----------------------------------------------------------------
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // 📅 Pulsante "Resoconto annuale"
-                      GestureDetector(
-                        onTap: () =>
-                            Navigator.pushNamed(context, YearsPage.route),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 8.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.backgroundLight.withValues(
-                              alpha: 0.2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // -----------------------------------------------------------------
+                    // 🔷 RIGA SUPERIORE: Bottone resoconto annuale + Avatar profilo
+                    // -----------------------------------------------------------------
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // 📅 Pulsante "Resoconto annuale"
+                        GestureDetector(
+                          onTap: () =>
+                              Navigator.pushNamed(context, YearsPage.route),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 8.h,
                             ),
-                            borderRadius: BorderRadius.circular(12.r),
-                            border: Border.all(
+                            decoration: BoxDecoration(
                               color: AppColors.backgroundLight.withValues(
-                                alpha: 0.3,
+                                alpha: 0.2,
                               ),
-                              width: 1,
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: AppColors.backgroundLight.withValues(
+                                  alpha: 0.3,
+                                ),
+                                width: 1,
+                              ),
                             ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.calendar_today_rounded,
-                                size: 14.sp,
-                                color: isDark
-                                    ? AppColors.textDark
-                                    : AppColors.textLight,
-                              ),
-                              SizedBox(width: 8.w),
-                              Text(
-                                "RESOCONTO ANNUALE",
-                                style: TextStyle(
-                                  fontSize: 10.sp,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  size: 14.sp,
                                   color: isDark
                                       ? AppColors.textDark
                                       : AppColors.textLight,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.8,
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // 👤 Avatar utente
-                      GestureDetector(
-                        onTap: onTapProfile,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.backgroundLight.withValues(
-                                alpha: 0.4,
-                              ),
-                              width: 3,
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 20.r,
-                            backgroundColor: AppColors.backgroundLight
-                                .withValues(alpha: 0.3),
-                            backgroundImage: localAvatar != null
-                                ? FileImage(localAvatar!)
-                                : (user?.photoURL != null
-                                      ? NetworkImage(user!.photoURL!)
-                                      : null),
-
-                            child: localAvatar == null && user?.photoURL == null
-                                ? Icon(
-                                    Icons.person_rounded,
-                                    size: 32.sp,
+                                SizedBox(width: 8.w),
+                                Text(
+                                  "RESOCONTO ANNUALE",
+                                  style: TextStyle(
+                                    fontSize: 10.sp,
                                     color: isDark
                                         ? AppColors.textDark
                                         : AppColors.textLight,
-                                  )
-                                : null,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
 
-                  SizedBox(height: 20.h),
+                        // 👤 Avatar utente
+                        GestureDetector(
+                          onTap: onTapProfile,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.backgroundLight.withValues(
+                                  alpha: 0.4,
+                                ),
+                                width: 3,
+                              ),
+                            ),
+                            child: CircleAvatar(
+                              radius: 20.r,
+                              backgroundColor: AppColors.backgroundLight
+                                  .withValues(alpha: 0.3),
+                              backgroundImage: localAvatar != null
+                                  ? FileImage(localAvatar!)
+                                  : (user?.photoURL != null
+                                        ? NetworkImage(user!.photoURL!)
+                                        : null),
 
-                  // -----------------------------------------------------------------
-                  // 💰 SEZIONE SPESA DEL MESE CORRENTE
-                  // -----------------------------------------------------------------
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "QUESTO MESE",
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: isDark
-                              ? AppColors.textDark.withValues(alpha: 0.9)
-                              : AppColors.textLight.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.3,
+                              child:
+                                  localAvatar == null && user?.photoURL == null
+                                  ? Icon(
+                                      Icons.person_rounded,
+                                      size: 32.sp,
+                                      color: isDark
+                                          ? AppColors.textDark
+                                          : AppColors.textLight,
+                                    )
+                                  : null,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
 
-                      SizedBox(height: 4.h),
+                    SizedBox(height: 20.h),
 
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        child: Text(
-                          "€ ${expenseStore.value.totalExpenseMonth.toStringAsFixed(2)}",
+                    // -----------------------------------------------------------------
+                    // 💰 SEZIONE SPESA DEL MESE CORRENTE
+                    // -----------------------------------------------------------------
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "QUESTO MESE",
                           style: TextStyle(
-                            fontSize: 35.sp,
+                            fontSize: 12.sp,
                             color: isDark
-                                ? AppColors.textDark
-                                : AppColors.textLight,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -1,
+                                ? AppColors.textDark.withValues(alpha: 0.9)
+                                : AppColors.textLight.withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.3,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
 
-                  SizedBox(height: 24.h),
+                        SizedBox(height: 4.h),
 
-                  // -----------------------------------------------------------------
-                  // 📊 STATISTICHE GIORNO / SETTIMANA / ANNO
-                  // -----------------------------------------------------------------
-                  Row(
-                    children: [
-                      Expanded(
-                        child: HeaderExpenseState(
-                          value: expenseStore.value.totalExpenseToday,
-                          label: "Oggi",
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: Text(
+                            "€ ${expenseProvider.totalExpenseMonth.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              fontSize: 35.sp,
+                              color: isDark
+                                  ? AppColors.textDark
+                                  : AppColors.textLight,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -1,
+                            ),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: HeaderExpenseState(
-                          value: expenseStore.value.totalExpenseWeek,
-                          label: "Settimana",
+                      ],
+                    ),
+
+                    SizedBox(height: 24.h),
+
+                    // -----------------------------------------------------------------
+                    // 📊 STATISTICHE GIORNO / SETTIMANA / ANNO
+                    // -----------------------------------------------------------------
+                    Row(
+                      children: [
+                        Expanded(
+                          child: HeaderExpenseState(
+                            value: expenseProvider.totalExpenseToday,
+                            label: "Oggi",
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: HeaderExpenseState(
-                          value: expenseStore.value.totalExpenseYear,
-                          label: "Anno",
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: HeaderExpenseState(
+                            value: expenseProvider.totalExpenseWeek,
+                            label: "Settimana",
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        SizedBox(width: 10.w),
+                        Expanded(
+                          child: HeaderExpenseState(
+                            value: expenseProvider.totalExpenseYear,
+                            label: "Anno",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

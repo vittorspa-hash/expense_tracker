@@ -7,40 +7,40 @@ import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/settings_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:get/get.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 
-// Oggetto globale osservabile di ExpenseStore
-final expenseStore = ExpenseStore().obs;
-
-class ExpenseStore {
+class ExpenseProvider extends ChangeNotifier {
   // Lista interna di tutte le spese
-  List<ExpenseModel> expenses = [];
+  List<ExpenseModel> _expenses = [];
+
+  // Getter pubblico per accedere alle spese (immutabile)
+  List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
   // Inizializza lo store caricando le spese dell'utente dal repository
   Future<void> initialise() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      expenses = [];
-      expenseStore.refresh();
+      _expenses = [];
+      notifyListeners();
       return;
     }
 
-    expenses = await GetIt.instance<FirebaseRepository>().allExpensesForUser(
+    _expenses = await GetIt.instance<FirebaseRepository>().allExpensesForUser(
       user.uid,
     );
 
-    expenses.sort(
+    _expenses.sort(
       (a, b) => b.createdOn.compareTo(a.createdOn),
     ); // Ordine decrescente per data
-    expenseStore.refresh();
+    notifyListeners();
   }
 
   // Pulisce tutte le spese dallo store
   void clear() {
-    expenses = [];
-    expenseStore.refresh();
+    _expenses = [];
+    notifyListeners();
   }
 
   // Totale spese di oggi
@@ -52,7 +52,7 @@ class ExpenseStore {
       currentDate.day,
     );
 
-    return expenses
+    return _expenses
         .where((expense) => expense.createdOn.isAfter(startOfDay))
         .fold(0.0, (acc, expense) => acc + expense.value);
   }
@@ -64,7 +64,7 @@ class ExpenseStore {
       Duration(days: currentDate.weekday - 1),
     );
 
-    return expenses
+    return _expenses
         .where((expense) => expense.createdOn.isAfter(startOfWeek))
         .fold(0.0, (acc, expense) => acc + expense.value);
   }
@@ -74,7 +74,7 @@ class ExpenseStore {
     final currentDate = DateTime.now();
     final startOfMonth = DateTime(currentDate.year, currentDate.month, 1);
 
-    return expenses
+    return _expenses
         .where((expense) => expense.createdOn.isAfter(startOfMonth))
         .fold(0.0, (acc, expense) => acc + expense.value);
   }
@@ -84,7 +84,7 @@ class ExpenseStore {
     final currentDate = DateTime.now();
     final startOfYear = DateTime(currentDate.year, 1, 1);
 
-    return expenses
+    return _expenses
         .where((expense) => expense.createdOn.isAfter(startOfYear))
         .fold(0.0, (acc, expense) => acc + expense.value);
   }
@@ -106,10 +106,10 @@ class ExpenseStore {
       userId: user.uid,
     );
 
-    expenses.add(expense);
-    expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
+    _expenses.add(expense);
+    _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
     GetIt.instance<FirebaseRepository>().createExpense(expense);
-    expenseStore.refresh();
+    notifyListeners();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -127,10 +127,10 @@ class ExpenseStore {
       expenseModel.userId = user.uid;
     }
 
-    expenses.add(expenseModel);
-    expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
+    _expenses.add(expenseModel);
+    _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
     GetIt.instance<FirebaseRepository>().createExpense(expenseModel);
-    expenseStore.refresh();
+    notifyListeners();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -154,9 +154,9 @@ class ExpenseStore {
     expenseModel.description = description;
     expenseModel.createdOn = date;
 
-    expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
+    _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
     GetIt.instance<FirebaseRepository>().updateExpense(expenseModel);
-    expenseStore.refresh();
+    notifyListeners();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -171,9 +171,9 @@ class ExpenseStore {
       throw Exception("Non hai permesso di eliminare questa spesa");
     }
 
-    expenses.remove(expenseModel);
+    _expenses.remove(expenseModel);
     GetIt.instance<FirebaseRepository>().deleteExpense(expenseModel);
-    expenseStore.refresh();
+    notifyListeners();
 
     final settingsProvider = GetIt.instance<SettingsProvider>();
     if (settingsProvider.limitAlertEnabled) {
@@ -185,26 +185,26 @@ class ExpenseStore {
   void sortBy(String criteria) {
     switch (criteria) {
       case "date_desc":
-        expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
+        _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
         break;
       case "date_asc":
-        expenses.sort((a, b) => a.createdOn.compareTo(b.createdOn));
+        _expenses.sort((a, b) => a.createdOn.compareTo(b.createdOn));
         break;
       case "amount_desc":
-        expenses.sort((a, b) => b.value.compareTo(a.value));
+        _expenses.sort((a, b) => b.value.compareTo(a.value));
         break;
       case "amount_asc":
-        expenses.sort((a, b) => a.value.compareTo(b.value));
+        _expenses.sort((a, b) => a.value.compareTo(b.value));
         break;
     }
-    expenseStore.refresh();
+    notifyListeners();
   }
 
   // Raggruppa le spese per mese (key: "YYYY-MM")
   Map<String, double> get expensesByMonth {
     final Map<String, double> grouped = {};
 
-    for (var expense in expenses) {
+    for (var expense in _expenses) {
       final date = expense.createdOn;
       final key = "${date.year}-${date.month.toString().padLeft(2, '0')}";
       grouped[key] = (grouped[key] ?? 0) + expense.value;
@@ -218,7 +218,7 @@ class ExpenseStore {
   Map<String, double> expensesByDay(int year, int month) {
     final Map<String, double> grouped = {};
 
-    for (var expense in expenses) {
+    for (var expense in _expenses) {
       final date = expense.createdOn;
       if (date.year == year && date.month == month) {
         final key =
@@ -241,7 +241,7 @@ class ExpenseStore {
 
   // Restituisce le spese di un giorno specifico
   List<ExpenseModel> expensesOfDay(int year, int month, int day) {
-    final list = expenses.where((expense) {
+    final list = _expenses.where((expense) {
       final date = expense.createdOn;
       return date.year == year && date.month == month && date.day == day;
     }).toList();

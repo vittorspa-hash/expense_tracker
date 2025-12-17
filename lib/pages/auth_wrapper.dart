@@ -1,38 +1,35 @@
 // auth_wrapper.dart
-// Gestisce il flusso di autenticazione dell’app.
-// Determina se mostrare la schermata di login oppure la HomePage,
-// in base allo stato dell’utente e alla verifica dell’email.
-// Esegue inoltre l’inizializzazione dei dati locali al primo accesso.
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/pages/home_page.dart';
 import '../../pages/auth_page.dart';
-import 'package:expense_tracker/stores/expense_store.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
+// Aggiunto Provider
+import 'package:provider/provider.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Recuperiamo lo store una volta per utilizzarlo nei builder sottostanti
+    final expense = context.read<ExpenseProvider>();
+
     return StreamBuilder<User?>(
-      // Ascolta i cambiamenti nel token dell’utente
-      // (login, logout, refresh del token)
       stream: FirebaseAuth.instance.idTokenChanges(),
       builder: (context, snapshot) {
-        // Mostra un loader mentre la connessione allo stream è in corso
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Utente autenticato (se presente)
         final user = snapshot.data;
 
-        // Se non autenticato → reindirizza alla pagina di login
+        // Se non autenticato → reset dello store e reindirizzamento al login
         if (user == null) {
-          expenseStore.value.clear(); // Reset dati locali all’uscita
+          Future.microtask(() => expense.clear());
           return const AuthPage();
         }
 
@@ -41,26 +38,21 @@ class AuthWrapper extends StatelessWidget {
           return const AuthPage();
         }
 
-        // Inizializza i dati dell’app prima di caricare la HomePage
+        // Inizializza i dati dell’app dallo store prima di caricare la HomePage
         return FutureBuilder(
-          future: expenseStore.value.initialise(),
+          future: expense.initialise(),
           builder: (context, initSnapshot) {
-            // Loader durante l’inizializzazione locale
             if (initSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );
-            }
-            // Gestione errori durante l’inizializzazione
-            else if (initSnapshot.hasError) {
+            } else if (initSnapshot.hasError) {
               return Scaffold(
                 body: Center(
                   child: Text('Errore caricamento dati: ${initSnapshot.error}'),
                 ),
               );
-            }
-            // Se tutto ok → accesso alla HomePage
-            else {
+            } else {
               return const HomePage();
             }
           },

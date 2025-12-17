@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
 
   # Gestione stato / utilities
-  get: ^4.7.2
+  
   get_it: ^8.2.0
   provider: ^6.1.5+1
   uuid: ^4.5.1

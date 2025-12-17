@@ -1,11 +1,8 @@
 // snackbar_utils.dart
 // Utility centralizzata per la gestione delle snackbar nell’app.
-// Consente di mostrare sia notifiche standard che snackbar con supporto
-// all’operazione di Undo (ripristino), ad esempio durante l’eliminazione di una spesa.
-// Utilizza GetX per la visualizzazione rapida e Flutter ScreenUtil per la responsività.
+// Utilizza lo standard ScaffoldMessenger di Flutter per la massima compatibilità.
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
@@ -31,61 +28,60 @@ class SnackbarUtils {
         deletedItem != null && onDelete != null && onRestore != null;
 
     // --- Esecuzione immediata della delete ---
-    // Se è una snackbar di eliminazione, esegue subito la callback delete
     if (isDeleteSnackbar) {
       onDelete(deletedItem);
     }
 
-    // --- Visualizzazione dello snackbar tramite GetX ---
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: isDark
-          ? AppColors.snackBarEditPageDark
-          : AppColors.snackBarEditPageLight,
-      margin: EdgeInsets.all(12.w),
-      borderRadius: 12.r,
+    // --- Configurazione colori ---
+    final Color backgroundColor = isDark
+        ? AppColors.snackBarEditPageDark
+        : AppColors.snackBarEditPageLight;
+    final Color textColor = isDark ? AppColors.textLight : AppColors.textDark;
 
-      // Testo del titolo
-      titleText: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16.sp,
-          fontWeight: FontWeight.bold,
-          color: isDark ? AppColors.textLight : AppColors.textDark,
+    // --- Visualizzazione tramite ScaffoldMessenger ---
+    // Rimuove eventuali snackbar pendenti prima di mostrarne una nuova
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: duration,
+        backgroundColor: backgroundColor,
+        behavior:
+            SnackBarBehavior.floating, // Rende la snackbar sollevata come GetX
+        margin: EdgeInsets.all(12.w),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r),
         ),
-      ),
-
-      // Testo del messaggio
-      messageText: Text(
-        message,
-        style: TextStyle(
-          fontSize: 12.sp,
-          color: isDark ? AppColors.textLight : AppColors.textDark,
-        ),
-      ),
-
-      duration: duration,
-
-      // --- Pulsante Undo ---
-      // Se è una delete snackbar → mostra pulsante "Annulla"
-      mainButton: isDeleteSnackbar
-          ? TextButton(
-              onPressed: () {
-                onRestore(deletedItem);
-                if (Get.isSnackbarOpen) Get.back();
-              },
-              child: Text(
-                "Annulla",
-                style: TextStyle(
-                  color: isDark ? AppColors.textLight : AppColors.textDark,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14.sp,
-                ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16.sp,
+                fontWeight: FontWeight.bold,
+                color: textColor,
               ),
-            )
-          : null,
+            ),
+            SizedBox(height: 4.h),
+            Text(
+              message,
+              style: TextStyle(fontSize: 12.sp, color: textColor),
+            ),
+          ],
+        ),
+        // --- Pulsante Undo ---
+        action: isDeleteSnackbar
+            ? SnackBarAction(
+                label: "Annulla",
+                textColor: textColor,
+                onPressed: () {
+                  onRestore(deletedItem);
+                },
+              )
+            : null,
+      ),
     );
   }
 }

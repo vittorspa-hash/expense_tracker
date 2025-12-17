@@ -1,15 +1,9 @@
 // expense_edit.dart
-// Widget per creare o modificare una spesa:
-// - Permette di inserire importo, descrizione e data.
-// - Supporta la creazione e la modifica tramite pressione prolungata.
-// - Mostra un dialogo informativo la prima volta che si apre.
-// - Include un FloatingActionButton opzionale per eliminare una spesa.
-// - Mostra snackbar di conferma per creazione, modifica o eliminazione.
 
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/stores/expense_store.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -17,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+// Aggiunto provider e rimosso GetX
+import 'package:provider/provider.dart';
 
 class ExpenseEdit extends StatefulWidget {
   final double? initialValue;
@@ -58,7 +54,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     descriptionController.text = widget.initialDescription ?? "";
     selectedDate = widget.initialDate ?? DateTime.now();
 
-    // Mostra dialogo istruzioni solo la prima volta
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInstructionDialogIfNeeded();
     });
@@ -96,12 +91,12 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       ),
       floatingActionButton: widget.floatingActionButtonIcon == null
           ? null
-          : floatingActionButton(isDark),
+          : floatingActionButton(context, isDark), // Passiamo il context
     );
   }
 
   // --- WIDGET INPUT ---
-
+  // (Invariati per mantenere l'interfaccia identica)
   Widget inputPrice() => Padding(
     padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: Row(
@@ -117,9 +112,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
             fontWeight: FontWeight.w600,
           ),
         ),
-
         SizedBox(width: 20.w),
-
         Flexible(
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
@@ -222,44 +215,46 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  Widget floatingActionButton(bool isDark) => FloatingActionButton(
-    heroTag: null,
-    backgroundColor: AppColors.delete.withValues(alpha: 0.3),
-    foregroundColor: AppColors.delete,
-    onPressed: () async {
-      final confirm = await DialogUtils.showConfirmDialog(
-        context,
-        title: "Conferma eliminazione",
-        content: "Vuoi eliminare la spesa selezionata?",
-        confirmText: "Elimina",
-        cancelText: "Annulla",
-      );
+  Widget floatingActionButton(BuildContext context, bool isDark) {
+    // Recuperiamo lo store tramite context.read (essendo un'azione non serve watch)
+    final expense = context.read<ExpenseProvider>();
 
-      if (confirm == true) {
-        if (widget.onFloatingActionButtonPressed != null) {
-          final deletedExpense = await Future.sync(
-            () => widget.onFloatingActionButtonPressed!(),
-          );
+    return FloatingActionButton(
+      heroTag: null,
+      backgroundColor: AppColors.delete.withValues(alpha: 0.3),
+      foregroundColor: AppColors.delete,
+      onPressed: () async {
+        final confirm = await DialogUtils.showConfirmDialog(
+          context,
+          title: "Conferma eliminazione",
+          content: "Vuoi eliminare la spesa selezionata?",
+          confirmText: "Elimina",
+          cancelText: "Annulla",
+        );
 
-          if (deletedExpense != null && mounted) {
-            SnackbarUtils.show(
-              context: context,
-              title: "Eliminata!",
-              message: "Spesa eliminata con successo.",
-              deletedItem: deletedExpense,
-              onDelete: (exp) => expenseStore.value.deleteExpense(exp),
-              onRestore: (exp) => expenseStore.value.createExpense(
-                value: exp.value,
-                description: exp.description,
-                date: exp.createdOn,
-              ),
+        if (confirm == true) {
+          if (widget.onFloatingActionButtonPressed != null) {
+            final deletedExpense = await Future.sync(
+              () => widget.onFloatingActionButtonPressed!(),
             );
+
+            if (deletedExpense != null && mounted) {
+              SnackbarUtils.show(
+                context: context,
+                title: "Eliminata!",
+                message: "Spesa eliminata con successo.",
+                deletedItem: deletedExpense,
+                // Chiamate allo store tramite l'istanza ottenuta con Provider
+                onDelete: (exp) => expense.deleteExpense(exp),
+                onRestore: (exp) => expense.restoreExpense(exp),
+              );
+            }
           }
         }
-      }
-    },
-    child: Icon(widget.floatingActionButtonIcon, size: 28.sp),
-  );
+      },
+      child: Icon(widget.floatingActionButtonIcon, size: 28.sp),
+    );
+  }
 
   // --- LOGICA SUBMIT ---
   void onSubmit() {

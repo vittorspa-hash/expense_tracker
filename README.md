@@ -50,15 +50,13 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 
 ## 🗂️ Struttura del progetto
 - `lib/main.dart` → Entry point: inizializza Firebase, localizzazione e registra i servizi tramite GetIt
-- `lib/app.dart` → Configurazione app: tema, localizzazione, routing e gestione notifiche
+- `lib/app.dart` → Configurazione app: tema, localizzazione, routing e gestione lifecycle
 - `lib/components/` →  Widget riutilizzabili e componenti UI custom
-- `lib/controllers/` → Controller GetX per la gestione dello stato UI (selezione multipla)
 - `lib/models/` → Data classes e modelli di dominio (ExpenseModel)
 - `lib/pages/` → Schermate dell'applicazione
-- `lib/providers/` → Provider per la gestione dello stato globale (settings, tema)
+- `lib/providers/` → Provider per la gestione dello stato globale (settings, tema, spese, selezione multipla)
 - `lib/repositories/` → Pattern Repository per l'accesso ai dati (Firestore)
 - `lib/services/` → Servizi che incapsulano logica condivisa dell'app (autenticazione, profilo, notifiche)
-- `lib/stores/` → Store per la business logic e gestione dello stato delle spese
 - `lib/theme/` → Palette colori
 - `lib/utils/` → Utility, helper e mixin riutilizzabili (dialog, snackbar, animazioni)
 - `lib/firebase_options.dart` → Configurazione Firebase autogenerata
@@ -67,7 +65,8 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 
 ## 🧱 Stack Tecnologico
 - **Framework:** Flutter & Dart  
-- **State Management:** Provider (stato globale), GetX (stato UI specifico)
+- **State Management:** Provider (gestione stato reattivo e globale)
+- **Service Locator:** GetIt (per l'iniezione delle dipendenze e singleton)
 - **Database:** Firebase Firestore  
 - **Autenticazione:** Firebase Auth  
 - **Notifiche:** `flutter_local_notifications`  

@@ -16,42 +16,32 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'firebase_options.dart';
+import 'package:expense_tracker/providers/expense_provider.dart'; // Importa lo store
+import 'package:expense_tracker/providers/multi_select_provider.dart'; // Importa il provider selezione
 
-/// Funzione principale dell'applicazione.
-/// - Assicura l'inizializzazione dei binding Flutter.
-/// - Blocca l'orientamento in verticale.
-/// - Avvia Firebase e la localizzazione.
-/// - Registra il repository dati e settings provider tramite GetIt.
-/// - Prepara la struttura base dell'app tramite `ScreenUtilInit` e i provider.
 void main() async {
-  // Garantisce che i binding di Flutter siano inizializzati prima del codice asincrono
   WidgetsFlutterBinding.ensureInitialized();
-
-  // 🔒 Limita l'app all'orientamento verticale (portrait)
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  // 🔥 Inizializza Firebase con la configurazione generata automaticamente
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // 🇮🇹 Imposta l'italiano come lingua di default e carica la formattazione delle date
   Intl.defaultLocale = "it_IT";
   await initializeDateFormatting("it_IT", null);
 
-  // 🔹 SERVICE LOCATOR (GetIt)
   final getIt = GetIt.instance;
 
-  // Registra il repository Firebase
+  // Repository Firebase
   final database = FirebaseRepository();
   getIt.registerSingleton<FirebaseRepository>(database);
 
-  // 🔔 Registra e inizializza SettingsProvider
+  // REGISTRAZIONE EXPENSE STORE in GetIt
+  final expenseProvider = ExpenseProvider();
+  getIt.registerSingleton<ExpenseProvider>(expenseProvider);
+
+  // Settings Provider
   final settingsProvider = SettingsProvider();
   getIt.registerSingleton<SettingsProvider>(settingsProvider);
-
-  // Inizializza le notifiche e carica le preferenze
   await settingsProvider.initialize();
 
-  // 🚀 Avvia l'app usando ScreenUtil per la responsività del layout
   runApp(
     ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -60,10 +50,14 @@ void main() async {
       builder: (context, child) {
         return MultiProvider(
           providers: [
-            // ✅ ThemeProvider con caricamento tema
             ChangeNotifierProvider(create: (_) => ThemeProvider()),
-            // ✅ SettingsProvider già inizializzato
             ChangeNotifierProvider.value(value: settingsProvider),
+
+            // AGGIUNTA EXPENSE STORE
+            ChangeNotifierProvider.value(value: expenseProvider),
+
+            // AGGIUNTA MULTI SELECT PROVIDER
+            ChangeNotifierProvider(create: (_) => MultiSelectProvider()),
           ],
           child: const App(),
         );

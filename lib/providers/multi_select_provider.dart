@@ -1,71 +1,93 @@
-// multi_select_controller.dart
-// Controller responsabile della gestione della selezione multipla delle spese.
+// multi_select_provider.dart
+// Provider responsabile della gestione della selezione multipla delle spese.
 // Utilizzato nella HomePage e DaysPage per selezionare, deselezionare ed eliminare più voci.
-// Funziona tramite GetX per mantenere lo stato reattivo dell'interfaccia.
+// Funziona tramite ChangeNotifier per mantenere lo stato reattivo dell'interfaccia.
 
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/stores/expense_store.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:get_it/get_it.dart';
 
-class MultiSelectController extends GetxController {
+class MultiSelectProvider extends ChangeNotifier {
   // --- STATO ---
+
   // Indica se la modalità selezione è attiva
-  final RxBool isSelectionMode = false.obs;
+  bool _isSelectionMode = false;
 
   // Insieme degli ID delle spese selezionate
-  final RxSet<String> selectedIds = <String>{}.obs;
+  final Set<String> _selectedIds = {};
+
+  // --- GETTERS ---
+
+  bool get isSelectionMode => _isSelectionMode;
+
+  Set<String> get selectedIds => Set.unmodifiable(_selectedIds);
+
+  int get selectedCount => _selectedIds.length;
 
   // --- ATTIVA SELEZIONE ---
+
   /// Attiva la modalità selezione al primo long press
   /// e aggiunge la prima spesa selezionata.
   void onLongPress(ExpenseModel expense) {
-    isSelectionMode.value = true;
-    selectedIds.add(expense.uuid);
+    _isSelectionMode = true;
+    _selectedIds.add(expense.uuid);
+    notifyListeners();
   }
 
   // --- TOGGLE SELEZIONE ---
+
   /// Aggiunge o rimuove una spesa dall'elenco selezionato.
   /// Se l'ultimo elemento viene deselezionato, la modalità di selezione si disattiva.
   void onToggleSelect(ExpenseModel expense) {
-    if (selectedIds.contains(expense.uuid)) {
-      selectedIds.remove(expense.uuid);
-      if (selectedIds.isEmpty) isSelectionMode.value = false;
+    if (_selectedIds.contains(expense.uuid)) {
+      _selectedIds.remove(expense.uuid);
+      if (_selectedIds.isEmpty) {
+        _isSelectionMode = false;
+      }
     } else {
-      selectedIds.add(expense.uuid);
+      _selectedIds.add(expense.uuid);
     }
+    notifyListeners();
   }
 
   // --- SELEZIONA TUTTO ---
+
   /// Seleziona tutte le spese disponibili nella lista fornita.
   /// Utile per selezionare tutte le spese in una volta sola.
   void selectAll(List<ExpenseModel> expenses) {
     for (var expense in expenses) {
-      selectedIds.add(expense.uuid);
+      _selectedIds.add(expense.uuid);
     }
+    notifyListeners();
   }
 
   // --- DESELEZIONA TUTTO ---
+
   /// Deseleziona tutte le spese e disattiva la modalità selezione.
   void deselectAll() {
-    selectedIds.clear();
-    isSelectionMode.value = false;
+    _selectedIds.clear();
+    _isSelectionMode = false;
+    notifyListeners();
   }
 
   // --- ANNULLA SELEZIONE ---
+
   /// Disattiva la modalità di selezione e svuota l'elenco.
   void cancelSelection() {
-    isSelectionMode.value = false;
-    selectedIds.clear();
+    _isSelectionMode = false;
+    _selectedIds.clear();
+    notifyListeners();
   }
 
   // --- ELIMINAZIONE MASSIVA ---
+
   /// Elimina tutte le spese selezionate, previa conferma dell'utente.
   /// Mostra una snackbar che permette anche di annullare l'eliminazione.
   Future<void> deleteSelected(BuildContext context) async {
-    final count = selectedIds.length;
+    final count = _selectedIds.length;
 
     // Conferma eliminazione
     final confirm = await DialogUtils.showConfirmDialog(
@@ -83,14 +105,17 @@ class MultiSelectController extends GetxController {
     // Controllo che il contesto sia ancora valido
     if (!context.mounted) return;
 
+    // Recupera ExpenseStore da GetIt
+    final expenseProvider = GetIt.instance<ExpenseProvider>();
+
     // Recupera le spese selezionate
-    final deletedExpenses = expenseStore.value.expenses
-        .where((e) => selectedIds.contains(e.uuid))
+    final deletedExpenses = expenseProvider.expenses
+        .where((e) => _selectedIds.contains(e.uuid))
         .toList();
 
-    // Elimina le spese da StoreModel
+    // Elimina le spese da ExpenseStore
     for (var expense in deletedExpenses) {
-      expenseStore.value.deleteExpense(expense);
+      await expenseProvider.deleteExpense(expense);
     }
 
     // Snackbar con supporto al ripristino
@@ -103,13 +128,13 @@ class MultiSelectController extends GetxController {
       // 🔻 Delete immediato (viene eseguito PRIMA dello snackbar)
       onDelete: (_) {
         for (var expense in deletedExpenses) {
-          expenseStore.value.deleteExpense(expense);
+          expenseProvider.deleteExpense(expense);
         }
       },
       // 🔻 Ripristino premendo "Annulla"
       onRestore: (_) {
         for (var expense in deletedExpenses) {
-          expenseStore.value.restoreExpense(expense);
+          expenseProvider.restoreExpense(expense);
         }
       },
     );
@@ -117,4 +142,9 @@ class MultiSelectController extends GetxController {
     // Pulisce la selezione dopo l'eliminazione
     cancelSelection();
   }
+
+  // --- UTILITY ---
+
+  /// Verifica se una spesa specifica è selezionata
+  bool isSelected(String uuid) => _selectedIds.contains(uuid);
 }
