@@ -76,9 +76,9 @@ class _YearsPageState extends State<YearsPage>
         child: SafeArea(
           // SOSTITUITO Obx con Consumer<ExpenseStore>
           child: Consumer<ExpenseProvider>(
-            builder: (context, expenseprovider, child) {
+            builder: (context, expenseProvider, child) {
               // Recupera spese mensili dallo store (ora passato tramite Consumer)
-              final Map<String, double> monthlyExpenses = expenseprovider.expensesByMonth;
+              final Map<String, double> monthlyExpenses = expenseProvider.expensesByMonth;
 
               // Estrae anni disponibili e ordina
               final years =

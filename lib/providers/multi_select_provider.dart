@@ -118,6 +118,8 @@ class MultiSelectProvider extends ChangeNotifier {
       await expenseProvider.deleteExpense(expense);
     }
 
+    if (!context.mounted) return;
+
     // Snackbar con supporto al ripristino
     SnackbarUtils.show(
       context: context,

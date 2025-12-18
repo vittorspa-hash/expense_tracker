@@ -1,8 +1,3 @@
-// main.dart
-// Punto di ingresso dell'app Expense Tracker.
-// Inizializza Firebase, imposta la localizzazione italiana e configura
-// i servizi principali (repository, preferenze, notifiche).
-
 import 'package:expense_tracker/app.dart';
 import 'package:expense_tracker/providers/settings_provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
@@ -16,11 +11,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'firebase_options.dart';
-import 'package:expense_tracker/providers/expense_provider.dart'; // Importa lo store
-import 'package:expense_tracker/providers/multi_select_provider.dart'; // Importa il provider selezione
+import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:expense_tracker/providers/multi_select_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
@@ -29,18 +25,21 @@ void main() async {
 
   final getIt = GetIt.instance;
 
-  // Repository Firebase
   final database = FirebaseRepository();
   getIt.registerSingleton<FirebaseRepository>(database);
 
-  // REGISTRAZIONE EXPENSE STORE in GetIt
   final expenseProvider = ExpenseProvider();
   getIt.registerSingleton<ExpenseProvider>(expenseProvider);
 
-  // Settings Provider
   final settingsProvider = SettingsProvider();
   getIt.registerSingleton<SettingsProvider>(settingsProvider);
   await settingsProvider.initialize();
+
+  final themeProvider = ThemeProvider();
+  getIt.registerSingleton<ThemeProvider>(themeProvider);
+
+  final multiSelectProvider = MultiSelectProvider();
+  getIt.registerSingleton<MultiSelectProvider>(multiSelectProvider);
 
   runApp(
     ScreenUtilInit(
@@ -50,14 +49,10 @@ void main() async {
       builder: (context, child) {
         return MultiProvider(
           providers: [
-            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ChangeNotifierProvider.value(value: themeProvider),
             ChangeNotifierProvider.value(value: settingsProvider),
-
-            // AGGIUNTA EXPENSE STORE
             ChangeNotifierProvider.value(value: expenseProvider),
-
-            // AGGIUNTA MULTI SELECT PROVIDER
-            ChangeNotifierProvider(create: (_) => MultiSelectProvider()),
+            ChangeNotifierProvider.value(value: multiSelectProvider),
           ],
           child: const App(),
         );

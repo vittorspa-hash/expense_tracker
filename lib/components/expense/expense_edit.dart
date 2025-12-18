@@ -1,5 +1,3 @@
-// expense_edit.dart
-
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
@@ -11,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-// Aggiunto provider e rimosso GetX
 import 'package:provider/provider.dart';
 
 class ExpenseEdit extends StatefulWidget {
@@ -91,12 +88,10 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       ),
       floatingActionButton: widget.floatingActionButtonIcon == null
           ? null
-          : floatingActionButton(context, isDark), // Passiamo il context
+          : floatingActionButton(context, isDark), 
     );
   }
 
-  // --- WIDGET INPUT ---
-  // (Invariati per mantenere l'interfaccia identica)
   Widget inputPrice() => Padding(
     padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: Row(
@@ -238,7 +233,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               () => widget.onFloatingActionButtonPressed!(),
             );
 
-            if (deletedExpense != null && mounted) {
+            if (!context.mounted) return;
+
+            if (deletedExpense != null) {
               SnackbarUtils.show(
                 context: context,
                 title: "Eliminata!",
@@ -256,7 +253,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- LOGICA SUBMIT ---
   void onSubmit() {
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
     final description = descriptionController.text.trim();
@@ -285,7 +281,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- PICKER DATA ---
   Future<void> _pickDate(BuildContext context) async {
     final DateTime? pickedDate = await DialogUtils.showDatePickerAdaptive(
       context,
@@ -294,6 +289,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       lastDate: DateTime.now(),
     );
 
+    if (!mounted) return;
+
     if (pickedDate != null && pickedDate != selectedDate) {
       setState(() {
         selectedDate = pickedDate;
@@ -301,7 +298,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     }
   }
 
-  // --- FUNZIONI UTILI ---
   String capitalizeMonth(String date) {
     final parts = date.split(' ');
     if (parts.length < 3) return date;

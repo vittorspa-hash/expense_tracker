@@ -34,9 +34,9 @@ class SnackbarUtils {
 
     // --- Configurazione colori ---
     final Color backgroundColor = isDark
-        ? AppColors.snackBarEditPageDark
-        : AppColors.snackBarEditPageLight;
-    final Color textColor = isDark ? AppColors.textLight : AppColors.textDark;
+        ? AppColors.secondaryDark
+        : AppColors.secondaryLight;
+    final Color textColor = AppColors.textDark;
 
     // --- Visualizzazione tramite ScaffoldMessenger ---
     // Rimuove eventuali snackbar pendenti prima di mostrarne una nuova
@@ -52,25 +52,40 @@ class SnackbarUtils {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.r),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
-                color: textColor,
+        content: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: 1),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) {
+            return Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, (1 - value) * 12),
+                child: child,
               ),
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              message,
-              style: TextStyle(fontSize: 12.sp, color: textColor),
-            ),
-          ],
+            );
+          },
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: textColor,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              Text(
+                message,
+                style: TextStyle(fontSize: 12.sp, color: textColor),
+              ),
+            ],
+          ),
         ),
+
         // --- Pulsante Undo ---
         action: isDeleteSnackbar
             ? SnackBarAction(
