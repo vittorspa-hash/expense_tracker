@@ -19,6 +19,7 @@ import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
@@ -42,7 +43,7 @@ class ProfileService {
   bool isUploading = false;
 
   /// Istanza di AuthService per delegare operazioni di autenticazione
-  final AuthService _authService = AuthService();
+  final AuthService _authService = GetIt.instance<AuthService>();
 
   // ---------------------------------------------------------------------------
   // 🔄 Aggiorna dati utente da Firebase

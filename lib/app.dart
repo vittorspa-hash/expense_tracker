@@ -14,6 +14,7 @@ import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
 /// Widget principale dell'app.
@@ -26,7 +27,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> with WidgetsBindingObserver {
-  final NotificationService _notificationService = NotificationService();
+  final NotificationService _notificationService = GetIt.instance<NotificationService>();
 
   @override
   void initState() {

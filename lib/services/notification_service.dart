@@ -16,11 +16,6 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'dart:io' show Platform;
 
 class NotificationService {
-  // 🔧 Singleton pattern
-  static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
-  NotificationService._internal();
-
   // 📱 Plugin per notifiche locali
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();

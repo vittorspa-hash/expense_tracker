@@ -18,6 +18,7 @@ import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get_it/get_it.dart';
 
 class ProfilePage extends StatefulWidget {
   static const route = "/profile/page";
@@ -30,7 +31,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   // 🔧 Service profilo (gestisce immagine, dati utente, update)
-  final profileService = ProfileService();
+  final profileService = GetIt.instance<ProfileService>();
 
   // 🔧 Getter per il vsync richiesto dal mixin
   @override

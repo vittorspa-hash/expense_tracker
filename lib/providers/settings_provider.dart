@@ -11,6 +11,7 @@
 
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsProvider extends ChangeNotifier {
@@ -24,7 +25,7 @@ class SettingsProvider extends ChangeNotifier {
   double _monthlyLimit = 1000.0;
 
   // 📱 Servizio notifiche
-  final NotificationService _notificationService = NotificationService();
+  final NotificationService _notificationService = GetIt.instance<NotificationService>();
 
   // 🔑 Chiavi SharedPreferences
   static const String _keyDailyReminderEnabled = 'daily_reminder_enabled';

@@ -15,6 +15,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get_it/get_it.dart';
 
 class AuthPage extends StatefulWidget {
   static const route = "/";
@@ -30,7 +31,7 @@ class _AuthPageState extends State<AuthPage>
   late TabController _tabController;
 
   // Service che gestisce tutta la logica di autenticazione
-  final _authService = AuthService();
+  final _authService = GetIt.instance<AuthService>();
 
   // Getter per il vsync richiesto dal mixin
   @override

@@ -2,6 +2,9 @@ import 'package:expense_tracker/app.dart';
 import 'package:expense_tracker/providers/settings_provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
+import 'package:expense_tracker/services/auth_service.dart';
+import 'package:expense_tracker/services/notification_service.dart';
+import 'package:expense_tracker/services/profile_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
@@ -23,23 +26,17 @@ void main() async {
   Intl.defaultLocale = "it_IT";
   await initializeDateFormatting("it_IT", null);
 
+  // Registrazione in GetIt solo dei repository/servizi
   final getIt = GetIt.instance;
 
-  final database = FirebaseRepository();
-  getIt.registerSingleton<FirebaseRepository>(database);
+  getIt.registerLazySingleton<FirebaseRepository>(() => FirebaseRepository());
+  getIt.registerLazySingleton<AuthService>(() => AuthService());
+  getIt.registerLazySingleton<ProfileService>(() => ProfileService());
+  getIt.registerSingleton<NotificationService>(NotificationService());
 
-  final expenseProvider = ExpenseProvider();
-  getIt.registerSingleton<ExpenseProvider>(expenseProvider);
-
+  // Inizializzazione dei provider che aggiornano la UI
   final settingsProvider = SettingsProvider();
-  getIt.registerSingleton<SettingsProvider>(settingsProvider);
   await settingsProvider.initialize();
-
-  final themeProvider = ThemeProvider();
-  getIt.registerSingleton<ThemeProvider>(themeProvider);
-
-  final multiSelectProvider = MultiSelectProvider();
-  getIt.registerSingleton<MultiSelectProvider>(multiSelectProvider);
 
   runApp(
     ScreenUtilInit(
@@ -49,10 +46,10 @@ void main() async {
       builder: (context, child) {
         return MultiProvider(
           providers: [
-            ChangeNotifierProvider.value(value: themeProvider),
             ChangeNotifierProvider.value(value: settingsProvider),
-            ChangeNotifierProvider.value(value: expenseProvider),
-            ChangeNotifierProvider.value(value: multiSelectProvider),
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ChangeNotifierProvider(create: (_) => ExpenseProvider()),
+            ChangeNotifierProvider(create: (_) => MultiSelectProvider()),
           ],
           child: const App(),
         );
