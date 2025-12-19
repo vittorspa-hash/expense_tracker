@@ -34,9 +34,21 @@ void main() async {
   getIt.registerLazySingleton<ProfileService>(() => ProfileService());
   getIt.registerSingleton<NotificationService>(NotificationService());
 
-  // Inizializzazione dei provider che aggiornano la UI
-  final settingsProvider = SettingsProvider();
+  final settingsProvider = SettingsProvider(
+    notificationService: getIt<NotificationService>(),
+  );
   await settingsProvider.initialize();
+
+  final themeProvider = ThemeProvider();
+
+  final expenseProvider = ExpenseProvider(
+    settingsProvider: settingsProvider,
+    firebaseRepository: getIt<FirebaseRepository>(),
+  );
+
+  final multiSelectProvider = MultiSelectProvider(
+    expenseProvider: expenseProvider,
+  );
 
   runApp(
     ScreenUtilInit(
@@ -47,9 +59,9 @@ void main() async {
         return MultiProvider(
           providers: [
             ChangeNotifierProvider.value(value: settingsProvider),
-            ChangeNotifierProvider(create: (_) => ThemeProvider()),
-            ChangeNotifierProvider(create: (_) => ExpenseProvider()),
-            ChangeNotifierProvider(create: (_) => MultiSelectProvider()),
+            ChangeNotifierProvider.value(value: themeProvider),
+            ChangeNotifierProvider.value(value: expenseProvider),
+            ChangeNotifierProvider.value(value: multiSelectProvider),
           ],
           child: const App(),
         );

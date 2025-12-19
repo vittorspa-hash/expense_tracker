@@ -8,9 +8,13 @@ import 'package:flutter/material.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:get_it/get_it.dart';
 
 class MultiSelectProvider extends ChangeNotifier {
+  final ExpenseProvider _expenseProvider;
+
+  MultiSelectProvider({required ExpenseProvider expenseProvider})
+      : _expenseProvider = expenseProvider;
+
   // --- STATO ---
 
   // Indica se la modalità selezione è attiva
@@ -105,17 +109,14 @@ class MultiSelectProvider extends ChangeNotifier {
     // Controllo che il contesto sia ancora valido
     if (!context.mounted) return;
 
-    // Recupera ExpenseStore da GetIt
-    final expenseProvider = GetIt.instance<ExpenseProvider>();
-
     // Recupera le spese selezionate
-    final deletedExpenses = expenseProvider.expenses
+    final deletedExpenses = _expenseProvider.expenses
         .where((e) => _selectedIds.contains(e.uuid))
         .toList();
 
     // Elimina le spese da ExpenseStore
     for (var expense in deletedExpenses) {
-      await expenseProvider.deleteExpense(expense);
+      await _expenseProvider.deleteExpense(expense);
     }
 
     if (!context.mounted) return;
@@ -130,13 +131,13 @@ class MultiSelectProvider extends ChangeNotifier {
       // 🔻 Delete immediato (viene eseguito PRIMA dello snackbar)
       onDelete: (_) {
         for (var expense in deletedExpenses) {
-          expenseProvider.deleteExpense(expense);
+          _expenseProvider.deleteExpense(expense);
         }
       },
       // 🔻 Ripristino premendo "Annulla"
       onRestore: (_) {
         for (var expense in deletedExpenses) {
-          expenseProvider.restoreExpense(expense);
+          _expenseProvider.restoreExpense(expense);
         }
       },
     );

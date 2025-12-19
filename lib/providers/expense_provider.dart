@@ -8,10 +8,18 @@ import 'package:expense_tracker/providers/settings_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:get_it/get_it.dart';
 import 'package:uuid/uuid.dart';
 
 class ExpenseProvider extends ChangeNotifier {
+  final SettingsProvider _settingsProvider;
+  final FirebaseRepository _firebaseRepository;
+
+  ExpenseProvider({
+    required SettingsProvider settingsProvider,
+    required FirebaseRepository firebaseRepository,
+  }) : _settingsProvider = settingsProvider,
+       _firebaseRepository = firebaseRepository;
+
   // Lista interna di tutte le spese
   List<ExpenseModel> _expenses = [];
 
@@ -27,9 +35,7 @@ class ExpenseProvider extends ChangeNotifier {
       return;
     }
 
-    _expenses = await GetIt.instance<FirebaseRepository>().allExpensesForUser(
-      user.uid,
-    );
+    _expenses = await _firebaseRepository.allExpensesForUser(user.uid);
 
     _expenses.sort(
       (a, b) => b.createdOn.compareTo(a.createdOn),
@@ -108,12 +114,11 @@ class ExpenseProvider extends ChangeNotifier {
 
     _expenses.add(expense);
     _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-    GetIt.instance<FirebaseRepository>().createExpense(expense);
+    _firebaseRepository.createExpense(expense);
     notifyListeners();
 
-    final settingsProvider = GetIt.instance<SettingsProvider>();
-    if (settingsProvider.limitAlertEnabled) {
-      await settingsProvider.checkBudgetLimit(totalExpenseMonth);
+    if (_settingsProvider.limitAlertEnabled) {
+      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
     }
   }
 
@@ -129,12 +134,11 @@ class ExpenseProvider extends ChangeNotifier {
 
     _expenses.add(expenseModel);
     _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-    GetIt.instance<FirebaseRepository>().createExpense(expenseModel);
+    _firebaseRepository.createExpense(expenseModel);
     notifyListeners();
 
-    final settingsProvider = GetIt.instance<SettingsProvider>();
-    if (settingsProvider.limitAlertEnabled) {
-      await settingsProvider.checkBudgetLimit(totalExpenseMonth);
+    if (_settingsProvider.limitAlertEnabled) {
+      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
     }
   }
 
@@ -155,12 +159,11 @@ class ExpenseProvider extends ChangeNotifier {
     expenseModel.createdOn = date;
 
     _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-    GetIt.instance<FirebaseRepository>().updateExpense(expenseModel);
+    _firebaseRepository.updateExpense(expenseModel);
     notifyListeners();
 
-    final settingsProvider = GetIt.instance<SettingsProvider>();
-    if (settingsProvider.limitAlertEnabled) {
-      await settingsProvider.checkBudgetLimit(totalExpenseMonth);
+    if (_settingsProvider.limitAlertEnabled) {
+      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
     }
   }
 
@@ -172,12 +175,11 @@ class ExpenseProvider extends ChangeNotifier {
     }
 
     _expenses.remove(expenseModel);
-    GetIt.instance<FirebaseRepository>().deleteExpense(expenseModel);
+    _firebaseRepository.deleteExpense(expenseModel);
     notifyListeners();
 
-    final settingsProvider = GetIt.instance<SettingsProvider>();
-    if (settingsProvider.limitAlertEnabled) {
-      await settingsProvider.checkBudgetLimit(totalExpenseMonth);
+    if (_settingsProvider.limitAlertEnabled) {
+      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
     }
   }
 
