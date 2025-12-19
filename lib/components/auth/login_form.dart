@@ -1,53 +1,37 @@
 // login_form.dart
-// -----------------------------------------------------------------------------
-// 🔐 FORM DI LOGIN UTENTE
-//
-// Gestisce l'accesso dell'utente tramite:
-// - Email
-// - Password
-//
-// Include validazione dei campi, gestione dei FocusNode, toggle visibilità
-// password, integrazione con AuthService per eseguire il login, feedback di
-// caricamento e pulsante per il recupero della password. 
-// -----------------------------------------------------------------------------
-
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
-import 'package:expense_tracker/services/auth_service.dart';
+// Assicurati che questo import punti al file dove hai messo la classe AuthProvider
+import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart'; // 👈 Importante per usare context.read/watch
 
 class LoginForm extends StatefulWidget {
-  final AuthService authService;
-  const LoginForm({super.key, required this.authService});
+  // Rimosso AuthService dal costruttore, ora usiamo Provider
+  const LoginForm({super.key});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
 }
 
 class _LoginFormState extends State<LoginForm> {
-  // Chiave per validare l'intero form
   final _formKey = GlobalKey<FormState>();
 
-  // Controller per input testo
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  // FocusNode per gestione del flusso tra input
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
 
-  // Gestione visibilità password
   bool _obscure = true;
 
-  // Stato di caricamento
-  bool _isLoading = false;
+  // Rimosso bool _isLoading locale. Ora usiamo provider.isLoading
 
   @override
   void dispose() {
-    // Libera i controller e i focus node
     _emailController.dispose();
     _passwordController.dispose();
     _emailFocus.dispose();
@@ -55,34 +39,34 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  //  Funzione per gestire il login con feedback di caricamento
+  // ---------------------------------------------------------------------------
+  // ⚡️ GESTIONE LOGIN
+  // ---------------------------------------------------------------------------
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    // Recuperiamo il provider senza ascoltare i cambiamenti (listen: false)
+    // perché siamo dentro una funzione, non nel build.
+    final provider = context.read<AuthProvider>();
 
-    try {
-      await widget.authService.signIn(
-        context: context,
-        email: _emailController.text,
-        password: _passwordController.text,
-        onSuccess: () {
-          if (mounted) {
-            setState(() => _isLoading = false);
-          }
-        },
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    // Non serve più il try-catch qui per gestire il loading UI,
+    // lo fa il provider notificando i listener.
+    await provider.signIn(
+      context: context,
+      email: _emailController.text,
+      password: _passwordController.text,
+      onSuccess: () {},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Rileva tema scuro/chiaro per colori dinamici
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 👀 ASCOLTIAMO IL PROVIDER
+    // Usiamo watch così il widget si ricostruisce quando isLoading cambia (true/false)
+    final provider = context.watch<AuthProvider>();
+    final isLoading = provider.isLoading; // Alias per comodità
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -90,9 +74,6 @@ class _LoginFormState extends State<LoginForm> {
         key: _formKey,
         child: Column(
           children: [
-            // -------------------------------------------------------------------
-            // 🧱 CARD PRINCIPALE DEL FORM DI LOGIN
-            // -------------------------------------------------------------------
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -108,14 +89,9 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                 ],
               ),
-
-              // -----------------------------------------------------------------
-              // 📋 CONTENUTO INTERNO DELLA CARD
-              // -----------------------------------------------------------------
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titolo
                   Text(
                     "Bentornato!",
                     style: TextStyle(
@@ -125,10 +101,7 @@ class _LoginFormState extends State<LoginForm> {
                       letterSpacing: 0.3,
                     ),
                   ),
-
                   SizedBox(height: 8.h),
-
-                  // Descrizione
                   Text(
                     "Accedi al tuo account per continuare",
                     style: TextStyle(
@@ -136,7 +109,6 @@ class _LoginFormState extends State<LoginForm> {
                       color: isDark ? AppColors.greyDark : AppColors.greyLight,
                     ),
                   ),
-
                   SizedBox(height: 18.h),
 
                   // -------------------------------------------------------------
@@ -149,7 +121,8 @@ class _LoginFormState extends State<LoginForm> {
                     hint: "Email",
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
-                    enabled: !_isLoading, 
+                    enabled:
+                        !isLoading, // Disabilita se il provider sta caricando
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Inserisci l'email";
@@ -173,7 +146,8 @@ class _LoginFormState extends State<LoginForm> {
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure,
                     isLast: true,
-                    enabled: !_isLoading, 
+                    enabled:
+                        !isLoading, // Disabilita se il provider sta caricando
                     onToggleObscure: () => setState(() => _obscure = !_obscure),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -191,12 +165,13 @@ class _LoginFormState extends State<LoginForm> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: _isLoading
-                          ? null 
-                          : () => widget.authService.resetPassword(
-                                context,
-                                email: _emailController.text.trim(),
-                              ),
+                      // Chiamata al provider
+                      onPressed: isLoading
+                          ? null
+                          : () => provider.resetPassword(
+                              context,
+                              email: _emailController.text.trim(),
+                            ),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(
                           horizontal: 8.w,
@@ -206,23 +181,23 @@ class _LoginFormState extends State<LoginForm> {
                       child: Text(
                         "Password dimenticata?",
                         style: TextStyle(
-                          color: _isLoading
+                          color: isLoading
                               ? (isDark
-                                  ? AppColors.greyDark
-                                  : AppColors.greyLight)
+                                    ? AppColors.greyDark
+                                    : AppColors.greyLight)
                               : (isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textDark),
+                                    ? AppColors.textLight
+                                    : AppColors.textDark),
                           fontWeight: FontWeight.w600,
                           fontSize: 12.sp,
                           decoration: TextDecoration.underline,
-                          decorationColor: _isLoading
+                          decorationColor: isLoading
                               ? (isDark
-                                  ? AppColors.greyDark
-                                  : AppColors.greyLight)
+                                    ? AppColors.greyDark
+                                    : AppColors.greyLight)
                               : (isDark
-                                  ? AppColors.textLight
-                                  : AppColors.textDark),
+                                    ? AppColors.textLight
+                                    : AppColors.textDark),
                         ),
                       ),
                     ),
@@ -234,14 +209,13 @@ class _LoginFormState extends State<LoginForm> {
             SizedBox(height: 10.h),
 
             // -------------------------------------------------------------------
-            // 🚀 BOTTONE DI LOGIN CON INDICATORE DI CARICAMENTO
+            // 🚀 BOTTONE LOGIN
             // -------------------------------------------------------------------
             AuthButton(
-              onPressed: _isLoading ? null : _handleLogin, // Disabilita durante il caricamento
-              icon: _isLoading ? null : FontAwesomeIcons.rightToBracket, // Nasconde icona durante caricamento
-              text: _isLoading ? "" : "Accedi", // Nasconde testo durante caricamento
-              //  Mostra loading indicator
-              child: _isLoading
+              onPressed: isLoading ? null : _handleLogin,
+              icon: isLoading ? null : FontAwesomeIcons.rightToBracket,
+              text: isLoading ? "" : "Accedi",
+              child: isLoading
                   ? SizedBox(
                       height: 20.h,
                       width: 20.h,

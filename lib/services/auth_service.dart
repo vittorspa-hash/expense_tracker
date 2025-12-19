@@ -1,95 +1,54 @@
-// auth_service.dart
-// Service che gestisce l'intera logica di autenticazione dell'app.
-// Include:
-// • Registrazione di un nuovo utente con email e password
-// • Login con controllo della verifica email
-// • Invio email di reset password
-// • Prevenzione dell'invio eccessivo di email tramite rate-limit
-// • Gestione uniforme degli errori e notifiche tramite SnackBar e dialog personalizzati
-
-import 'package:expense_tracker/utils/dialog_utils.dart';
-import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+
+// Importa la tua classe di eccezione personalizzata se l'hai messa in un altro file,
+// altrimenti puoi definirla in fondo a questo file.
 
 class AuthService {
-  // Istanza principale per gestire l'autenticazione tramite Firebase
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Timestamp dell'ultima email inviata (verifica o reset), usato per limitare gli invii
+  // Timestamp per rate-limit
   DateTime? _lastEmailSent;
 
+  // Getter utile per l'esterno
+  User? get currentUser => _auth.currentUser;
+
   // ---------------------------------------------------------------------------
-  // 🟦 REGISTRAZIONE UTENTE
+  // 🟦 REGISTRAZIONE
   // ---------------------------------------------------------------------------
   Future<void> signUp({
-    required BuildContext context,
     required String email,
     required String password,
-    required String confermaPassword,
     required String nome,
-    required VoidCallback onSuccess,
   }) async {
-    if (password != confermaPassword) {
-      _showSnack(context, "Le password non coincidono");
-      return;
-    }
-
     try {
+      // Nota: Il controllo "password != confermaPassword" deve essere fatto nel UI/Provider prima di chiamare questo metodo.
+
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
       );
 
       var user = userCredential.user;
-      if (user == null) return;
+      if (user == null){
+        throw AuthException("Errore sconosciuto nella creazione utente.");
+      }
 
-      // Imposta il nome e aggiorna l'istanza utente
       await user.updateDisplayName(nome.trim());
       await user.reload();
       user = _auth.currentUser;
 
-      // Limita l'invio eccessivo delle email di verifica
-      if (_lastEmailSent != null &&
-          DateTime.now().difference(_lastEmailSent!) <
-              const Duration(seconds: 60)) {
-        if (!context.mounted) return;
-        _showSnack(
-          context,
-          "Attendi almeno 1 minuto prima di rinviare l'email di conferma.",
-        );
-        return;
-      }
-
-      // Invia email di verifica
-      await user!.sendEmailVerification();
-      _lastEmailSent = DateTime.now();
-
-      onSuccess();
-
-      if (!context.mounted) return;
-      await DialogUtils.showInfoDialog(
-        context,
-        title: "Verifica Email",
-        content:
-            "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
-      );
-
+      // Invio email di verifica gestito internamente
+      await sendVerificationEmail(user!);
     } on FirebaseAuthException catch (e) {
-      if (!context.mounted) return;
-      _showSnack(context, _errorMessageSignup(e));
+      throw AuthException(_errorMessageSignup(e));
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 🟦 LOGIN UTENTE
+  // 🟦 LOGIN
   // ---------------------------------------------------------------------------
-  Future<void> signIn({
-    required BuildContext context,
-    required String email,
-    required String password,
-    required VoidCallback onSuccess,
-  }) async {
+  Future<User> signIn({required String email, required String password}) async {
     try {
       var userCredential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),
@@ -97,157 +56,81 @@ class AuthService {
       );
 
       var user = userCredential.user;
-      if (user == null) return;
+      if (user == null) throw AuthException("Utente non trovato.");
 
-      // Aggiorna lo stato dell'utente
       await user.reload();
-      user = _auth.currentUser;
-
-      if (!context.mounted) return;
-
-      onSuccess();
-
-      // Blocca l'accesso se l'email non è ancora verificata
-      if (!user!.emailVerified) {
-        await _showUnverifiedDialog(context, user);
-        return;
-      }
-
+      // Restituiamo l'utente così il Provider può controllare se emailVerified è true/false
+      return _auth.currentUser!;
     } on FirebaseAuthException catch (e) {
-      if (!context.mounted) return;
-      _showSnack(context, _errorMessageLogin(e));
+      throw AuthException(_errorMessageLogin(e));
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 🟦 LOGOUT UTENTE
+  // 🟦 LOGOUT
   // ---------------------------------------------------------------------------
-  Future<void> signOut({
-    required BuildContext context,
-    required VoidCallback onSuccess,
-  }) async {
+  Future<void> signOut() async {
     try {
       await _auth.signOut();
-      debugPrint('✅ Logout completato con successo');
-      onSuccess();
     } on FirebaseAuthException catch (e) {
-      if (!context.mounted) return;
-      _showSnack(context, 'Errore durante il logout: ${e.message ?? e.code}');
+      throw AuthException('Errore durante il logout: ${e.message ?? e.code}');
     }
   }
 
   // ---------------------------------------------------------------------------
   // 🟦 RESET PASSWORD
   // ---------------------------------------------------------------------------
-  /// Invia email di reset password.
-  /// 
-  /// Se l'email non viene fornita, usa l'email dell'utente corrente.
-  /// Applica rate-limiting per prevenire invii eccessivi.
-  Future<void> resetPassword(
-    BuildContext context, {
-    String? email,
-    String? customSuccessMessage,
-  }) async {
-    // Se email non è fornita, usa quella dell'utente corrente
+  Future<void> resetPassword(String? email) async {
     final targetEmail = email?.trim() ?? _auth.currentUser?.email;
-    
+
     if (targetEmail == null || targetEmail.isEmpty) {
-      _showSnack(context, "Inserisci l'email.");
-      return;
+      throw AuthException("Inserisci l'email.");
     }
 
-    // Applica un limite per evitare invii ravvicinati
+    _checkRateLimit(
+      "Attendi almeno 1 minuto prima di richiedere un'altra email di reset.",
+    );
+
+    try {
+      await _auth.sendPasswordResetEmail(email: targetEmail);
+      _lastEmailSent = DateTime.now();
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(_errorMessageReset(e));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🟦 INVIO EMAIL DI VERIFICA (Con Rate Limit)
+  // ---------------------------------------------------------------------------
+  Future<void> sendVerificationEmail([User? user]) async {
+    final u = user ?? _auth.currentUser;
+    if (u == null) throw AuthException("Nessun utente loggato.");
+
+    _checkRateLimit(
+      "Attendi almeno 1 minuto prima di rinviare l'email di conferma.",
+    );
+
+    try {
+      await u.sendEmailVerification();
+      _lastEmailSent = DateTime.now();
+    } on FirebaseAuthException {
+      throw AuthException("Errore invio email di verifica.");
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🛠 HELPER: RATE LIMIT CHECK
+  // ---------------------------------------------------------------------------
+  void _checkRateLimit(String errorMessage) {
     if (_lastEmailSent != null &&
         DateTime.now().difference(_lastEmailSent!) <
             const Duration(seconds: 60)) {
-      _showSnack(
-        context,
-        "Attendi almeno 1 minuto prima di richiedere un'altra email di reset.",
-      );
-      return;
-    }
-
-    try {
-      // Invio email di ripristino password
-      await _auth.sendPasswordResetEmail(email: targetEmail);
-      _lastEmailSent = DateTime.now();
-
-      if (!context.mounted) return;
-      
-      // Mostra messaggio personalizzato o quello di default
-      final message = customSuccessMessage ??
-          "Se l'email è registrata, riceverai un link per reimpostare la password.";
-      
-      _showSnack(context, message);
-    } on FirebaseAuthException catch (e) {
-      if (!context.mounted) return;
-      _showSnack(context, _errorMessageReset(e));
+      throw AuthException(errorMessage);
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 🟦 EMAIL NON VERIFICATA — DIALOG DI CONFERMA
-  // ---------------------------------------------------------------------------
-  Future<void> _showUnverifiedDialog(BuildContext context, User user) async {
-    if (!context.mounted) return;
-
-    final confirmed = await DialogUtils.showConfirmDialog(
-      context,
-      title: "Email non verificata",
-      content: "Devi confermare la tua email prima di accedere.",
-      confirmText: "Rinvia Email",
-      cancelText: "OK",
-    );
-
-    if (confirmed == true) {
-      // Rate-limit dell'invio email
-      if (_lastEmailSent != null &&
-          DateTime.now().difference(_lastEmailSent!) <
-              const Duration(seconds: 60)) {
-        if (context.mounted) {
-          _showSnack(
-            context,
-            "Attendi almeno 1 minuto prima di rinviare l'email.",
-          );
-        }
-        return;
-      }
-
-      try {
-        await user.sendEmailVerification();
-        _lastEmailSent = DateTime.now();
-
-        if (context.mounted) {
-          _showSnack(context, "Email di verifica inviata!");
-        }
-      } on FirebaseAuthException {
-        if (context.mounted) {
-          _showSnack(context, "Errore invio email di verifica.");
-        }
-      }
-    } else {
-      // Logout se l'utente rifiuta
-      if (context.mounted) {
-        await _auth.signOut();
-      }
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // 🟦 SNACKBAR UTILE PER ERRORI E NOTIFICHE
-  // ---------------------------------------------------------------------------
-  void _showSnack(BuildContext context, String msg) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.snackBar,
-        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
-      ),
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // 🟦 MAPPATURA ERRORI — SIGNUP
+  // 🛠 MAPPATURA ERRORI (Preservata dal tuo codice originale)
   // ---------------------------------------------------------------------------
   String _errorMessageSignup(FirebaseAuthException e) {
     switch (e.code) {
@@ -264,9 +147,6 @@ class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 MAPPATURA ERRORI — LOGIN
-  // ---------------------------------------------------------------------------
   String _errorMessageLogin(FirebaseAuthException e) {
     switch (e.code) {
       case "user-not-found":
@@ -282,9 +162,6 @@ class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 MAPPATURA ERRORI — RESET PASSWORD
-  // ---------------------------------------------------------------------------
   String _errorMessageReset(FirebaseAuthException e) {
     switch (e.code) {
       case "user-not-found":
@@ -297,4 +174,12 @@ class AuthService {
         return "Errore durante il reset della password.";
     }
   }
+}
+
+class AuthException implements Exception {
+  final String message;
+  AuthException(this.message);
+
+  @override
+  String toString() => message;
 }

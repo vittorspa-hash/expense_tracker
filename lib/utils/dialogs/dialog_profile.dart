@@ -4,16 +4,16 @@
 // Gestisce anche la navigazione verso le pagine Profilo/Impostazioni e il processo di Logout.
 
 import 'dart:io';
-import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/pages/profile_page.dart';
 import 'package:expense_tracker/pages/settings_page.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get_it/get_it.dart';
+import 'package:provider/provider.dart';
+import 'package:expense_tracker/providers/auth_provider.dart';
 import 'dialog_commons.dart';
 
 class DialogProfile {
@@ -111,7 +111,7 @@ class DialogProfile {
       isDestructiveAction:
           true, // Rende il testo rosso per segnalare un'azione pericolosa.
       onPressed: () =>
-          handleLogout(context, GetIt.instance<AuthService>()), // Avvia la procedura di logout con conferma.
+          handleLogout(context), // Avvia la procedura di logout con conferma.
       child: Text(
         "Logout",
         style: TextStyle(color: AppColors.delete, fontSize: 17.sp),
@@ -156,7 +156,7 @@ class DialogProfile {
           style: TextStyle(color: AppColors.delete, fontSize: 16.sp),
         ),
         onTap: () =>
-            handleLogout(context, GetIt.instance<AuthService>()), // Avvia la procedura di logout con conferma.
+            handleLogout(context), // Avvia la procedura di logout con conferma.
       );
 
   // Gestisce la navigazione verso la pagina del profilo e il ricaricamento dell'avatar al ritorno.
@@ -213,10 +213,7 @@ class DialogProfile {
   }
 
   // Gestisce la procedura di logout, inclusa la richiesta di conferma.
-  static Future<void> handleLogout(
-    BuildContext context,
-    AuthService authService,
-  ) async {
+  static Future<void> handleLogout(BuildContext context) async {
     if (!context.mounted) return;
     Navigator.pop(context);
     await Future.delayed(Duration.zero);
@@ -232,9 +229,10 @@ class DialogProfile {
     );
 
     if (confirmed == true && context.mounted) {
-      await authService.signOut(
-        context: context,
-        onSuccess: () {}, // Gestito automaticamente da FirebaseAuth stream
+      final authProvider = context.read<AuthProvider>();
+      await authProvider.signOut(
+        context,
+        onSuccess: () {},
       );
     }
   }

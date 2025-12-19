@@ -1,4 +1,5 @@
 import 'package:expense_tracker/app.dart';
+import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/providers/settings_provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
@@ -50,6 +51,10 @@ void main() async {
     expenseProvider: expenseProvider,
   );
 
+  final authProvider = AuthProvider(
+    authService: getIt<AuthService>(),
+  );
+
   runApp(
     ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -62,6 +67,7 @@ void main() async {
             ChangeNotifierProvider.value(value: themeProvider),
             ChangeNotifierProvider.value(value: expenseProvider),
             ChangeNotifierProvider.value(value: multiSelectProvider),
+            ChangeNotifierProvider.value(value: authProvider),
           ],
           child: const App(),
         );

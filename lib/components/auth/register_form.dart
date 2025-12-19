@@ -1,58 +1,42 @@
 // register_form.dart
-// -----------------------------------------------------------------------------
-// 📝 FORM DI REGISTRAZIONE UTENTE
-//
-// Gestisce la creazione di un nuovo account tramite:
-// - Nome completo
-// - Email
-// - Password + Conferma password
-//
-// Include validazione dei campi, gestione dei focus, gestione visibilità password e
-// feedback di caricamento. Integrazione diretta con AuthService per eseguire la registrazione.
-// -----------------------------------------------------------------------------
-
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
-import 'package:expense_tracker/services/auth_service.dart';
+// Assicurati che l'import punti al tuo AuthProvider
+import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart'; // 👈 Indispensabile
 
 class RegisterForm extends StatefulWidget {
-  final AuthService authService;
-  const RegisterForm({super.key, required this.authService});
+  // Rimosso AuthService dal costruttore
+  const RegisterForm({super.key});
 
   @override
   State<RegisterForm> createState() => _RegisterFormState();
 }
 
 class _RegisterFormState extends State<RegisterForm> {
-  // Chiave del form per validazione generale
   final _formKey = GlobalKey<FormState>();
 
-  // Controller per i campi di input
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
 
-  // FocusNode per controllare il passaggio tra un campo e l’altro
   final _nameFocus = FocusNode();
   final _emailFocus = FocusNode();
   final _passwordFocus = FocusNode();
   final _confirmFocus = FocusNode();
 
-  // Gestione visibilità password
   bool _obscure1 = true;
   bool _obscure2 = true;
 
-  // Stato di caricamento
-  bool _isLoading = false;
+  // Rimosso _isLoading locale, useremo quello del Provider
 
   @override
   void dispose() {
-    // Libera tutte le risorse dei controller e focus node
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -64,35 +48,32 @@ class _RegisterFormState extends State<RegisterForm> {
     super.dispose();
   }
 
-  //  Funzione per gestire la registrazione con feedback di caricamento
+  // ---------------------------------------------------------------------------
+  // ⚡️ GESTIONE REGISTRAZIONE
+  // ---------------------------------------------------------------------------
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    // Usiamo read perché siamo dentro una funzione callback
+    final provider = context.read<AuthProvider>();
 
-    try {
-      await widget.authService.signUp(
-        context: context,
-        email: _emailController.text,
-        password: _passwordController.text,
-        confermaPassword: _confirmController.text,
-        nome: _nameController.text,
-        onSuccess: () {
-          if (mounted) {
-            setState(() => _isLoading = false);
-          }
-        },
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    await provider.signUp(
+      context: context,
+      email: _emailController.text,
+      password: _passwordController.text,
+      confermaPassword: _confirmController.text,
+      nome: _nameController.text,
+      onSuccess: () {},
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 👀 ASCOLTIAMO IL PROVIDER
+    final provider = context.watch<AuthProvider>();
+    final isLoading = provider.isLoading;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -101,7 +82,7 @@ class _RegisterFormState extends State<RegisterForm> {
         child: Column(
           children: [
             // -------------------------------------------------------------------
-            // 📦 CARD PRINCIPALE DEL FORM
+            // 📦 CARD PRINCIPALE
             // -------------------------------------------------------------------
             Container(
               padding: EdgeInsets.all(20.w),
@@ -118,14 +99,9 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                 ],
               ),
-
-              // -----------------------------------------------------------------
-              // 🧭 CONTENUTO DEL FORM
-              // -----------------------------------------------------------------
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titolo form
                   Text(
                     "Crea un account",
                     style: TextStyle(
@@ -135,10 +111,7 @@ class _RegisterFormState extends State<RegisterForm> {
                       letterSpacing: 0.3,
                     ),
                   ),
-
                   SizedBox(height: 8.h),
-
-                  // Sottotitolo form
                   Text(
                     "Registrati per iniziare a tracciare le spese",
                     style: TextStyle(
@@ -146,11 +119,10 @@ class _RegisterFormState extends State<RegisterForm> {
                       color: isDark ? AppColors.greyDark : AppColors.greyLight,
                     ),
                   ),
-
                   SizedBox(height: 18.h),
 
                   // -------------------------------------------------------------
-                  // 🧑 Nome completo
+                  // 🧑 Nome
                   // -------------------------------------------------------------
                   AuthTextField(
                     controller: _nameController,
@@ -159,7 +131,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Nome completo",
                     icon: FontAwesomeIcons.user,
                     capitalization: TextCapitalization.words,
-                    enabled: !_isLoading,
+                    enabled: !isLoading, // Disabilita se carica
                     validator: (v) =>
                         v!.trim().isEmpty ? "Inserisci il tuo nome" : null,
                   ),
@@ -176,7 +148,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Email",
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
-                    enabled: !_isLoading,
+                    enabled: !isLoading, // Disabilita se carica
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
                         return "Inserisci l'email";
@@ -198,7 +170,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Password",
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure1,
-                    enabled: !_isLoading,
+                    enabled: !isLoading, // Disabilita se carica
                     onToggleObscure: () =>
                         setState(() => _obscure1 = !_obscure1),
                     validator: (v) {
@@ -215,7 +187,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   SizedBox(height: 8.h),
 
                   // -------------------------------------------------------------
-                  // 🔒 Conferma password
+                  // 🔒 Conferma Password
                   // -------------------------------------------------------------
                   AuthTextField(
                     controller: _confirmController,
@@ -224,7 +196,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure2,
                     isLast: true,
-                    enabled: !_isLoading,
+                    enabled: !isLoading, // Disabilita se carica
                     onToggleObscure: () =>
                         setState(() => _obscure2 = !_obscure2),
                     validator: (v) {
@@ -244,21 +216,13 @@ class _RegisterFormState extends State<RegisterForm> {
             SizedBox(height: 10.h),
 
             // -------------------------------------------------------------------
-            // 🚀 BOTTONE DI REGISTRAZIONE
+            // 🚀 BOTTONE REGISTRAZIONE
             // -------------------------------------------------------------------
             AuthButton(
-              onPressed: _isLoading
-                  ? null
-                  : _handleRegister, // Disabilita durante il caricamento
-              icon: _isLoading
-                  ? null
-                  : FontAwesomeIcons
-                        .userPlus, // Nasconde icona durante caricamento
-              text: _isLoading
-                  ? ""
-                  : "Registrati", // Nasconde testo durante caricamento
-              //  Mostra loading indicator
-              child: _isLoading
+              onPressed: isLoading ? null : _handleRegister,
+              icon: isLoading ? null : FontAwesomeIcons.userPlus,
+              text: isLoading ? "" : "Registrati",
+              child: isLoading
                   ? SizedBox(
                       height: 20.h,
                       width: 20.h,

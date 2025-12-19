@@ -15,15 +15,15 @@
 // -----------------------------------------------------------------------------
 
 import 'dart:io';
-import 'package:expense_tracker/services/auth_service.dart';
+import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:provider/provider.dart';
 
 class ProfileService {
   // ---------------------------------------------------------------------------
@@ -42,8 +42,6 @@ class ProfileService {
   /// Flag stato caricamento immagine
   bool isUploading = false;
 
-  /// Istanza di AuthService per delegare operazioni di autenticazione
-  final AuthService _authService = GetIt.instance<AuthService>();
 
   // ---------------------------------------------------------------------------
   // 🔄 Aggiorna dati utente da Firebase
@@ -369,13 +367,15 @@ class ProfileService {
   }
 
   // ---------------------------------------------------------------------------
-  // 📩 Reset password via email - DELEGA AD AuthService
+  // 📩 Reset password via email - USA AuthProvider
   // ---------------------------------------------------------------------------
-  /// Invia email di reset password usando AuthService.
-  /// Questo metodo delega completamente la logica ad AuthService.
+  /// Invia email di reset password usando AuthProvider.
+  /// Questo metodo delega la logica e la gestione UI (SnackBar) al Provider.
   Future<void> showForgotPasswordAction(BuildContext context) async {
-    await _authService.resetPassword(
+    // Usiamo read() perché è un'azione una tantum, non dobbiamo ascoltare cambiamenti
+    await context.read<AuthProvider>().resetPassword(
       context,
+      email: user!.email, // Passiamo esplicitamente l'email dell'utente
       customSuccessMessage: "Email di recupero inviata a ${user!.email!}",
     );
   }
