@@ -1,24 +1,16 @@
 // profile_page.dart
-// -----------------------------------------------------------------------------
-// 👤 PAGINA PROFILO UTENTE
-// -----------------------------------------------------------------------------
-// Gestisce:
-// - Visualizzazione avatar, nome, email, UID
-// - Modifica dati utente tramite ProfileService
-// - Cambio immagine profilo
-// - Eliminazione account
-// - Animazione fade-in iniziale
-// -----------------------------------------------------------------------------
-
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
-import 'package:expense_tracker/services/profile_service.dart';
+import 'package:provider/provider.dart'; // Importante
+
+// Importa il tuo provider invece del service
+import 'package:expense_tracker/providers/profile_provider.dart';
+
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get_it/get_it.dart';
 
 class ProfilePage extends StatefulWidget {
   static const route = "/profile/page";
@@ -30,62 +22,49 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  // 🔧 Service profilo (gestisce immagine, dati utente, update)
-  final profileService = GetIt.instance<ProfileService>();
-
-  // 🔧 Getter per il vsync richiesto dal mixin
   @override
   TickerProvider get vsync => this;
 
   @override
   void initState() {
     super.initState();
-
-    // 📷 Carica immagine profilo locale
-    profileService.loadLocalProfileImage(_safeSetState);
-
-    // 🎞️ Animazione fade-in iniziale
     initFadeAnimation();
+
+    // Caricamento iniziale dei dati tramite Provider (dopo il primo frame)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<ProfileProvider>().loadLocalData();
+      }
+    });
   }
 
   @override
   void dispose() {
-    disposeFadeAnimation(); // Rilascio memoria
+    disposeFadeAnimation();
     super.dispose();
-  }
-
-  // ⚡ Metodo sicuro per chiamare setState solo se il widget è ancora montato
-  void _safeSetState() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 👤 Utente corrente Firebase
-    final user = profileService.user;
-
-    // 🌗 Tema attuale
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      // -------------------------------------------------------------------------
-      // 🔝 APPBAR PROFILO
-      // -------------------------------------------------------------------------
-      appBar: CustomAppBar(title: "Profilo", icon: Icons.person_rounded, isDark: isDark),
+    // 🟢 ASCOLTIAMO IL PROVIDER
+    // Usiamo Consumer così aggiorniamo solo questa parte se cambia qualcosa
+    // oppure context.watch<ProfileProvider>() all'inizio del build.
+    final provider = context.watch<ProfileProvider>();
+    final user = provider.user;
 
-      // -------------------------------------------------------------------------
-      // 🔄 PULL-TO-REFRESH (aggiorna user Firebase)
-      // -------------------------------------------------------------------------
+    return Scaffold(
+      appBar: CustomAppBar(
+        title: "Profilo",
+        icon: Icons.person_rounded,
+        isDark: isDark,
+      ),
+
       body: RefreshIndicator(
         color: AppColors.primary,
-        onRefresh: () async =>
-            profileService.refreshUser(context, _safeSetState),
+        onRefresh: () async => await provider.refreshUser(context),
 
-        // -----------------------------------------------------------------------
-        // 🎨 BACKGROUND + ANIMAZIONE
-        // -----------------------------------------------------------------------
         child: Container(
           decoration: BoxDecoration(
             color: isDark
@@ -115,20 +94,18 @@ class _ProfilePageState extends State<ProfilePage>
                     ],
                   ),
                   child: ProfileAvatar(
-                    image: profileService.localImage,
-                    isUploading: profileService.isUploading,
-
+                    key: ObjectKey(provider.localImage),
+                    // Leggiamo i dati dallo stato del provider
+                    image: provider.localImage,
+                    isUploading: provider
+                        .isLoading, // Usiamo isLoading generico o specifico se ne hai uno
                     // 📤 Cambia immagine
-                    onChangePicture: () => profileService.changeProfilePicture(
-                      context,
-                      _safeSetState,
-                    ),
+                    onChangePicture: () =>
+                        provider.changeProfilePicture(context),
 
                     // ❌ Rimuovi immagine
-                    onRemovePicture: () => profileService.removeProfilePicture(
-                      context,
-                      _safeSetState,
-                    ),
+                    onRemovePicture: () =>
+                        provider.removeProfilePicture(context),
                   ),
                 ),
 
@@ -161,8 +138,8 @@ class _ProfilePageState extends State<ProfilePage>
                         title: "Nome",
                         value: user?.displayName,
                         tooltip: "Modifica nome",
-                        onPressed: () =>
-                            profileService.changeDisplayName(context),
+                        onPressed: () => provider.changeDisplayName(context),
+                        isLoading: provider.isLoading,
                       ),
 
                       _buildDivider(isDark),
@@ -173,13 +150,8 @@ class _ProfilePageState extends State<ProfilePage>
                         title: "Email",
                         value: user?.email,
                         tooltip: "Modifica email",
-                        onPressed: () => profileService.changeEmail(
-                          context,
-                          () => profileService.refreshUser(
-                            context,
-                            _safeSetState,
-                          ),
-                        ),
+                        onPressed: () => provider.changeEmail(context),
+                        isLoading: provider.isLoading,
                       ),
 
                       _buildDivider(isDark),
@@ -190,7 +162,8 @@ class _ProfilePageState extends State<ProfilePage>
                         title: "Password",
                         value: "••••••••••",
                         tooltip: "Modifica password",
-                        onPressed: () => profileService.changePassword(context),
+                        onPressed: () => provider.changePassword(context),
+                        isLoading: provider.isLoading,
                       ),
 
                       _buildDivider(isDark),
@@ -202,11 +175,12 @@ class _ProfilePageState extends State<ProfilePage>
                         value: user?.uid,
                         trailingIcon: Icons.content_copy_rounded,
                         tooltip: "Copia ID",
-                        onPressed: () => profileService.copyToClipboard(
+                        onPressed: () => provider.copyToClipboard(
                           context,
                           user?.uid,
                           message: "ID copiato negli appunti",
                         ),
+                        isLoading: provider.isLoading,
                       ),
                     ],
                   ),
@@ -218,7 +192,9 @@ class _ProfilePageState extends State<ProfilePage>
                 // 🗑️ ELIMINA ACCOUNT
                 // -----------------------------------------------------------------
                 ElevatedButton(
-                  onPressed: () => profileService.deleteAccount(context),
+                  onPressed: provider.isLoading
+                      ? null
+                      : () => provider.deleteAccount(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: isDark
@@ -234,14 +210,28 @@ class _ProfilePageState extends State<ProfilePage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        Icons.delete_outline_rounded,
-                        size: 22.r,
-                        color: isDark
-                            ? AppColors.textDark
-                            : AppColors.textLight,
-                      ),
-                      SizedBox(width: 12.w),
+                      if (provider.isLoading)
+                        Padding(
+                          padding: EdgeInsets.only(right: 12.w),
+                          child: SizedBox(
+                            width: 20.r,
+                            height: 20.r,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.textLight,
+                            ),
+                          ),
+                        )
+                      else ...[
+                        Icon(
+                          Icons.delete_outline_rounded,
+                          size: 22.r,
+                          color: isDark
+                              ? AppColors.textDark
+                              : AppColors.textLight,
+                        ),
+                        SizedBox(width: 12.w),
+                      ],
                       Text(
                         "Elimina account",
                         style: TextStyle(
@@ -263,9 +253,6 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  // -----------------------------------------------------------------------------
-  // ➖ DIVIDER SEZIONI
-  // -----------------------------------------------------------------------------
   Widget _buildDivider(bool isDark) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),

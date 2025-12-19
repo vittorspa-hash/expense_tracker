@@ -21,6 +21,7 @@ class ProfileTile extends StatelessWidget {
   final IconData trailingIcon; // Icona trailing (default edit)
   final String tooltip; // Tooltip per il pulsante
   final Widget? trailingWidget; // Widget trailing personalizzato
+  final bool isLoading;
 
   const ProfileTile({
     super.key,
@@ -31,6 +32,7 @@ class ProfileTile extends StatelessWidget {
     this.trailingIcon = Icons.edit_outlined,
     required this.tooltip,
     this.trailingWidget,
+    this.isLoading = false,
   });
 
   @override
@@ -120,16 +122,32 @@ class ProfileTile extends StatelessWidget {
                     width: 1.5,
                   ),
                 ),
-                child: IconButton(
-                  icon: Icon(
-                    trailingIcon,
-                    size: 20.r,
-                    color: isDark ? AppColors.greyDark : AppColors.greyLight,
-                  ),
-                  tooltip: tooltip,
-                  onPressed: onPressed,
-                  padding: EdgeInsets.zero,
-                ),
+                child: isLoading
+                    ? Center(
+                        child: SizedBox(
+                          width: 16.r,
+                          height: 16.r,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            // Usa il colore del testo/icona per coerenza
+                            color: isDark
+                                ? AppColors.greyDark
+                                : AppColors.greyLight,
+                          ),
+                        ),
+                      )
+                    : IconButton(
+                        icon: Icon(
+                          trailingIcon,
+                          size: 20.r,
+                          color: isDark
+                              ? AppColors.greyDark
+                              : AppColors.greyLight,
+                        ),
+                        tooltip: tooltip,
+                        onPressed: onPressed,
+                        padding: EdgeInsets.zero,
+                      ),
               ),
         ],
       ),

@@ -3,12 +3,12 @@
 // Contiene metodi statici per mostrare alert, conferme, sheet di ordinamento,
 // sheet profilo, dialoghi di input, istruzioni e picker di data/ora/anno.
 
-import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
 import 'dialogs/dialog_commons.dart';
 import 'dialogs/dialog_sheets.dart';
 import 'dialogs/dialog_profile.dart';
@@ -90,92 +90,103 @@ class DialogUtils {
   }
 
   // Mostra un bottom sheet adattivo con le opzioni del profilo utente.
-  static Future<void> showProfileSheet(
-    BuildContext context, {
-    required User? user,
-    required File? localAvatar,
-    required Future<void> Function() reloadAvatar,
-  }) async {
-    // Verifica se il widget è montato.
+  static Future<void> showProfileSheet(BuildContext context) async {
     if (!context.mounted) return;
 
     final isDark = DialogCommons.isDark(context);
-    // Costruisce l'intestazione del profilo (header).
-    final header = DialogProfile.buildProfileHeader(
-      context,
-      user,
-      localAvatar,
-      isDark,
-    );
 
-    // Gestione specifica per iOS (CupertinoActionSheet).
+    // Gestione iOS (CupertinoActionSheet)
     if (DialogCommons.isIOS) {
       if (!context.mounted) return;
 
       await showCupertinoModalPopup(
         context: context,
-        builder: (_) => CupertinoActionSheet(
-          title: header, // L'header come titolo del sheet.
-          actions: [
-            // Azione per modificare/visualizzare il profilo.
-            DialogProfile.buildProfileAction(
-              context,
-              user,
-              localAvatar,
-              reloadAvatar,
-              isDark,
-            ),
-            // Azione per le impostazioni.
-            DialogProfile.buildSettingsAction(context, isDark),
-            // Azione di logout.
-            DialogProfile.buildLogoutAction(context, isDark),
-          ],
-          // Pulsante Annulla/Chiudi.
-          cancelButton: DialogSheets.buildCupertinoSheetButton(
-            context,
-            "Chiudi",
-            isDark,
-            null,
-          ),
-        ),
-      );
-    } else {
-      // Gestione specifica per Android/Material (showModalBottomSheet).
-      if (!context.mounted) return;
+        // Usiamo Consumer per leggere i dati aggiornati dal Provider
+        builder: (ctx) => Consumer<ProfileProvider>(
+          builder: (context, provider, _) {
+            // Mappiamo i dati del provider ai parametri richiesti da DialogProfile
+            final user = provider.user;
+            final localAvatar = provider.localImage;
 
-      await showModalBottomSheet(
-        context: context,
-        // Forma con angoli arrotondati solo in alto.
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        ),
-        builder: (_) => Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
-          child: SafeArea(
-            top: false, // Esclude l'area di sicurezza superiore.
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                header,
-                SizedBox(height: 20.h),
-                // ListTile per il profilo.
-                DialogProfile.buildProfileListTile(
+            // Il reloadAvatar ora è semplicemente la funzione di ricaricamento del provider
+            Future<void> reloadAvatar() async => await provider.loadLocalData();
+
+            return CupertinoActionSheet(
+              title: DialogProfile.buildProfileHeader(
+                context,
+                user,
+                localAvatar,
+                isDark,
+              ),
+              actions: [
+                DialogProfile.buildProfileAction(
                   context,
                   user,
                   localAvatar,
                   reloadAvatar,
                   isDark,
                 ),
-                // ListTile per le impostazioni.
-                DialogProfile.buildSettingsListTile(context, isDark),
-                // ListTile per il logout.
-                DialogProfile.buildLogoutListTile(context, isDark),
-                SizedBox(height: 12.h),
-                // Pulsante di chiusura esplicito per Material.
-                DialogCommons.buildCloseButton(context),
+                DialogProfile.buildSettingsAction(context, isDark),
+                DialogProfile.buildLogoutAction(context, isDark),
               ],
-            ),
-          ),
+              cancelButton: DialogSheets.buildCupertinoSheetButton(
+                context,
+                "Chiudi",
+                isDark,
+                null,
+              ),
+            );
+          },
+        ),
+      );
+    } else {
+      // Gestione Android/Material (ModalBottomSheet)
+      if (!context.mounted) return;
+
+      await showModalBottomSheet(
+        context: context,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        ),
+        builder: (ctx) => Consumer<ProfileProvider>(
+          builder: (context, provider, _) {
+            final user = provider.user;
+            final localAvatar = provider.localImage;
+            Future<void> reloadAvatar() async => await provider.loadLocalData();
+
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DialogProfile.buildProfileHeader(
+                      context,
+                      user,
+                      localAvatar,
+                      isDark,
+                    ),
+                    SizedBox(height: 20.h),
+
+                    DialogProfile.buildProfileListTile(
+                      context,
+                      user,
+                      localAvatar,
+                      reloadAvatar,
+                      isDark,
+                    ),
+
+                    DialogProfile.buildSettingsListTile(context, isDark),
+                    DialogProfile.buildLogoutListTile(context, isDark),
+
+                    SizedBox(height: 12.h),
+                    DialogCommons.buildCloseButton(context),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       );
     }

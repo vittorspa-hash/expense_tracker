@@ -1,53 +1,40 @@
 // home_header.dart
-// -----------------------------------------------------------------------------
-// 🏠 HEADER DELLA HOME PAGE + STATISTICHE INLINE
-//
-// Questo file contiene:
-// - HomeHeader: header con avatar, bottone resoconto annuale
-//   e riepilogo delle spese.
-// - HeaderExpenseState: widget compatto per mostrare un valore (oggi/settimana/anno)
-//   con grafica moderna.
-//
-// Include animazioni fade, supporto dark mode, avatar locale
-// e integrazione con ExpenseStore tramite Consumer.
-// -----------------------------------------------------------------------------
-
-import 'dart:io';
 import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:expense_tracker/providers/profile_provider.dart'; // 👈 Importa il ProfileProvider
 import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 class HomeHeader extends StatelessWidget {
-  final Animation<double>
-  fadeAnimation; // ✨ Animazione fade-in del blocco header
-  final File? localAvatar; // 📁 Avatar salvato localmente
-  final User? user; // 👤 Utente Firebase loggato
-  final bool isDark; // 🌙 Theme mode attuale
-  final VoidCallback onTapProfile; // 🔘 Apertura sheet profilo
+  final Animation<double> fadeAnimation;
+  final bool isDark;
+  final VoidCallback onTapProfile;
 
+  // ✂️ RIMOSSI: localAvatar e user. Ora li prendiamo dal provider.
   const HomeHeader({
     super.key,
     required this.fadeAnimation,
-    required this.localAvatar,
-    required this.user,
     required this.isDark,
     required this.onTapProfile,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ExpenseProvider>(
-      builder: (context, expenseProvider, child) {
+    // 🎧 Usiamo Consumer2 per ascoltare SIA le spese CHE il profilo
+    return Consumer2<ExpenseProvider, ProfileProvider>(
+      builder: (context, expenseProvider, profileProvider, child) {
+        // Recuperiamo i dati dal ProfileProvider
+        final user = profileProvider.user;
+        final localAvatar = profileProvider.localImage;
+
         return FadeTransition(
-          opacity: fadeAnimation, // 🎞️ Header fade-in
+          opacity: fadeAnimation,
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.primary, // 🎨 Background principale dell'header
+              color: AppColors.primary,
               boxShadow: [
                 BoxShadow(
                   color: AppColors.primary.withValues(alpha: 0.3),
@@ -56,17 +43,14 @@ class HomeHeader extends StatelessWidget {
                 ),
               ],
             ),
-
-            // Evita overlap con notch, dinamiche, barra di stato
             child: SafeArea(
               child: Padding(
                 padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 24.h),
-
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // -----------------------------------------------------------------
-                    // 🔷 RIGA SUPERIORE: Bottone resoconto annuale + Avatar profilo
+                    // 🔷 RIGA SUPERIORE
                     // -----------------------------------------------------------------
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -119,7 +103,7 @@ class HomeHeader extends StatelessWidget {
                           ),
                         ),
 
-                        // 👤 Avatar utente
+                        // 👤 Avatar utente (Aggiornato automaticamente dal Provider)
                         GestureDetector(
                           onTap: onTapProfile,
                           child: Container(
@@ -133,15 +117,18 @@ class HomeHeader extends StatelessWidget {
                               ),
                             ),
                             child: CircleAvatar(
+                              key: ObjectKey(localAvatar),
                               radius: 20.r,
                               backgroundColor: AppColors.backgroundLight
                                   .withValues(alpha: 0.3),
+                              // Logica immagine: Locale > Rete > Null
                               backgroundImage: localAvatar != null
-                                  ? FileImage(localAvatar!)
+                                  ? FileImage(localAvatar)
                                   : (user?.photoURL != null
                                         ? NetworkImage(user!.photoURL!)
                                         : null),
 
+                              // Icona fallback
                               child:
                                   localAvatar == null && user?.photoURL == null
                                   ? Icon(
@@ -161,7 +148,7 @@ class HomeHeader extends StatelessWidget {
                     SizedBox(height: 20.h),
 
                     // -----------------------------------------------------------------
-                    // 💰 SEZIONE SPESA DEL MESE CORRENTE
+                    // 💰 SEZIONE SPESA DEL MESE
                     // -----------------------------------------------------------------
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,9 +164,7 @@ class HomeHeader extends StatelessWidget {
                             letterSpacing: 0.3,
                           ),
                         ),
-
                         SizedBox(height: 4.h),
-
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
@@ -201,7 +186,7 @@ class HomeHeader extends StatelessWidget {
                     SizedBox(height: 24.h),
 
                     // -----------------------------------------------------------------
-                    // 📊 STATISTICHE GIORNO / SETTIMANA / ANNO
+                    // 📊 STATISTICHE
                     // -----------------------------------------------------------------
                     Row(
                       children: [
@@ -238,12 +223,10 @@ class HomeHeader extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// 📦 WIDGET: Stato spese (piccola card per Oggi / Settimana / Anno)
-// -----------------------------------------------------------------------------
+// ... HeaderExpenseState rimane invariato ...
 class HeaderExpenseState extends StatelessWidget {
-  final double value; // 💶 Valore della spesa
-  final String label; // 🏷️ Etichetta (oggi / settimana / anno)
+  final double value;
+  final String label;
 
   const HeaderExpenseState({
     super.key,
@@ -272,13 +255,10 @@ class HeaderExpenseState extends StatelessWidget {
           ),
         ],
       ),
-
-      // Contenuto verticale: valore + etichetta
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 💶 Valore spesa formattato
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -294,10 +274,7 @@ class HeaderExpenseState extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-
           SizedBox(height: 2.h),
-
-          // 🏷️ Label card
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
             child: Text(

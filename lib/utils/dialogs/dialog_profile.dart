@@ -214,11 +214,8 @@ class DialogProfile {
 
   // Gestisce la procedura di logout, inclusa la richiesta di conferma.
   static Future<void> handleLogout(BuildContext context) async {
-    if (!context.mounted) return;
-    Navigator.pop(context);
-    await Future.delayed(Duration.zero);
-
-    if (!context.mounted) return;
+    // 1. NON chiamare Navigator.pop(context) qui.
+    // Il context deve restare "vivo" per poter aprire il ConfirmDialog.
 
     final confirmed = await DialogUtils.showConfirmDialog(
       context,
@@ -228,12 +225,20 @@ class DialogProfile {
       cancelText: "Annulla",
     );
 
-    if (confirmed == true && context.mounted) {
+    // 2. Se l'utente non conferma (null o false), ci fermiamo qui.
+    // Il menu profilo resta aperto (o puoi aggiungere un else per chiuderlo comunque).
+    if (confirmed != true) return;
+
+    // 3. Se ha confermato:
+    if (context.mounted) {
+      // È buona norma recuperare il provider prima di chiudere il contesto UI
       final authProvider = context.read<AuthProvider>();
-      await authProvider.signOut(
-        context,
-        onSuccess: () {},
-      );
+
+      // ORA possiamo chiudere il Profile Sheet in sicurezza
+      Navigator.pop(context);
+
+      // Procediamo con il logout
+      await authProvider.signOut(context, onSuccess: () {});
     }
   }
 }
