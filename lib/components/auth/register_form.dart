@@ -1,16 +1,15 @@
 // register_form.dart
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
-// Assicurati che l'import punti al tuo AuthProvider
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart'; // Importante
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart'; // 👈 Indispensabile
+import 'package:provider/provider.dart';
 
 class RegisterForm extends StatefulWidget {
-  // Rimosso AuthService dal costruttore
   const RegisterForm({super.key});
 
   @override
@@ -33,8 +32,6 @@ class _RegisterFormState extends State<RegisterForm> {
   bool _obscure1 = true;
   bool _obscure2 = true;
 
-  // Rimosso _isLoading locale, useremo quello del Provider
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -48,30 +45,10 @@ class _RegisterFormState extends State<RegisterForm> {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // ⚡️ GESTIONE REGISTRAZIONE
-  // ---------------------------------------------------------------------------
-  Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    // Usiamo read perché siamo dentro una funzione callback
-    final provider = context.read<AuthProvider>();
-
-    await provider.signUp(
-      context: context,
-      email: _emailController.text,
-      password: _passwordController.text,
-      confermaPassword: _confirmController.text,
-      nome: _nameController.text,
-      onSuccess: () {},
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 👀 ASCOLTIAMO IL PROVIDER
     final provider = context.watch<AuthProvider>();
     final isLoading = provider.isLoading;
 
@@ -81,9 +58,7 @@ class _RegisterFormState extends State<RegisterForm> {
         key: _formKey,
         child: Column(
           children: [
-            // -------------------------------------------------------------------
-            // 📦 CARD PRINCIPALE
-            // -------------------------------------------------------------------
+            // Card Principale
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -121,9 +96,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                   SizedBox(height: 18.h),
 
-                  // -------------------------------------------------------------
-                  // 🧑 Nome
-                  // -------------------------------------------------------------
+                  // Nome
                   AuthTextField(
                     controller: _nameController,
                     focusNode: _nameFocus,
@@ -131,16 +104,14 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Nome completo",
                     icon: FontAwesomeIcons.user,
                     capitalization: TextCapitalization.words,
-                    enabled: !isLoading, // Disabilita se carica
+                    enabled: !isLoading,
                     validator: (v) =>
                         v!.trim().isEmpty ? "Inserisci il tuo nome" : null,
                   ),
 
                   SizedBox(height: 8.h),
 
-                  // -------------------------------------------------------------
-                  // 📧 Email
-                  // -------------------------------------------------------------
+                  // Email
                   AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
@@ -148,7 +119,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Email",
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
-                    enabled: !isLoading, // Disabilita se carica
+                    enabled: !isLoading,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
                         return "Inserisci l'email";
@@ -160,9 +131,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
                   SizedBox(height: 8.h),
 
-                  // -------------------------------------------------------------
-                  // 🔒 Password
-                  // -------------------------------------------------------------
+                  // Password
                   AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
@@ -170,7 +139,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     hint: "Password",
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure1,
-                    enabled: !isLoading, // Disabilita se carica
+                    enabled: !isLoading,
                     onToggleObscure: () =>
                         setState(() => _obscure1 = !_obscure1),
                     validator: (v) {
@@ -186,9 +155,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
                   SizedBox(height: 8.h),
 
-                  // -------------------------------------------------------------
-                  // 🔒 Conferma Password
-                  // -------------------------------------------------------------
+                  // Conferma Password
                   AuthTextField(
                     controller: _confirmController,
                     focusNode: _confirmFocus,
@@ -196,7 +163,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure2,
                     isLast: true,
-                    enabled: !isLoading, // Disabilita se carica
+                    enabled: !isLoading,
                     onToggleObscure: () =>
                         setState(() => _obscure2 = !_obscure2),
                     validator: (v) {
@@ -215,9 +182,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
             SizedBox(height: 10.h),
 
-            // -------------------------------------------------------------------
-            // 🚀 BOTTONE REGISTRAZIONE
-            // -------------------------------------------------------------------
+            // Bottone Registrazione
             AuthButton(
               onPressed: isLoading ? null : _handleRegister,
               icon: isLoading ? null : FontAwesomeIcons.userPlus,
@@ -241,5 +206,60 @@ class _RegisterFormState extends State<RegisterForm> {
         ),
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🕹️ HELPER UI
+  // ---------------------------------------------------------------------------
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.snackBar,
+        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // ⚡️ GESTIONE REGISTRAZIONE
+  // ---------------------------------------------------------------------------
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // 1. Validazione UI (Password Match)
+    // Nota: Anche se il Validator lo fa, un controllo extra pre-chiamata è sicuro
+    if (_passwordController.text != _confirmController.text) {
+      _showSnack("Le password non coincidono", isError: true);
+      return;
+    }
+
+    final provider = context.read<AuthProvider>();
+
+    try {
+      // 2. Chiamata Provider
+      await provider.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        nome: _nameController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      // 3. Successo -> Feedback Utente (Dialog)
+      await DialogUtils.showInfoDialog(
+        context,
+        title: "Verifica Email",
+        content:
+            "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
+      );
+
+      // 4. Navigazione (es. torna al login o vai alla home)
+      // Dipende dal tuo flusso, es:
+      // Navigator.of(context).pop(); // Torna al login per accedere
+    } catch (e) {
+      // 5. Gestione Errori
+      _showSnack(e.toString(), isError: true);
+    }
   }
 }

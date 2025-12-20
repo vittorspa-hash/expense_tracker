@@ -214,9 +214,7 @@ class DialogProfile {
 
   // Gestisce la procedura di logout, inclusa la richiesta di conferma.
   static Future<void> handleLogout(BuildContext context) async {
-    // 1. NON chiamare Navigator.pop(context) qui.
-    // Il context deve restare "vivo" per poter aprire il ConfirmDialog.
-
+    // 1. Dialog conferma
     final confirmed = await DialogUtils.showConfirmDialog(
       context,
       title: "Conferma logout",
@@ -225,20 +223,38 @@ class DialogProfile {
       cancelText: "Annulla",
     );
 
-    // 2. Se l'utente non conferma (null o false), ci fermiamo qui.
-    // Il menu profilo resta aperto (o puoi aggiungere un else per chiuderlo comunque).
     if (confirmed != true) return;
 
-    // 3. Se ha confermato:
-    if (context.mounted) {
-      // È buona norma recuperare il provider prima di chiudere il contesto UI
-      final authProvider = context.read<AuthProvider>();
+    if (!context.mounted) return;
 
-      // ORA possiamo chiudere il Profile Sheet in sicurezza
-      Navigator.pop(context);
+    // Recuperiamo il provider prima di chiudere eventuali dialoghi
+    final authProvider = context.read<AuthProvider>();
 
-      // Procediamo con il logout
-      await authProvider.signOut(context, onSuccess: () {});
+    // Chiudiamo il dialog del profilo corrente
+    Navigator.pop(context);
+
+    try {
+      // 2. Chiamata al Provider (Senza parametri UI)
+      await authProvider.signOut();
+
+      // 3. Navigazione manuale al Login (resetta la stack)
+      // Nota: Se usi StreamBuilder su authStateChanges nel main.dart,
+      // questa navigazione potrebbe essere ridondante ma male non fa.
+      // Se invece navighi manualmente:
+      /* if (context.mounted) {
+         Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+      */
+    } catch (e) {
+      // Gestione errori logout
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Errore logout: $e"),
+            backgroundColor: AppColors.snackBar,
+          ),
+        );
+      }
     }
   }
 }

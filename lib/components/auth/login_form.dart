@@ -1,16 +1,15 @@
 // login_form.dart
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
-// Assicurati che questo import punti al file dove hai messo la classe AuthProvider
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart'; // Importante per i dialog
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart'; // 👈 Importante per usare context.read/watch
+import 'package:provider/provider.dart';
 
 class LoginForm extends StatefulWidget {
-  // Rimosso AuthService dal costruttore, ora usiamo Provider
   const LoginForm({super.key});
 
   @override
@@ -28,8 +27,6 @@ class _LoginFormState extends State<LoginForm> {
 
   bool _obscure = true;
 
-  // Rimosso bool _isLoading locale. Ora usiamo provider.isLoading
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -39,34 +36,13 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // ⚡️ GESTIONE LOGIN
-  // ---------------------------------------------------------------------------
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    // Recuperiamo il provider senza ascoltare i cambiamenti (listen: false)
-    // perché siamo dentro una funzione, non nel build.
-    final provider = context.read<AuthProvider>();
-
-    // Non serve più il try-catch qui per gestire il loading UI,
-    // lo fa il provider notificando i listener.
-    await provider.signIn(
-      context: context,
-      email: _emailController.text,
-      password: _passwordController.text,
-      onSuccess: () {},
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 👀 ASCOLTIAMO IL PROVIDER
-    // Usiamo watch così il widget si ricostruisce quando isLoading cambia (true/false)
+    // Ascoltiamo il provider per lo stato loading
     final provider = context.watch<AuthProvider>();
-    final isLoading = provider.isLoading; // Alias per comodità
+    final isLoading = provider.isLoading;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -111,9 +87,7 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                   SizedBox(height: 18.h),
 
-                  // -------------------------------------------------------------
-                  // 📧 Email
-                  // -------------------------------------------------------------
+                  // Email
                   AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
@@ -121,8 +95,7 @@ class _LoginFormState extends State<LoginForm> {
                     hint: "Email",
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
-                    enabled:
-                        !isLoading, // Disabilita se il provider sta caricando
+                    enabled: !isLoading,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Inserisci l'email";
@@ -136,9 +109,7 @@ class _LoginFormState extends State<LoginForm> {
 
                   SizedBox(height: 8.h),
 
-                  // -------------------------------------------------------------
-                  // 🔒 Password
-                  // -------------------------------------------------------------
+                  // Password
                   AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
@@ -146,8 +117,7 @@ class _LoginFormState extends State<LoginForm> {
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure,
                     isLast: true,
-                    enabled:
-                        !isLoading, // Disabilita se il provider sta caricando
+                    enabled: !isLoading,
                     onToggleObscure: () => setState(() => _obscure = !_obscure),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -159,19 +129,11 @@ class _LoginFormState extends State<LoginForm> {
 
                   SizedBox(height: 8.h),
 
-                  // -------------------------------------------------------------
-                  // ❓ Link recupero password
-                  // -------------------------------------------------------------
+                  // Link Password dimenticata
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      // Chiamata al provider
-                      onPressed: isLoading
-                          ? null
-                          : () => provider.resetPassword(
-                              context,
-                              email: _emailController.text.trim(),
-                            ),
+                      onPressed: isLoading ? null : _handleResetPassword,
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.symmetric(
                           horizontal: 8.w,
@@ -208,9 +170,7 @@ class _LoginFormState extends State<LoginForm> {
 
             SizedBox(height: 10.h),
 
-            // -------------------------------------------------------------------
-            // 🚀 BOTTONE LOGIN
-            // -------------------------------------------------------------------
+            // Bottone Login
             AuthButton(
               onPressed: isLoading ? null : _handleLogin,
               icon: isLoading ? null : FontAwesomeIcons.rightToBracket,
@@ -234,5 +194,90 @@ class _LoginFormState extends State<LoginForm> {
         ),
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🕹️ HELPER UI
+  // ---------------------------------------------------------------------------
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.snackBar,
+        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // ⚡️ GESTIONE LOGIN (Logica UI + Chiamata Provider)
+  // ---------------------------------------------------------------------------
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final provider = context.read<AuthProvider>();
+
+    try {
+      // 1. Chiamata al Provider (Logica Pura)
+      final user = await provider.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      // 2. Controllo Email Verificata (Logica UI)
+      if (!user.emailVerified) {
+        // 2a. Mostra Dialogo
+        final confirm = await DialogUtils.showConfirmDialog(
+          context,
+          title: "Email non verificata",
+          content: "Devi confermare la tua email prima di accedere.",
+          confirmText: "Rinvia Email",
+          cancelText: "Chiudi",
+        );
+
+        if (!mounted) return;
+
+        if (confirm == true) {
+          // 2b. Invia Email Verifica (se richiesto)
+          try {
+            await provider.sendVerificationEmail(user);
+            _showSnack("Email di verifica inviata!");
+          } catch (e) {
+            _showSnack(e.toString(), isError: true);
+          }
+        }
+
+        // 2c. Forza il Logout perché l'accesso è bloccato
+        await provider.signOut();
+        return;
+      }
+
+      // 3. Successo -> Navigazione (Es. alla Dashboard)
+      // Qui dovresti gestire la navigazione, esempio:
+      // Navigator.pushReplacementNamed(context, '/home');
+    } catch (e) {
+      // 4. Gestione Errori Login
+      _showSnack(e.toString(), isError: true);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🔑 RESET PASSWORD
+  // ---------------------------------------------------------------------------
+  Future<void> _handleResetPassword() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      _showSnack("Inserisci la tua email per il recupero", isError: true);
+      return;
+    }
+
+    try {
+      await context.read<AuthProvider>().resetPassword(email: email);
+      _showSnack("Email di recupero inviata a $email");
+    } catch (e) {
+      _showSnack(e.toString(), isError: true);
+    }
   }
 }

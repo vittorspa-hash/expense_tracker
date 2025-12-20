@@ -1,24 +1,15 @@
 // profile_avatar.dart
-// -----------------------------------------------------------------------------
-// 🖼️ WIDGET AVATAR PROFILO
-// -----------------------------------------------------------------------------
-// Gestisce:
-// - Visualizzazione avatar utente
-// - Bottone cambio foto (camera) con indicatore caricamento
-// - Bottone rimuovi foto (icona "X")
-// -----------------------------------------------------------------------------
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class ProfileAvatar extends StatefulWidget {
+class ProfileAvatar extends StatelessWidget {
   // 🔧 Parametri
-  final File? image; // Immagine avatar locale
-  final bool isUploading; // Flag caricamento immagine
-  final VoidCallback? onChangePicture; // Callback cambio foto
-  final VoidCallback? onRemovePicture; // Callback rimuovi foto
+  final File? image;
+  final bool isUploading;
+  final VoidCallback? onChangePicture;
+  final VoidCallback? onRemovePicture;
 
   const ProfileAvatar({
     super.key,
@@ -29,11 +20,6 @@ class ProfileAvatar extends StatefulWidget {
   });
 
   @override
-  State<ProfileAvatar> createState() => _ProfileAvatarState();
-}
-
-class _ProfileAvatarState extends State<ProfileAvatar> {
-  @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -42,9 +28,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // -----------------------------------------------------------------
-          // 🎨 CERCHIO SFONDO PRIMARIO
-          // -----------------------------------------------------------------
+          // Sfondo Cerchio
           Container(
             width: 125.r,
             height: 125.r,
@@ -54,9 +38,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
             ),
           ),
 
-          // -----------------------------------------------------------------
-          // 🖼️ CERCHIO AVATAR + OMBRA
-          // -----------------------------------------------------------------
+          // Cerchio Avatar
           Container(
             width: 120.r,
             height: 120.r,
@@ -72,15 +54,11 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
               ],
             ),
             child: CircleAvatar(
-              key: ValueKey(widget.image?.path ?? "default_avatar"),
+              key: ValueKey(image?.path ?? "default_avatar"),
               radius: 65.r,
-              backgroundImage: widget.image != null
-                  ? FileImage(widget.image!)
-                  : null,
+              backgroundImage: image != null ? FileImage(image!) : null,
               backgroundColor: AppColors.backgroundAvatar,
-
-              // ❌ Icona default se non c'è immagine
-              child: widget.image == null
+              child: image == null
                   ? Icon(
                       Icons.person_rounded,
                       size: 70.r,
@@ -90,16 +68,14 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
             ),
           ),
 
-          // -----------------------------------------------------------------
-          // 📸 BOTTONE CAMBIO FOTO
-          // -----------------------------------------------------------------
+          // Bottone Camera
           Positioned(
             bottom: 5.h,
             right: 5.w,
             child: _buildActionButton(
-              onTap: widget.isUploading ? null : widget.onChangePicture,
+              onTap: isUploading ? null : onChangePicture,
               color: AppColors.primary,
-              child: widget.isUploading
+              child: isUploading
                   ? SizedBox(
                       width: 18.w,
                       height: 18.h,
@@ -116,15 +92,13 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
             ),
           ),
 
-          // -----------------------------------------------------------------
-          // ❌ BOTTONE RIMUOVI FOTO (se immagine presente)
-          // -----------------------------------------------------------------
-          if (widget.image != null)
+          // Bottone Rimuovi
+          if (image != null)
             Positioned(
               bottom: 5.h,
               left: 5.w,
               child: _buildActionButton(
-                onTap: widget.onRemovePicture,
+                onTap: onRemovePicture,
                 color: AppColors.delete,
                 child: Icon(
                   Icons.close_rounded,
@@ -138,9 +112,6 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔘 FUNZIONE COMUNE PER CREARE I BOTTINI (camera / remove)
-  // ---------------------------------------------------------------------------
   Widget _buildActionButton({
     required VoidCallback? onTap,
     required Color color,

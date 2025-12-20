@@ -1,26 +1,16 @@
 // profile_tile.dart
-// -----------------------------------------------------------------------------
-// 📝 WIDGET PROFILE TILE (MOBILE ONLY)
-// -----------------------------------------------------------------------------
-// Gestisce la visualizzazione di una singola voce del profilo utente:
-// - Icona a sinistra
-// - Titolo e valore centrale
-// - Pulsante azione / icona modificabile a destra
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
 class ProfileTile extends StatelessWidget {
-  // 🔧 Parametri principali
-  final IconData icon; // Icona sinistra
-  final String title; // Titolo della voce
-  final String? value; // Valore della voce
-  final VoidCallback? onPressed; // Callback azione sul trailing
-  final IconData trailingIcon; // Icona trailing (default edit)
-  final String tooltip; // Tooltip per il pulsante
-  final Widget? trailingWidget; // Widget trailing personalizzato
+  final IconData icon;
+  final String title;
+  final String? value;
+  final VoidCallback? onPressed;
+  final IconData trailingIcon;
+  final String tooltip;
+  final Widget? trailingWidget;
   final bool isLoading;
 
   const ProfileTile({
@@ -43,9 +33,7 @@ class ProfileTile extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
         children: [
-          // -----------------------------------------------------------------
-          // 🎨 ICONA SINISTRA CON GRADIENT E OMBRA
-          // -----------------------------------------------------------------
+          // Icona sinistra
           Container(
             width: 44.w,
             height: 44.h,
@@ -72,9 +60,7 @@ class ProfileTile extends StatelessWidget {
 
           SizedBox(width: 16.w),
 
-          // -----------------------------------------------------------------
-          // 📄 COLONNA CENTRALE: TITOLO + VALORE
-          // -----------------------------------------------------------------
+          // Testi
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,9 +92,7 @@ class ProfileTile extends StatelessWidget {
 
           SizedBox(width: 12.w),
 
-          // -----------------------------------------------------------------
-          // 🖱 BOTTONE/TRAILING WIDGET
-          // -----------------------------------------------------------------
+          // Azione
           trailingWidget ??
               Container(
                 width: 36.w,
@@ -129,7 +113,6 @@ class ProfileTile extends StatelessWidget {
                           height: 16.r,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            // Usa il colore del testo/icona per coerenza
                             color: isDark
                                 ? AppColors.greyDark
                                 : AppColors.greyLight,

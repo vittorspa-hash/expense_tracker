@@ -5,8 +5,8 @@ import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/utils/dialog_utils.dart';
+import 'package:expense_tracker/utils/snackbar_utils.dart'; // 👈 Importante per la SnackBar
 import 'package:expense_tracker/providers/expense_provider.dart';
-// 👇 Aggiungi questo import se vuoi caricare i dati profilo all'avvio della home
 import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/pages/new_expense_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
@@ -29,8 +29,6 @@ class _HomePageState extends State<HomePage>
   String _searchQuery = "";
   String _sortCriteria = "date_desc";
 
-  // ✂️ Rimosso: File? _localAvatar; (Gestito da ProfileProvider)
-
   late AnimationController _listAnimationController;
 
   @override
@@ -46,11 +44,11 @@ class _HomePageState extends State<HomePage>
       });
     });
 
-    // ✂️ Rimosso: _loadLocalAvatar();
-
-    // Opzionale: Se non carichi il profilo nel main, caricalo qui.
+    // Caricamento profilo all'avvio
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ProfileProvider>().loadLocalData();
+      if (mounted) {
+        context.read<ProfileProvider>().loadLocalData();
+      }
     });
 
     initFadeAnimation();
@@ -81,7 +79,6 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    // ✂️ Rimosso: final user = FirebaseAuth.instance.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
@@ -101,7 +98,8 @@ class _HomePageState extends State<HomePage>
                   isSelectionMode: true,
                   selectedCount: selectedCount,
                   onCancelSelection: multiSelect.cancelSelection,
-                  onDeleteSelected: () => multiSelect.deleteSelected(context),
+                  // 👇 Qui colleghiamo la funzione locale
+                  onDeleteSelected: _handleDeleteSelected,
                   onSelectAll: () => multiSelect.selectAll(filteredExpenses),
                   onDeselectAll: () => multiSelect.deselectAll(),
                   totalCount: filteredExpenses.length,
@@ -113,7 +111,6 @@ class _HomePageState extends State<HomePage>
               // ---------------------------------------------------------------
               // 👤 HEADER
               // ---------------------------------------------------------------
-              // 👇 Header semplificato: legge tutto dai Provider interni
               HomeHeader(
                 fadeAnimation: fadeAnimation,
                 isDark: isDark,
@@ -182,9 +179,51 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // ✂️ Rimosso: _loadLocalAvatar (Logica spostata nel Provider)
+  // ---------------------------------------------------------------------------
+  // 🗑️ GESTIONE ELIMINAZIONE (Logica UI spostata qui dal Provider)
+  // ---------------------------------------------------------------------------
+  Future<void> _handleDeleteSelected() async {
+    final multiSelect = context.read<MultiSelectProvider>();
+    final count = multiSelect.selectedCount;
+
+    if (count == 0) return;
+
+    // 1. Dialogo di conferma
+    final confirm = await DialogUtils.showConfirmDialog(
+      context,
+      title: "Eliminazione ${count == 1 ? 'singola' : 'multipla'}",
+      content:
+          "Vuoi eliminare $count ${count == 1 ? 'spesa selezionata' : 'spese selezionate'}?",
+      confirmText: "Elimina",
+      cancelText: "Annulla",
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+
+    // 2. Chiamata al Provider (che ritorna gli oggetti eliminati)
+    final deletedItems = await multiSelect.deleteSelectedExpenses();
+
+    if (!mounted) return;
+
+    // 3. Feedback SnackBar con Undo
+    SnackbarUtils.show(
+      context: context,
+      title: count == 1 ? "Eliminata!" : "Eliminate!",
+      message:
+          "$count ${count == 1 ? 'spesa eliminata' : 'spese eliminate'} con successo.",
+      deletedItem: deletedItems,
+      // La cancellazione reale è già avvenuta nel provider, qui gestiamo solo UI
+      onDelete: (_) {},
+      // Ripristino
+      onRestore: (_) async {
+        await multiSelect.restoreExpenses(deletedItems);
+      },
+    );
+  }
 
   Future<void> _refreshExpenses() async {
+    // Usiamo read per evitare rebuild inutili all'interno di funzioni asincrone
     final multiSelect = context.read<MultiSelectProvider>();
     final expenseProvider = context.read<ExpenseProvider>();
 
@@ -199,8 +238,6 @@ class _HomePageState extends State<HomePage>
   // 👤 MOSTRA MODALE PROFILO
   // -----------------------------------------------------------------------------
   Future<void> _showProfileSheet(BuildContext context) async {
-    // 👇 Ora chiamiamo il dialog senza passare parametri,
-    // perché DialogProfile userà i context.read/watch sui provider.
     await DialogUtils.showProfileSheet(context);
   }
 }

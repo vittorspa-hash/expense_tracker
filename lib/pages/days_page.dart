@@ -44,7 +44,9 @@ class _DaysPageState extends State<DaysPage>
 
     // Reset della selezione quando si entra nella pagina per evitare residui
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<MultiSelectProvider>().cancelSelection();
+      if (mounted) {
+        context.read<MultiSelectProvider>().cancelSelection();
+      }
     });
   }
 
@@ -94,11 +96,11 @@ class _DaysPageState extends State<DaysPage>
                   isSelectionMode: true,
                   selectedCount: selectedCount,
                   totalCount: expensesList.length,
-                  onCancelSelection:
-                      multiSelect.cancelSelection, // Nome corretto
-                  onDeleteSelected: () => multiSelect.deleteSelected(context),
+                  onCancelSelection: multiSelect.cancelSelection,
+                  // 👇 Qui colleghiamo la funzione locale
+                  onDeleteSelected: _handleDeleteSelected,
                   onSelectAll: () => multiSelect.selectAll(expensesList),
-                  onDeselectAll: multiSelect.deselectAll, // Nome corretto
+                  onDeselectAll: multiSelect.deselectAll,
                 )
               : CustomAppBar(
                   title: dayOfWeek,
@@ -211,6 +213,7 @@ class _DaysPageState extends State<DaysPage>
                         title: "Eliminata!",
                         message: "Spesa eliminata con successo.",
                         deletedItem: expense,
+                        // Qui chiamiamo direttamente il provider perché è uno Swipe Singolo
                         onDelete: (exp) => expenseprovider.deleteExpense(exp),
                         onRestore: (exp) => expenseprovider.restoreExpense(exp),
                       );
@@ -219,10 +222,8 @@ class _DaysPageState extends State<DaysPage>
                       expense,
                       isSelectionMode: isSelectionMode,
                       isSelected: isSelected,
-                      onLongPress: () =>
-                          multiSelect.onLongPress(expense), // Nome corretto
-                      onSelectToggle: () =>
-                          multiSelect.onToggleSelect(expense), // Nome corretto
+                      onLongPress: () => multiSelect.onLongPress(expense),
+                      onSelectToggle: () => multiSelect.onToggleSelect(expense),
                     ),
                   );
                 },
@@ -279,6 +280,49 @@ class _DaysPageState extends State<DaysPage>
         color: AppColors.textLight,
         size: 28.sp,
       ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🗑️ GESTIONE ELIMINAZIONE SELEZIONATI
+  // ---------------------------------------------------------------------------
+  Future<void> _handleDeleteSelected() async {
+    final multiSelect = context.read<MultiSelectProvider>();
+    final count = multiSelect.selectedCount;
+
+    if (count == 0) return;
+
+    // 1. Dialogo di conferma
+    final confirm = await DialogUtils.showConfirmDialog(
+      context,
+      title: "Eliminazione ${count == 1 ? 'singola' : 'multipla'}",
+      content:
+          "Vuoi eliminare $count ${count == 1 ? 'spesa selezionata' : 'spese selezionate'}?",
+      confirmText: "Elimina",
+      cancelText: "Annulla",
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+
+    // 2. Esecuzione tramite Provider
+    final deletedItems = await multiSelect.deleteSelectedExpenses();
+
+    if (!mounted) return;
+
+    // 3. SnackBar con Undo
+    SnackbarUtils.show(
+      context: context,
+      title: count == 1 ? "Eliminata!" : "Eliminate!",
+      message:
+          "$count ${count == 1 ? 'spesa eliminata' : 'spese eliminate'} con successo.",
+      deletedItem: deletedItems,
+      // La cancellazione reale è già avvenuta nel provider
+      onDelete: (_) {},
+      // Ripristino
+      onRestore: (_) async {
+        await multiSelect.restoreExpenses(deletedItems);
+      },
     );
   }
 }

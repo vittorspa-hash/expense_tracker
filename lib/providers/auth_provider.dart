@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart';
+// auth_provider.dart
+import 'package:flutter/foundation.dart'; // Per ChangeNotifier
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Assicurati che questi import puntino ai file corretti nel tuo progetto
-import 'package:expense_tracker/services/auth_service.dart'; // Il file che hai appena modificato
-import 'package:expense_tracker/utils/dialog_utils.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+// Assicurati che l'import punti al tuo service corretto
+import 'package:expense_tracker/services/auth_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthService _authService;
@@ -12,7 +11,7 @@ class AuthProvider extends ChangeNotifier {
   AuthProvider({required AuthService authService})
       : _authService = authService;
 
-  // Stato per gestire caricamenti (utile per mostrare spinner nei pulsanti)
+  // Stato per gestire caricamenti
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
@@ -23,172 +22,91 @@ class AuthProvider extends ChangeNotifier {
   // 🟦 REGISTRAZIONE UTENTE
   // ---------------------------------------------------------------------------
   Future<void> signUp({
-    required BuildContext context,
     required String email,
     required String password,
-    required String confermaPassword,
     required String nome,
-    required VoidCallback onSuccess,
   }) async {
-    // 1. Validazione UI (password match)
-    if (password != confermaPassword) {
-      _showSnack(context, "Le password non coincidono");
-      return;
-    }
-
+    // Nota: La validazione delle password (match) deve essere fatta dalla UI prima di chiamare questo metodo.
+    
     _setLoading(true);
-
     try {
-      // 2. Chiamata alla Logica Pura
       await _authService.signUp(
         email: email, 
         password: password, 
         nome: nome
       );
-
-      _setLoading(false);
-
-      // 3. Callback di successo (navigazione)
-      onSuccess();
-
-      // 4. Feedback Utente (Dialog)
-      if (context.mounted) {
-        await DialogUtils.showInfoDialog(
-          context,
-          title: "Verifica Email",
-          content: "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
-        );
-      }
-
-    } on AuthException catch (e) {
-      _setLoading(false);
-      if (context.mounted) _showSnack(context, e.message);
+      // Il service si occupa di inviare l'email automatica se configurato, 
+      // oppure la UI può mostrare il Dialog di successo dopo l'await.
     } catch (e) {
+      rethrow; // Rilancia l'errore alla UI (es. "Email già in uso")
+    } finally {
       _setLoading(false);
-      if (context.mounted) _showSnack(context, "Errore imprevisto: $e");
     }
   }
 
   // ---------------------------------------------------------------------------
   // 🟦 LOGIN UTENTE
   // ---------------------------------------------------------------------------
-  Future<void> signIn({
-    required BuildContext context,
+  /// Ritorna l'oggetto User così la UI può controllare user.emailVerified
+  Future<User> signIn({
     required String email,
     required String password,
-    required VoidCallback onSuccess,
   }) async {
     _setLoading(true);
-
     try {
-      // 1. Chiamata alla Logica
       final user = await _authService.signIn(email: email, password: password);
-      
-      _setLoading(false);
-
-      if (!context.mounted) return;
-
-      // 2. Controllo Email Verificata (Logica di flusso UI)
-      if (!user.emailVerified) {
-        await _handleUnverifiedUser(context, user);
-        return; // Blocchiamo il login qui
-      }
-
-      // 3. Successo
-      onSuccess();
-
-    } on AuthException catch (e) {
-      _setLoading(false);
-      if (context.mounted) _showSnack(context, e.message);
+      return user; 
+      // La logica "Se non verificato -> Show Dialog" ora appartiene alla UI
     } catch (e) {
+      rethrow; // Rilancia l'errore alla UI (es. "Password errata")
+    } finally {
       _setLoading(false);
-      if (context.mounted) _showSnack(context, "Errore imprevisto durante il login.");
     }
   }
 
   // ---------------------------------------------------------------------------
   // 🟦 LOGOUT UTENTE
   // ---------------------------------------------------------------------------
-  Future<void> signOut(BuildContext context, {required VoidCallback onSuccess}) async {
+  Future<void> signOut() async {
     try {
       await _authService.signOut();
-      debugPrint('✅ Logout completato con successo');
-      onSuccess();
-    } on AuthException catch (e) {
-      if (context.mounted) _showSnack(context, e.message);
+      notifyListeners(); 
+    } catch (e) {
+      rethrow;
     }
   }
 
   // ---------------------------------------------------------------------------
   // 🟦 RESET PASSWORD
   // ---------------------------------------------------------------------------
-  Future<void> resetPassword(
-    BuildContext context, {
-    String? email,
-    String? customSuccessMessage,
-  }) async {
+  Future<void> resetPassword({String? email}) async {
     _setLoading(true);
-
     try {
       await _authService.resetPassword(email);
-      
+    } catch (e) {
+      rethrow;
+    } finally {
       _setLoading(false);
-
-      if (context.mounted) {
-        final message = customSuccessMessage ??
-            "Se l'email è registrata, riceverai un link per reimpostare la password.";
-        _showSnack(context, message);
-      }
-    } on AuthException catch (e) {
-      _setLoading(false);
-      if (context.mounted) _showSnack(context, e.message);
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 🟦 LOGICA DIALOGO EMAIL NON VERIFICATA
+  // 🟦 INVIA EMAIL DI VERIFICA MANUALE
   // ---------------------------------------------------------------------------
-  Future<void> _handleUnverifiedUser(BuildContext context, User user) async {
-    final confirmed = await DialogUtils.showConfirmDialog(
-      context,
-      title: "Email non verificata",
-      content: "Devi confermare la tua email prima di accedere.",
-      confirmText: "Rinvia Email",
-      cancelText: "OK",
-    );
-
-    if (!context.mounted) return;
-
-    if (confirmed == true) {
-      try {
-        await _authService.sendVerificationEmail(user);
-        if (context.mounted) _showSnack(context, "Email di verifica inviata!");
-      } on AuthException catch (e) {
-        if (context.mounted) _showSnack(context, e.message);
-      }
-    } else {
-      // Logout se l'utente rifiuta o chiude il dialog senza verificare
-      await _authService.signOut();
+  // Metodo esposto per essere chiamato dal Dialog della UI "Email non verificata"
+  Future<void> sendVerificationEmail(User user) async {
+    try {
+      await _authService.sendVerificationEmail(user);
+    } catch (e) {
+      rethrow;
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 🛠 UTILS
+  // 🛠 UTILS INTERNE
   // ---------------------------------------------------------------------------
-  
-  // Gestione stato di caricamento e notifica ai listener (la UI si aggiorna)
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
-  }
-
-  // Helper per mostrare SnackBar
-  void _showSnack(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.snackBar,
-        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
-      ),
-    );
   }
 }

@@ -1,25 +1,18 @@
 // profile_provider.dart
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Per ChangeNotifier
+import 'package:flutter/painting.dart'; // Per FileImage e gestione cache
 import 'package:flutter/services.dart'; // Per Clipboard
-import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 
 // Importa i tuoi file
 import 'package:expense_tracker/services/profile_service.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
-import 'package:expense_tracker/utils/dialog_utils.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
 
 class ProfileProvider extends ChangeNotifier {
   final ProfileService _profileService;
 
   ProfileProvider({required ProfileService profileService})
     : _profileService = profileService;
-
-  // Dependency Injection
-  final ImagePicker _picker = ImagePicker();
 
   // Stato Locale
   File? _localImage;
@@ -34,7 +27,6 @@ class ProfileProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
   // 🚀 INIZIALIZZAZIONE
   // ---------------------------------------------------------------------------
-  /// Carica l'immagine locale all'avvio
   Future<void> loadLocalData() async {
     _localImage = await _profileService.getLocalImage();
     notifyListeners();
@@ -43,272 +35,138 @@ class ProfileProvider extends ChangeNotifier {
   // ---------------------------------------------------------------------------
   // 🔄 REFRESH UTENTE
   // ---------------------------------------------------------------------------
-  Future<void> refreshUser(BuildContext context) async {
+  Future<void> refreshUser() async {
+    // Non gestiamo try/catch qui per la UI, ma solo per lo stato interno se necessario.
+    // Rilanciamo l'errore affinché la UI possa mostrare la SnackBar di errore.
     try {
       await _profileService.reloadUser();
       notifyListeners();
-
-      if (context.mounted) _showSnack(context, "Dati profilo aggiornati");
     } catch (e) {
-      if (context.mounted) _showSnack(context, "Errore refresh: $e");
+      rethrow;
     }
   }
 
   // ---------------------------------------------------------------------------
-  // 📸 CAMBIA IMMAGINE (Galleria)
+  // 📸 IMPOSTA IMMAGINE (L'UI deve fornire il File)
   // ---------------------------------------------------------------------------
-  Future<void> changeProfilePicture(BuildContext context) async {
-    // 1. Scelta immagine (UI Logic)
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile == null) return;
-
+  Future<void> setProfileImage(File imageFile) async {
     _setLoading(true);
-
     try {
-      // 2. Salvataggio (Business Logic)
-      final savedFile = await _profileService.saveLocalImage(
-        File(pickedFile.path),
-      );
+      final savedFile = await _profileService.saveLocalImage(imageFile);
 
-      // Invalida la cache dell'immagine precedente per forzare il refresh UI
+      // Invalida la cache dell'immagine precedente
       await FileImage(savedFile).evict();
 
-      _localImage = savedFile;
-      _setLoading(false);
+      // Pulizia extra cache globale (opzionale ma consigliato)
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
 
-      if (context.mounted) _showSnack(context, "Immagine profilo aggiornata!");
+      _localImage = savedFile;
+      notifyListeners();
     } catch (e) {
+      rethrow;
+    } finally {
       _setLoading(false);
-      if (context.mounted) _showSnack(context, e.toString());
     }
   }
 
   // ---------------------------------------------------------------------------
   // ❌ RIMUOVI IMMAGINE
   // ---------------------------------------------------------------------------
-  Future<void> removeProfilePicture(BuildContext context) async {
-    // 1. Dialogo conferma
-    final confirm = await DialogUtils.showConfirmDialog(
-      context,
-      title: "Rimuovi immagine",
-      content: "Sei sicuro di voler eliminare la foto profilo?",
-      confirmText: "Elimina",
-      cancelText: "Annulla",
-    );
-
-    if (confirm != true) return;
-
+  Future<void> deleteProfileImage() async {
+    // Nota: Nessun dialog qui. Il dialog è responsabilità della UI.
     try {
-      // 2. Logica rimozione
       await _profileService.deleteLocalImage();
       _localImage = null;
       notifyListeners();
-
-      if (context.mounted) _showSnack(context, "Immagine profilo rimossa");
     } catch (e) {
-      if (context.mounted) _showSnack(context, e.toString());
+      rethrow;
     }
   }
 
   // ---------------------------------------------------------------------------
   // 📝 MODIFICA NOME
   // ---------------------------------------------------------------------------
-  Future<void> changeDisplayName(BuildContext context) async {
-    final result = await DialogUtils.showInputDialogAdaptive(
-      context,
-      title: "Modifica nome",
-      fields: [
-        {
-          "hintText": "Nuovo nome",
-          "initialValue": user?.displayName ?? "",
-          "obscureText": false,
-        },
-      ],
-      confirmText: "Salva",
-      cancelText: "Annulla",
-    );
+  Future<void> updateDisplayName(String newName) async {
+    if (newName.isEmpty) return;
 
-    if (result != null && result.isNotEmpty && result.first.isNotEmpty) {
-      _setLoading(true);
-      try {
-        await _profileService.updateDisplayName(result.first);
-        _setLoading(false);
-        if (context.mounted) {
-          _showSnack(context, "Nome aggiornato con successo");
-        }
-      } catch (e) {
-        _setLoading(false);
-        if (context.mounted) _showSnack(context, e.toString());
-      }
+    _setLoading(true);
+    try {
+      await _profileService.updateDisplayName(newName);
+      // reloadUser viene spesso chiamato internamente dal service,
+      // ma notifyListeners aggiorna la UI qui.
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
   // ---------------------------------------------------------------------------
   // 📧 MODIFICA EMAIL
   // ---------------------------------------------------------------------------
-  Future<void> changeEmail(BuildContext context) async {
-    final result = await DialogUtils.showInputDialogAdaptive(
-      context,
-      title: "Modifica email",
-      fields: [
-        {
-          "hintText": "Nuova email",
-          "initialValue": user?.email ?? "",
-          "keyboardType": TextInputType.emailAddress,
-          "obscureText": false,
-        },
-        {"hintText": "Password attuale", "obscureText": true},
-      ],
-      confirmText: "Salva",
-      cancelText: "Annulla",
-    );
-
-    if (!context.mounted) return;
-
-    if (result == null || result.length < 2) return;
-
-    final newEmail = result[0].trim();
-    final password = result[1];
-    
-    if (newEmail.isEmpty || password.isEmpty) {
-      _showSnack(context, "Inserisci email e password valide");
-      return;
-    }
-
+  Future<void> updateEmail({
+    required String newEmail,
+    required String password,
+  }) async {
     _setLoading(true);
     try {
       await _profileService.updateEmail(newEmail: newEmail, password: password);
-      _setLoading(false);
-
-      if (!context.mounted) return;
-      _showSnack(
-        context,
-        "Conferma la nuova email che ti abbiamo inviato, poi accedi.",
-      );
-
-      // Navigazione gestita qui perché è un cambio di stato dell'app (logout forzato)
-      Navigator.popUntil(context, (route) => route.isFirst);
+      // Logout gestito dalla UI o dal Service, qui aggiorniamo solo lo stato se serve
     } catch (e) {
+      rethrow;
+    } finally {
       _setLoading(false);
-      if (context.mounted) _showSnack(context, e.toString());
     }
   }
 
   // ---------------------------------------------------------------------------
   // 🔒 MODIFICA PASSWORD
   // ---------------------------------------------------------------------------
-  Future<void> changePassword(BuildContext context) async {
-    final result = await DialogUtils.showInputDialogAdaptive(
-      context,
-      title: "Modifica password",
-      fields: [
-        {"hintText": "Password attuale", "obscureText": true},
-        {"hintText": "Nuova password", "obscureText": true},
-        {"hintText": "Conferma password", "obscureText": true},
-      ],
-      confirmText: "Salva",
-      cancelText: "Annulla",
-      // Qui deleghiamo al AuthProvider tramite context
-      onForgotPassword: () => _showForgotPasswordAction(context),
-    );
-
-    if (!context.mounted) return;
-
-    if (result == null || result.length < 3) return;
-
-    final currentPassword = result[0].trim();
-    final newPassword = result[1].trim();
-    final confirmPassword = result[2].trim();
-
-    if (currentPassword.isEmpty ||
-        newPassword.isEmpty ||
-        confirmPassword.isEmpty) {
-      _showSnack(context, "Compila tutti i campi");
-      return;
-    }
-
-    if (newPassword != confirmPassword) {
-      _showSnack(context, "Le nuove password non coincidono");
-      return;
-    }
-
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
     _setLoading(true);
     try {
       await _profileService.updatePassword(
         currentPassword: currentPassword,
         newPassword: newPassword,
       );
-      _setLoading(false);
-      if (context.mounted) {
-        _showSnack(context, "Password aggiornata con successo");
-      }
     } catch (e) {
+      rethrow;
+    } finally {
       _setLoading(false);
-      if (context.mounted) _showSnack(context, e.toString());
     }
-  }
-
-  // ---------------------------------------------------------------------------
-  // 📩 RESET PASSWORD (Delega)
-  // ---------------------------------------------------------------------------
-  Future<void> _showForgotPasswordAction(BuildContext context) async {
-    // Usiamo il context per trovare l'AuthProvider esistente
-    await context.read<AuthProvider>().resetPassword(
-      context,
-      email: user?.email,
-      customSuccessMessage: "Email di recupero inviata a ${user?.email}",
-    );
   }
 
   // ---------------------------------------------------------------------------
   // 🗑 ELIMINA ACCOUNT
   // ---------------------------------------------------------------------------
-  Future<void> deleteAccount(BuildContext context) async {
-    final confirm = await DialogUtils.showConfirmDialog(
-      context,
-      title: "Elimina account",
-      content: "Sei sicuro di voler eliminare definitivamente il tuo account?",
-      confirmText: "Elimina",
-      cancelText: "Annulla",
-    );
-
-    if (confirm == true) {
-      _setLoading(true);
-      try {
-        await _profileService.deleteAccount();
-        _setLoading(false);
-
-        if (context.mounted) {
-          _showSnack(context, "Account eliminato con successo");
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        }
-      } catch (e) {
-        _setLoading(false);
-        if (context.mounted) _showSnack(context, e.toString());
-      }
+  Future<void> deleteAccount() async {
+    _setLoading(true);
+    try {
+      await _profileService.deleteAccount();
+      // La navigazione di logout deve avvenire nella UI dopo che questo Future si completa
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
   // ---------------------------------------------------------------------------
   // 📋 UTILS
   // ---------------------------------------------------------------------------
-  void copyToClipboard(BuildContext context, String? text, {String? message}) {
+  /// Copia il testo. Ritorna true se ha successo (così la UI mostra la snackbar)
+  Future<void> copyToClipboard(String? text) async {
     if (text == null) return;
-    Clipboard.setData(ClipboardData(text: text));
-    _showSnack(context, message ?? "Copiato negli appunti");
+    await Clipboard.setData(ClipboardData(text: text));
   }
 
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
-  }
-
-  void _showSnack(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.snackBar,
-        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
-      ),
-    );
   }
 }

@@ -1,12 +1,15 @@
 // profile_page.dart
+import 'dart:io';
+
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
+import 'package:expense_tracker/utils/dialog_utils.dart'; // Necessario ora qui
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Importante
+import 'package:image_picker/image_picker.dart'; // Necessario ora qui
+import 'package:provider/provider.dart';
 
-// Importa il tuo provider invece del service
 import 'package:expense_tracker/providers/profile_provider.dart';
-
+import 'package:expense_tracker/providers/auth_provider.dart'; // Per il reset password
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
@@ -22,6 +25,9 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  // UI Controller Resources
+  final ImagePicker _picker = ImagePicker();
+
   @override
   TickerProvider get vsync => this;
 
@@ -30,7 +36,7 @@ class _ProfilePageState extends State<ProfilePage>
     super.initState();
     initFadeAnimation();
 
-    // Caricamento iniziale dei dati tramite Provider (dopo il primo frame)
+    // Caricamento iniziale
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<ProfileProvider>().loadLocalData();
@@ -44,13 +50,14 @@ class _ProfilePageState extends State<ProfilePage>
     super.dispose();
   }
 
+  // ---------------------------------------------------------------------------
+  // 🎨 BUILD
+  // ---------------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 🟢 ASCOLTIAMO IL PROVIDER
-    // Usiamo Consumer così aggiorniamo solo questa parte se cambia qualcosa
-    // oppure context.watch<ProfileProvider>() all'inizio del build.
+    // Ascoltiamo le modifiche del provider
     final provider = context.watch<ProfileProvider>();
     final user = provider.user;
 
@@ -63,7 +70,14 @@ class _ProfilePageState extends State<ProfilePage>
 
       body: RefreshIndicator(
         color: AppColors.primary,
-        onRefresh: () async => await provider.refreshUser(context),
+        onRefresh: () async {
+          try {
+            await provider.refreshUser();
+            if (mounted) _showSnack("Dati aggiornati");
+          } catch (e) {
+            if (mounted) _showSnack("Errore refresh: $e", isError: true);
+          }
+        },
 
         child: Container(
           decoration: BoxDecoration(
@@ -75,9 +89,7 @@ class _ProfilePageState extends State<ProfilePage>
             ListView(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
               children: [
-                // -----------------------------------------------------------------
-                // 🖼️ AVATAR + CAMBIO FOTO
-                // -----------------------------------------------------------------
+                // 🖼️ AVATAR
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 20.h),
                   decoration: BoxDecoration(
@@ -94,26 +106,18 @@ class _ProfilePageState extends State<ProfilePage>
                     ],
                   ),
                   child: ProfileAvatar(
+                    // Key per forzare il refresh se cambia il file
                     key: ObjectKey(provider.localImage),
-                    // Leggiamo i dati dallo stato del provider
                     image: provider.localImage,
-                    isUploading: provider
-                        .isLoading, // Usiamo isLoading generico o specifico se ne hai uno
-                    // 📤 Cambia immagine
-                    onChangePicture: () =>
-                        provider.changeProfilePicture(context),
-
-                    // ❌ Rimuovi immagine
-                    onRemovePicture: () =>
-                        provider.removeProfilePicture(context),
+                    isUploading: provider.isLoading,
+                    onChangePicture: _handleChangePicture,
+                    onRemovePicture: _handleRemovePicture,
                   ),
                 ),
 
                 SizedBox(height: 32.h),
 
-                // -----------------------------------------------------------------
-                // 📑 SEZIONE DATI PERSONALI
-                // -----------------------------------------------------------------
+                // 📑 DATI PERSONALI
                 Container(
                   decoration: BoxDecoration(
                     color: isDark
@@ -132,54 +136,53 @@ class _ProfilePageState extends State<ProfilePage>
                   ),
                   child: Column(
                     children: [
-                      // 👤 Nome
+                      // Nome
                       ProfileTile(
                         icon: Icons.person_outline_rounded,
                         title: "Nome",
                         value: user?.displayName,
                         tooltip: "Modifica nome",
-                        onPressed: () => provider.changeDisplayName(context),
+                        onPressed: _handleChangeDisplayName,
                         isLoading: provider.isLoading,
                       ),
 
                       _buildDivider(isDark),
 
-                      // 📧 Email
+                      // Email
                       ProfileTile(
                         icon: Icons.email_outlined,
                         title: "Email",
                         value: user?.email,
                         tooltip: "Modifica email",
-                        onPressed: () => provider.changeEmail(context),
+                        onPressed: _handleChangeEmail,
                         isLoading: provider.isLoading,
                       ),
 
                       _buildDivider(isDark),
 
-                      // 🔒 Password
+                      // Password
                       ProfileTile(
                         icon: Icons.lock_outline_rounded,
                         title: "Password",
                         value: "••••••••••",
                         tooltip: "Modifica password",
-                        onPressed: () => provider.changePassword(context),
+                        onPressed: _handleChangePassword,
                         isLoading: provider.isLoading,
                       ),
 
                       _buildDivider(isDark),
 
-                      // 🆔 UID Firebase
+                      // ID
                       ProfileTile(
                         icon: Icons.badge_outlined,
                         title: "ID utente",
                         value: user?.uid,
                         trailingIcon: Icons.content_copy_rounded,
                         tooltip: "Copia ID",
-                        onPressed: () => provider.copyToClipboard(
-                          context,
-                          user?.uid,
-                          message: "ID copiato negli appunti",
-                        ),
+                        onPressed: () async {
+                          await provider.copyToClipboard(user?.uid);
+                          _showSnack("ID copiato negli appunti");
+                        },
                         isLoading: provider.isLoading,
                       ),
                     ],
@@ -188,13 +191,9 @@ class _ProfilePageState extends State<ProfilePage>
 
                 SizedBox(height: 24.h),
 
-                // -----------------------------------------------------------------
-                // 🗑️ ELIMINA ACCOUNT
-                // -----------------------------------------------------------------
+                // 🗑️ ELIMINA
                 ElevatedButton(
-                  onPressed: provider.isLoading
-                      ? null
-                      : () => provider.deleteAccount(context),
+                  onPressed: provider.isLoading ? null : _handleDeleteAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: isDark
@@ -264,5 +263,211 @@ class _ProfilePageState extends State<ProfilePage>
             : AppColors.dividerLight.withValues(alpha: 0.5),
       ),
     );
+  }
+
+  // ---------------------------------------------------------------------------
+  // 🕹️ LOGICA UI (Gestione Dialoghi e Chiamate al Provider)
+  // ---------------------------------------------------------------------------
+
+  void _showSnack(String msg, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: AppColors.snackBar,
+        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
+      ),
+    );
+  }
+
+  /// 📸 CAMBIO IMMAGINE
+  Future<void> _handleChangePicture() async {
+    final provider = context.read<ProfileProvider>();
+
+    // 1. Scelta Immagine (UI)
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        imageQuality: 80,
+      );
+
+      if (pickedFile == null) return;
+
+      // 2. Logica Provider
+      await provider.setProfileImage(File(pickedFile.path));
+      _showSnack("Immagine profilo aggiornata!");
+    } catch (e) {
+      _showSnack(e.toString(), isError: true);
+    }
+  }
+
+  /// ❌ RIMOZIONE IMMAGINE
+  Future<void> _handleRemovePicture() async {
+    final provider = context.read<ProfileProvider>();
+
+    final confirm = await DialogUtils.showConfirmDialog(
+      context,
+      title: "Rimuovi immagine",
+      content: "Sei sicuro di voler eliminare la foto profilo?",
+      confirmText: "Elimina",
+      cancelText: "Annulla",
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await provider.deleteProfileImage();
+      _showSnack("Immagine profilo rimossa");
+    } catch (e) {
+      _showSnack(e.toString(), isError: true);
+    }
+  }
+
+  /// 📝 MODIFICA NOME
+  Future<void> _handleChangeDisplayName() async {
+    final provider = context.read<ProfileProvider>();
+
+    final result = await DialogUtils.showInputDialogAdaptive(
+      context,
+      title: "Modifica nome",
+      fields: [
+        {
+          "hintText": "Nuovo nome",
+          "initialValue": provider.user?.displayName ?? "",
+          "obscureText": false,
+        },
+      ],
+      confirmText: "Salva",
+      cancelText: "Annulla",
+    );
+
+    if (result != null && result.isNotEmpty && result.first.isNotEmpty) {
+      try {
+        await provider.updateDisplayName(result.first);
+        _showSnack("Nome aggiornato con successo");
+      } catch (e) {
+        _showSnack(e.toString(), isError: true);
+      }
+    }
+  }
+
+  /// 📧 MODIFICA EMAIL
+  Future<void> _handleChangeEmail() async {
+    final provider = context.read<ProfileProvider>();
+
+    final result = await DialogUtils.showInputDialogAdaptive(
+      context,
+      title: "Modifica email",
+      fields: [
+        {
+          "hintText": "Nuova email",
+          "initialValue": provider.user?.email ?? "",
+          "keyboardType": TextInputType.emailAddress,
+          "obscureText": false,
+        },
+        {"hintText": "Password attuale", "obscureText": true},
+      ],
+      confirmText: "Salva",
+      cancelText: "Annulla",
+    );
+
+    if (result == null || result.length < 2) return;
+
+    final newEmail = result[0].trim();
+    final password = result[1];
+
+    if (newEmail.isEmpty || password.isEmpty) {
+      _showSnack("Inserisci dati validi", isError: true);
+      return;
+    }
+
+    try {
+      await provider.updateEmail(newEmail: newEmail, password: password);
+      if (!mounted) return;
+
+      _showSnack("Conferma la nuova email inviata. Effettua l'accesso.");
+      Navigator.popUntil(context, (route) => route.isFirst);
+    } catch (e) {
+      _showSnack(e.toString(), isError: true);
+    }
+  }
+
+  /// 🔒 MODIFICA PASSWORD
+  Future<void> _handleChangePassword() async {
+    final provider = context.read<ProfileProvider>();
+    // Otteniamo l'email in anticipo per usarla nella callback
+    final userEmail = provider.user?.email;
+
+    final result = await DialogUtils.showInputDialogAdaptive(
+      context,
+      title: "Modifica password",
+      fields: [
+        {"hintText": "Password attuale", "obscureText": true},
+        {"hintText": "Nuova password", "obscureText": true},
+        {"hintText": "Conferma password", "obscureText": true},
+      ],
+      confirmText: "Salva",
+      cancelText: "Annulla",
+      // Callback aggiornata per il nuovo AuthProvider
+      onForgotPassword: () async {
+        try {
+          await context.read<AuthProvider>().resetPassword(email: userEmail);
+          // Messaggio gestito qui nella UI
+          if (mounted) {
+            _showSnack("Email di recupero inviata a $userEmail");
+          }
+        } catch (e) {
+          // Errore gestito qui nella UI
+          if (mounted) {
+            _showSnack(e.toString(), isError: true);
+          }
+        }
+      },
+    );
+
+    if (result == null || result.length < 3) return;
+
+    final currentPass = result[0].trim();
+    final newPass = result[1].trim();
+    final confirmPass = result[2].trim();
+
+    if (newPass != confirmPass) {
+      _showSnack("Le nuove password non coincidono", isError: true);
+      return;
+    }
+
+    try {
+      await provider.updatePassword(
+        currentPassword: currentPass,
+        newPassword: newPass,
+      );
+      _showSnack("Password aggiornata con successo");
+    } catch (e) {
+      _showSnack(e.toString(), isError: true);
+    }
+  }
+
+  /// 🗑 ELIMINA ACCOUNT
+  Future<void> _handleDeleteAccount() async {
+    final provider = context.read<ProfileProvider>();
+
+    final confirm = await DialogUtils.showConfirmDialog(
+      context,
+      title: "Elimina account",
+      content: "Sei sicuro di voler eliminare definitivamente il tuo account?",
+      confirmText: "Elimina",
+      cancelText: "Annulla",
+    );
+
+    if (confirm == true) {
+      try {
+        await provider.deleteAccount();
+        if (!mounted) return;
+        _showSnack("Account eliminato con successo");
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } catch (e) {
+        _showSnack(e.toString(), isError: true);
+      }
+    }
   }
 }
