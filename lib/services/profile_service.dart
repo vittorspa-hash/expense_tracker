@@ -9,6 +9,24 @@ class ProfileService {
   fb_auth.User? get currentUser => _auth.currentUser;
 
   // ---------------------------------------------------------------------------
+  // 🛠 HELPER PRIVATO: Genera il percorso file basato sull'UID
+  // ---------------------------------------------------------------------------
+  /// Restituisce il riferimento al File specifico per l'utente loggato.
+  /// Es: .../documents/profile_pic_AbCdEf123456.jpg
+  Future<File> _getUserFile() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw ProfileException(
+        "Nessun utente loggato: impossibile gestire l'immagine.",
+      );
+    }
+
+    final appDir = await getApplicationDocumentsDirectory();
+    // 🔑 QUI È LA MAGIA: Usiamo user.uid nel nome del file
+    return File('${appDir.path}/profile_pic_${user.uid}.jpg');
+  }
+
+  // ---------------------------------------------------------------------------
   // 🔄 REFRESH UTENTE
   // ---------------------------------------------------------------------------
   Future<void> reloadUser() async {
@@ -16,22 +34,22 @@ class ProfileService {
   }
 
   // ---------------------------------------------------------------------------
-  // 💾 SALVATAGGIO IMMAGINE (File System)
+  // 💾 SALVATAGGIO IMMAGINE
   // ---------------------------------------------------------------------------
-  /// Prende un file (selezionato dal picker nel provider) e lo salva in locale
   Future<File> saveLocalImage(File sourceFile) async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final destination = '${appDir.path}/profile_picture.jpg';
-      
-      // Copia il file
-      final savedImage = await sourceFile.copy(destination);
-      
-      // Svuota la cache dell'immagine vecchia
-      // Nota: FileImage eviction è un concetto di Flutter Painting, 
-      // ma dato che è legato al file system, possiamo lasciarlo gestire al Provider 
-      // o farlo qui se importiamo painting. Per purezza, meglio che il service ritorni il File.
-      
+      // Ottengo il file di destinazione specifico per questo utente
+      final destinationFile = await _getUserFile();
+
+      // Se esiste già un file vecchio per questo utente, lo sovrascriviamo.
+      // Opzionale: cancellarlo esplicitamente prima della copia per pulizia
+      if (await destinationFile.exists()) {
+        await destinationFile.delete();
+      }
+
+      // Copia il file dalla cache/galleria alla cartella documenti
+      final savedImage = await sourceFile.copy(destinationFile.path);
+
       return savedImage;
     } catch (e) {
       throw ProfileException("Errore durante il salvataggio immagine: $e");
@@ -43,8 +61,7 @@ class ProfileService {
   // ---------------------------------------------------------------------------
   Future<void> deleteLocalImage() async {
     try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final file = File('${appDir.path}/profile_picture.jpg');
+      final file = await _getUserFile();
       if (await file.exists()) {
         await file.delete();
       }
@@ -57,9 +74,14 @@ class ProfileService {
   // 📂 CARICAMENTO IMMAGINE ESISTENTE
   // ---------------------------------------------------------------------------
   Future<File?> getLocalImage() async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final file = File('${appDir.path}/profile_picture.jpg');
-    return (await file.exists()) ? file : null;
+    try {
+      final file = await _getUserFile();
+      return (await file.exists()) ? file : null;
+    } catch (e) {
+      // Se non c'è utente loggato (es. fase di logout/inizializzazione),
+      // ritorniamo null invece di lanciare eccezione
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -97,7 +119,6 @@ class ProfileService {
 
       // 3. Logout (richiesto dal tuo flusso originale)
       await _auth.signOut();
-      
     } on fb_auth.FirebaseAuthException catch (e) {
       throw ProfileException("Errore cambio email: ${e.message}");
     }
@@ -121,7 +142,6 @@ class ProfileService {
 
       await user.reauthenticateWithCredential(cred);
       await user.updatePassword(newPassword);
-      
     } on fb_auth.FirebaseAuthException catch (e) {
       throw ProfileException("Errore cambio password: ${e.message}");
     }
