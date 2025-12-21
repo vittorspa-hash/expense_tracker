@@ -1,28 +1,40 @@
-// expense_provider.dart
-// Provider per gestire lo stato delle spese nell'applicazione.
-// Delega la logica di business al service e i calcoli al calculator.
-
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/settings_provider.dart';
+import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/services/expense_service.dart';
 import 'package:expense_tracker/utils/expense_calculator.dart';
 import 'package:flutter/foundation.dart';
 
+/// FILE: expense_provider.dart
+/// DESCRIZIONE: Gestore di stato principale per le spese (State Management).
+/// Agisce da "Brain" dell'applicazione collegando:
+/// 1. UI (che ascolta i cambiamenti)
+/// 2. Service (che parla con il Database/Firebase)
+/// 3. Calculator (che esegue la matematica pura)
+/// 4. NotificationProvider (per reagire ai cambiamenti di budget)
+
 class ExpenseProvider extends ChangeNotifier {
-  final SettingsProvider _settingsProvider;
+  // --- DIPENDENZE ---
+  // Iniezione delle dipendenze necessarie per la logica di business e le notifiche.
+  final NotificationProvider _notificationProvider;
   final ExpenseService _expenseService;
 
   ExpenseProvider({
-    required SettingsProvider settingsProvider,
+    required NotificationProvider notificationProvider,
     required ExpenseService expenseService,
-  }) : _settingsProvider = settingsProvider,
+  }) : _notificationProvider = notificationProvider,
        _expenseService = expenseService;
 
+  // --- STATO ---
+  // La lista principale delle spese (Private) e il getter pubblico immutabile.
+  // 
   List<ExpenseModel> _expenses = [];
   List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
   // --- CACHE DEI TOTALI (Performance Boost) ---
-  // I getter ora sono istantanei (O(1)) invece che calcolati (O(N))
+  // Strategia di ottimizzazione: Invece di ricalcolare i totali (O(N)) ogni volta
+  // che la UI li richiede, li calcoliamo una volta sola quando i dati cambiano
+  // e li salviamo in variabili (O(1) in lettura).
+  // 
   double _todayTotal = 0.0;
   double _weekTotal = 0.0;
   double _monthTotal = 0.0;
@@ -33,7 +45,7 @@ class ExpenseProvider extends ChangeNotifier {
   double get totalExpenseMonth => _monthTotal;
   double get totalExpenseYear => _yearTotal;
 
-  // Funzione privata per aggiornare tutti i totali in un colpo solo
+  // Aggiorna tutti i totali in cache. Chiamato dopo ogni modifica (CRUD).
   void _refreshTotals() {
     _todayTotal = ExpenseCalculator.totalExpenseToday(_expenses);
     _weekTotal = ExpenseCalculator.totalExpenseWeek(_expenses);
@@ -41,11 +53,8 @@ class ExpenseProvider extends ChangeNotifier {
     _yearTotal = ExpenseCalculator.totalExpenseYear(_expenses);
   }
 
-  // Helper privato per ordinare per data decrescente (usato internamente)
-  void _sortByDateDesc() {
-    ExpenseCalculator.sortInPlace(_expenses, "date_desc");
-  }
-
+  // --- INIZIALIZZAZIONE ---
+  // Carica i dati dal servizio, calcola i totali iniziali e notifica la UI.
   Future<void> initialise() async {
     _expenses = await _expenseService.loadUserExpenses();
     _refreshTotals();
@@ -57,6 +66,16 @@ class ExpenseProvider extends ChangeNotifier {
     _refreshTotals();
     notifyListeners();
   }
+
+  // --- OPERAZIONI CRUD ---
+  // Metodi per Creare, Ripristinare, Modificare ed Eliminare le spese.
+  // Ogni operazione segue il pattern:
+  // 1. Chiamata al Service (Async).
+  // 2. Aggiornamento lista locale.
+  // 3. Refresh Cache Totali.
+  // 4. Notifica Listeners.
+  // 5. Controllo Budget (Interazione con NotificationProvider).
+  // 
 
   Future<void> createExpense({
     required double value,
@@ -70,13 +89,13 @@ class ExpenseProvider extends ChangeNotifier {
     );
 
     _expenses.add(expense);
-    _sortByDateDesc(); // ✅ Sort in-place, nessuna allocazione
+    _sortByDateDesc(); 
 
     _refreshTotals();
     notifyListeners();
 
-    if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(_monthTotal);
+    if (_notificationProvider.limitAlertEnabled) {
+      await _notificationProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
@@ -84,13 +103,13 @@ class ExpenseProvider extends ChangeNotifier {
     final expense = await _expenseService.restoreExpense(expenseModel);
 
     _expenses.add(expense);
-    _sortByDateDesc(); // ✅ Sort in-place
+    _sortByDateDesc();
 
     _refreshTotals();
     notifyListeners();
 
-    if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(_monthTotal);
+    if (_notificationProvider.limitAlertEnabled) {
+      await _notificationProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
@@ -107,13 +126,13 @@ class ExpenseProvider extends ChangeNotifier {
       date: date,
     );
 
-    _sortByDateDesc(); // ✅ Sort in-place
+    _sortByDateDesc(); // Mantiene l'ordine corretto se la data cambia
 
     _refreshTotals();
     notifyListeners();
 
-    if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(_monthTotal);
+    if (_notificationProvider.limitAlertEnabled) {
+      await _notificationProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
@@ -125,19 +144,26 @@ class ExpenseProvider extends ChangeNotifier {
     _refreshTotals();
     notifyListeners();
 
-    if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(_monthTotal);
+    if (_notificationProvider.limitAlertEnabled) {
+      await _notificationProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
-  // Metodo pubblico per ordinare secondo diversi criteri
+  // --- ORDINAMENTO ---
+  // Helper privato e metodo pubblico per ordinare la lista in-place.
+  void _sortByDateDesc() {
+    ExpenseCalculator.sortInPlace(_expenses, "date_desc");
+  }
+
   void sortBy(String criteria) {
-    ExpenseCalculator.sortInPlace(_expenses, criteria); // ✅ Sort in-place
+    ExpenseCalculator.sortInPlace(_expenses, criteria);
     notifyListeners();
   }
 
-  // Questi metodi ritornano Map o List filtrate, quindi va bene lasciarli dinamici
-  // perché non vengono chiamati ad ogni frame come i totali semplici.
+  // --- AGGREGAZIONE E FILTRI ---
+  // Delegano i calcoli complessi all'ExpenseCalculator.
+  // Non vengono cachati perché ritornano strutture dati complesse (Map/List)
+  // usate solo in schermate specifiche di reportistica.
   Map<String, double> get expensesByMonth {
     return ExpenseCalculator.expensesByMonth(_expenses);
   }

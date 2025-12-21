@@ -1,25 +1,22 @@
-// settings_tile.dart
-// -----------------------------------------------------------------------------
-// ⚙️ WIDGET SETTINGS TILE
-// -----------------------------------------------------------------------------
-// Gestisce la visualizzazione di una singola voce delle impostazioni:
-// - Icona a sinistra
-// - Titolo e sottotitolo centrale
-// - Widget trailing personalizzabile (switch, icona, etc.)
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
+/// FILE: settings_tile.dart
+/// DESCRIZIONE: Componente UI per visualizzare una singola voce nella lista delle impostazioni.
+/// Strutturato in tre parti: Icona decorativa (sinistra), Informazioni testuali (centro)
+/// e Azione/Widget (destra, es. Switch o Chevron).
+
 class SettingsTile extends StatelessWidget {
-  // 🔧 Parametri principali
-  final IconData icon; // Icona sinistra
-  final String title; // Titolo della voce
-  final String? subtitle; // Sottotitolo/valore
-  final VoidCallback? onPressed; // Callback azione
-  final IconData trailingIcon; // Icona trailing (default chevron)
-  final Widget? trailingWidget; // Widget trailing personalizzato
+  // --- PARAMETRI ---
+  // Configurazione del tile: icona principale, testi descrittivi e 
+  // widget di coda opzionale (trailingWidget) che ha priorità sull'icona di default.
+  final IconData icon; 
+  final String title; 
+  final String? subtitle; 
+  final VoidCallback? onPressed; 
+  final IconData trailingIcon; 
+  final Widget? trailingWidget; 
 
   const SettingsTile({
     super.key,
@@ -35,13 +32,15 @@ class SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- STRUTTURA LAYOUT ---
+    // Organizza gli elementi orizzontalmente con padding standard.
+    // 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
         children: [
-          // -----------------------------------------------------------------
-          // 🎨 ICONA SINISTRA CON GRADIENT E OMBRA
-          // -----------------------------------------------------------------
+          // --- ICONA SINISTRA ---
+          // Container decorativo con sfondo colorato semitrasparente e ombra.
           Container(
             width: 44.w,
             height: 44.h,
@@ -61,9 +60,9 @@ class SettingsTile extends StatelessWidget {
 
           SizedBox(width: 16.w),
 
-          // -----------------------------------------------------------------
-          // 📄 COLONNA CENTRALE: TITOLO + SOTTOTITOLO
-          // -----------------------------------------------------------------
+          // --- INFO TESTUALI ---
+          // Colonna centrale che si espande per occupare lo spazio disponibile.
+          // Gestisce titolo e sottotitolo opzionale.
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,10 +96,11 @@ class SettingsTile extends StatelessWidget {
 
           SizedBox(width: 12.w),
 
-          // -----------------------------------------------------------------
-          // 🖱 TRAILING WIDGET O ICONA
-          // - Può essere sovrascritto da trailingWidget personalizzato
-          // -----------------------------------------------------------------
+          // --- AZIONE TRAILING ---
+          // Logica di visualizzazione della parte destra:
+          // 1. Se esiste un `trailingWidget` (es. Switch), lo mostra.
+          // 2. Altrimenti, se c'è un callback `onPressed`, mostra un bottone icona (es. Chevron).
+          // 3. Altrimenti, nulla.
           trailingWidget ??
               (onPressed != null
                   ? Container(

@@ -1,12 +1,14 @@
-// edit_expense_page.dart
-
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
-// Aggiunto Provider
 import 'package:provider/provider.dart';
+
+/// FILE: edit_expense_page.dart
+/// DESCRIZIONE: Schermata per la modifica di una spesa esistente.
+/// Riceve il modello della spesa come parametro, pre-compila i campi del form `ExpenseEdit`
+/// e gestisce le operazioni di aggiornamento (Update) ed eliminazione (Delete) tramite il Provider.
 
 class EditExpensePage extends StatefulWidget {
   static const route = "/expense/edit";
@@ -21,6 +23,9 @@ class EditExpensePage extends StatefulWidget {
 
 class _EditExpensePageState extends State<EditExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  
+  // --- CONFIGURAZIONE ANIMAZIONE ---
+  // Setup del mixin per l'effetto fade-in all'ingresso della pagina.
   @override
   TickerProvider get vsync => this;
 
@@ -39,13 +44,16 @@ class _EditExpensePageState extends State<EditExpensePage>
     super.dispose();
   }
 
-  // Callback chiamato dal widget ExpenseEdit quando si inviano le modifiche
+  // --- LOGICA DI AGGIORNAMENTO ---
+  // Callback invocata al salvataggio (Long Press).
+  // Chiama il metodo `editExpense` del Provider per aggiornare lo stato persistente
+  // e chiude la schermata corrente.
+  // 
   void onSubmit({
     required double value,
     required String? description,
     required DateTime date,
   }) {
-    // Aggiorna la spesa nello store tramite Provider
     context.read<ExpenseProvider>().editExpense(
       widget.expenseModel,
       value: value,
@@ -56,9 +64,13 @@ class _EditExpensePageState extends State<EditExpensePage>
     Navigator.pop(context);
   }
 
+  // --- BUILD UI & ELIMINAZIONE ---
+  // Costruisce l'interfaccia riutilizzando `ExpenseEdit`.
+  // 1. Popola i campi con i dati iniziali (`initialValue`, etc.).
+  // 2. Configura il FAB per l'eliminazione della spesa.
+  // 
   @override
   Widget build(BuildContext context) {
-    // Recuperiamo lo store una volta per usarlo nelle varie callback
     final expense = context.read<ExpenseProvider>();
 
     return buildWithFadeAnimation(

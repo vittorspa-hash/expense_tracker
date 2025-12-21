@@ -1,33 +1,34 @@
-// auth_provider.dart
-import 'package:flutter/foundation.dart'; // Per ChangeNotifier
+import 'package:flutter/foundation.dart'; 
 import 'package:firebase_auth/firebase_auth.dart';
-
-// Assicurati che l'import punti al tuo service corretto
 import 'package:expense_tracker/services/auth_service.dart';
 
+/// FILE: auth_provider.dart
+/// DESCRIZIONE: State Manager per l'autenticazione (ChangeNotifier).
+/// Agisce come intermediario tra la UI e l'AuthService, gestendo lo stato di 
+/// caricamento (loading spinners) e propagando errori o successi alle viste.
+
 class AuthProvider extends ChangeNotifier {
+  // --- STATO E DIPENDENZE ---
+  // Iniezione del servizio di autenticazione e gestione dello stato 
+  // di caricamento visibile dalla UI.
   final AuthService _authService;
 
   AuthProvider({required AuthService authService})
       : _authService = authService;
 
-  // Stato per gestire caricamenti
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // Getter per l'utente corrente
   User? get currentUser => _authService.currentUser;
 
-  // ---------------------------------------------------------------------------
-  // 🟦 REGISTRAZIONE UTENTE
-  // ---------------------------------------------------------------------------
+  // --- REGISTRAZIONE ---
+  // Coordina la creazione dell'account gestendo il loading state.
+  // Gli errori (es. email duplicata) vengono rilanciati alla UI per la gestione visiva.
   Future<void> signUp({
     required String email,
     required String password,
     required String nome,
   }) async {
-    // Nota: La validazione delle password (match) deve essere fatta dalla UI prima di chiamare questo metodo.
-    
     _setLoading(true);
     try {
       await _authService.signUp(
@@ -35,19 +36,17 @@ class AuthProvider extends ChangeNotifier {
         password: password, 
         nome: nome
       );
-      // Il service si occupa di inviare l'email automatica se configurato, 
-      // oppure la UI può mostrare il Dialog di successo dopo l'await.
     } catch (e) {
-      rethrow; // Rilancia l'errore alla UI (es. "Email già in uso")
+      rethrow; 
     } finally {
       _setLoading(false);
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 LOGIN UTENTE
-  // ---------------------------------------------------------------------------
-  /// Ritorna l'oggetto User così la UI può controllare user.emailVerified
+  // --- LOGIN ---
+  // Gestisce l'accesso e restituisce l'oggetto User.
+  // Questo permette alla UI di verificare immediatamente lo stato (es. emailVerified)
+  // e decidere se procedere alla Home o mostrare avvisi.
   Future<User> signIn({
     required String email,
     required String password,
@@ -56,17 +55,16 @@ class AuthProvider extends ChangeNotifier {
     try {
       final user = await _authService.signIn(email: email, password: password);
       return user; 
-      // La logica "Se non verificato -> Show Dialog" ora appartiene alla UI
     } catch (e) {
-      rethrow; // Rilancia l'errore alla UI (es. "Password errata")
+      rethrow; 
     } finally {
       _setLoading(false);
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 LOGOUT UTENTE
-  // ---------------------------------------------------------------------------
+  // --- LOGOUT ---
+  // Esegue la disconnessione e notifica i listener per aggiornare il routing
+  // (es. AuthWrapper reindirizza al Login).
   Future<void> signOut() async {
     try {
       await _authService.signOut();
@@ -76,9 +74,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 RESET PASSWORD
-  // ---------------------------------------------------------------------------
+  // --- GESTIONE ACCOUNT ---
+  // Metodi di supporto per il recupero password e l'invio manuale
+  // dell'email di verifica (utilizzato nei dialog di avviso).
   Future<void> resetPassword({String? email}) async {
     _setLoading(true);
     try {
@@ -90,10 +88,6 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 INVIA EMAIL DI VERIFICA MANUALE
-  // ---------------------------------------------------------------------------
-  // Metodo esposto per essere chiamato dal Dialog della UI "Email non verificata"
   Future<void> sendVerificationEmail(User user) async {
     try {
       await _authService.sendVerificationEmail(user);
@@ -102,9 +96,8 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🛠 UTILS INTERNE
-  // ---------------------------------------------------------------------------
+  // --- HELPER INTERNI ---
+  // Utility per aggiornare lo stato di caricamento e notificare la UI in un unico passaggio.
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

@@ -1,5 +1,3 @@
-// years_page.dart
-
 import 'package:expense_tracker/components/report/bar_chart_widget.dart';
 import 'package:expense_tracker/components/report/period_list_item_widget.dart';
 import 'package:expense_tracker/components/report/total_card_widget.dart';
@@ -8,11 +6,17 @@ import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/pages/months_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
-// Rimosso GetX e aggiunto Provider
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+/// FILE: years_page.dart
+/// DESCRIZIONE: Schermata di reportistica annuale.
+/// Visualizza:
+/// 1. Un selettore per cambiare l'anno di riferimento.
+/// 2. Un grafico a barre con l'andamento mensile.
+/// 3. Una lista dettagliata dei mesi, navigabile verso il dettaglio mensile.
 
 class YearsPage extends StatefulWidget {
   static const route = "/years";
@@ -25,6 +29,9 @@ class YearsPage extends StatefulWidget {
 
 class _YearsPageState extends State<YearsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  
+  // --- STATO LOCALE ---
+  // Anno attualmente selezionato per il filtro.
   String? selectedYear;
 
   final monthListKey = GlobalKey();
@@ -74,13 +81,16 @@ class _YearsPageState extends State<YearsPage>
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
         child: SafeArea(
-          // SOSTITUITO Obx con Consumer<ExpenseStore>
+          // --- RECUPERO DATI (CONSUMER) ---
+          // Ascolta ExpenseProvider per ottenere i dati aggregati.
+          // Filtra le spese per anno e calcola i totali dinamici.
+          // 
           child: Consumer<ExpenseProvider>(
             builder: (context, expenseProvider, child) {
-              // Recupera spese mensili dallo store (ora passato tramite Consumer)
+              // Recupera mappa grezza { "YYYY-MM": totale }
               final Map<String, double> monthlyExpenses = expenseProvider.expensesByMonth;
 
-              // Estrae anni disponibili e ordina
+              // Estrae anni unici disponibili e li ordina
               final years =
                   monthlyExpenses.keys
                       .map((key) => key.split('-')[0])
@@ -88,7 +98,7 @@ class _YearsPageState extends State<YearsPage>
                       .toList()
                     ..sort();
 
-              // ⚠️ Nessuna spesa disponibile
+              // Stato Vuoto: Nessuna spesa registrata
               if (years.isEmpty) {
                 return Center(
                   child: Column(
@@ -117,10 +127,10 @@ class _YearsPageState extends State<YearsPage>
                 );
               }
 
-              // Imposta anno selezionato di default
+              // Inizializzazione anno corrente (ultimo disponibile di default)
               selectedYear ??= years.last;
 
-              // Lista dei valori mensili per l'anno selezionato
+              // Generazione dati per il grafico (lista di 12 double)
               final List<double> values = List.generate(12, (i) {
                 final monthKey =
                     "$selectedYear-${(i + 1).toString().padLeft(2, '0')}";
@@ -136,7 +146,9 @@ class _YearsPageState extends State<YearsPage>
                     children: [
                       SizedBox(height: 20.h),
 
-                      // SELEZIONE ANNO
+                      // --- SELETTORE ANNO ---
+                      // Apre un dialog per scegliere l'anno tra quelli disponibili.
+                      // 
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
                         child: InkWell(
@@ -214,6 +226,9 @@ class _YearsPageState extends State<YearsPage>
                         ),
                       ),
 
+                      // --- RIEPILOGO E GRAFICO ---
+                      // Card con totale annuo e grafico a barre mensile.
+                      //
                       TotalCardWidget(
                         label: "Totale $selectedYear",
                         totalAmount: totalYear,
@@ -224,6 +239,7 @@ class _YearsPageState extends State<YearsPage>
 
                       SizedBox(height: 12.h),
 
+                      // Header Sezione Lista
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
                         child: Align(
@@ -244,6 +260,9 @@ class _YearsPageState extends State<YearsPage>
 
                       SizedBox(height: 12.h),
 
+                      // --- LISTA MESI ---
+                      // Genera 12 tile, una per mese. Cliccando si naviga al dettaglio (MonthsPage).
+                      // 
                       Column(
                         key: monthListKey,
                         children: List.generate(12, (index) {

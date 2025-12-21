@@ -1,12 +1,16 @@
-// profile_provider.dart
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
-import 'package:flutter/foundation.dart'; // Per ChangeNotifier
-import 'package:flutter/painting.dart'; // Per FileImage e gestione cache
-import 'package:flutter/services.dart'; // Per Clipboard
-
-// Importa i tuoi file
+import 'package:flutter/foundation.dart'; 
+import 'package:flutter/painting.dart'; 
+import 'package:flutter/services.dart'; 
 import 'package:expense_tracker/services/profile_service.dart';
+
+/// FILE: profile_provider.dart
+/// DESCRIZIONE: State Manager per il profilo utente.
+/// Agisce da intermediario tra la UI e il ProfileService, gestendo:
+/// 1. Lo stato dell'immagine locale (caricamento, cache eviction, aggiornamento).
+/// 2. Lo stato di caricamento (loading spinner) per operazioni lunghe.
+/// 3. La propagazione delle modifiche ai dati utente (Nome, Email, Password).
 
 class ProfileProvider extends ChangeNotifier {
   final ProfileService _profileService;
@@ -14,30 +18,26 @@ class ProfileProvider extends ChangeNotifier {
   ProfileProvider({required ProfileService profileService})
     : _profileService = profileService;
 
-  // Stato Locale
+  // --- STATO E GETTERS ---
+  // Gestione dello stato interno (File immagine, flag loading) e proxy
+  // verso l'utente Firebase corrente per l'accesso in sola lettura.
   File? _localImage;
   File? get localImage => _localImage;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  // Utente corrente (proxy verso il service)
   fb_auth.User? get user => _profileService.currentUser;
 
-  // ---------------------------------------------------------------------------
-  // 🚀 INIZIALIZZAZIONE
-  // ---------------------------------------------------------------------------
+  // --- INIZIALIZZAZIONE E REFRESH ---
+  // Metodi per il caricamento iniziale dell'immagine dal disco e per
+  // la sincronizzazione manuale (pull-to-refresh) dei dati utente da Firebase.
   Future<void> loadLocalData() async {
     _localImage = await _profileService.getLocalImage();
     notifyListeners();
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔄 REFRESH UTENTE
-  // ---------------------------------------------------------------------------
   Future<void> refreshUser() async {
-    // Non gestiamo try/catch qui per la UI, ma solo per lo stato interno se necessario.
-    // Rilanciamo l'errore affinché la UI possa mostrare la SnackBar di errore.
     try {
       await _profileService.reloadUser();
       notifyListeners();
@@ -46,9 +46,11 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 📸 IMPOSTA IMMAGINE (L'UI deve fornire il File)
-  // ---------------------------------------------------------------------------
+  // --- GESTIONE IMMAGINE PROFILO ---
+  // Gestisce il salvataggio e la rimozione dell'immagine.
+  // CRITICO: Esegue l'invalidazione della cache (evict) e la pulizia della ImageCache
+  // globale per garantire che la UI mostri subito la nuova foto sovrascritta.
+  // 
   Future<void> setProfileImage(File imageFile) async {
     _setLoading(true);
     try {
@@ -70,11 +72,7 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // ❌ RIMUOVI IMMAGINE
-  // ---------------------------------------------------------------------------
   Future<void> deleteProfileImage() async {
-    // Nota: Nessun dialog qui. Il dialog è responsabilità della UI.
     try {
       await _profileService.deleteLocalImage();
       _localImage = null;
@@ -84,17 +82,15 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 📝 MODIFICA NOME
-  // ---------------------------------------------------------------------------
+  // --- AGGIORNAMENTO DATI UTENTE ---
+  // Metodi wrapper che gestiscono il loading state durante le chiamate asincrone
+  // al service per modificare nome, email e password.
   Future<void> updateDisplayName(String newName) async {
     if (newName.isEmpty) return;
 
     _setLoading(true);
     try {
       await _profileService.updateDisplayName(newName);
-      // reloadUser viene spesso chiamato internamente dal service,
-      // ma notifyListeners aggiorna la UI qui.
       notifyListeners();
     } catch (e) {
       rethrow;
@@ -103,9 +99,6 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 📧 MODIFICA EMAIL
-  // ---------------------------------------------------------------------------
   Future<void> updateEmail({
     required String newEmail,
     required String password,
@@ -113,7 +106,6 @@ class ProfileProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       await _profileService.updateEmail(newEmail: newEmail, password: password);
-      // Logout gestito dalla UI o dal Service, qui aggiorniamo solo lo stato se serve
     } catch (e) {
       rethrow;
     } finally {
@@ -121,9 +113,6 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔒 MODIFICA PASSWORD
-  // ---------------------------------------------------------------------------
   Future<void> updatePassword({
     required String currentPassword,
     required String newPassword,
@@ -141,14 +130,12 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🗑 ELIMINA ACCOUNT
-  // ---------------------------------------------------------------------------
+  // --- ELIMINAZIONE ACCOUNT ---
+  // Avvia la procedura di cancellazione definitiva.
   Future<void> deleteAccount() async {
     _setLoading(true);
     try {
       await _profileService.deleteAccount();
-      // La navigazione di logout deve avvenire nella UI dopo che questo Future si completa
     } catch (e) {
       rethrow;
     } finally {
@@ -156,10 +143,8 @@ class ProfileProvider extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 📋 UTILS
-  // ---------------------------------------------------------------------------
-  /// Copia il testo. Ritorna true se ha successo (così la UI mostra la snackbar)
+  // --- UTILS E HELPER ---
+  // Funzioni di utilità per la clipboard e per la gestione centralizzata del loading.
   Future<void> copyToClipboard(String? text) async {
     if (text == null) return;
     await Clipboard.setData(ClipboardData(text: text));

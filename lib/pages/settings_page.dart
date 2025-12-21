@@ -1,25 +1,21 @@
-// settings_page.dart
-// -----------------------------------------------------------------------------
-// ⚙️ PAGINA IMPOSTAZIONI
-// -----------------------------------------------------------------------------
-// Gestisce:
-// - Tema scuro ON/OFF
-// - Notifiche giornaliere (promemoria spese)
-// - Notifiche limite spesa mensile
-// - Animazione fade-in iniziale
-// -----------------------------------------------------------------------------
-
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
-import 'package:expense_tracker/providers/settings_provider.dart';
+import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/components/settings/settings_tile.dart';
 import 'package:expense_tracker/components/settings/settings_section_header.dart';
+
+/// FILE: settings_page.dart
+/// DESCRIZIONE: Schermata principale delle impostazioni.
+/// Permette all'utente di configurare:
+/// 1. L'aspetto dell'app (Tema Chiaro/Scuro).
+/// 2. Le notifiche locali (Promemoria giornaliero e Avviso limite budget).
+/// Utilizza Switch e Dialoghi adattivi per modificare lo stato dei Provider.
 
 class SettingsPage extends StatefulWidget {
   static const route = "/settings/page";
@@ -31,14 +27,15 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  // 🔧 Getter per il vsync richiesto dal mixin
+  
+  // --- INIZIALIZZAZIONE ---
+  // Setup delle animazioni di ingresso (Fade-in).
   @override
   TickerProvider get vsync => this;
 
   @override
   void initState() {
     super.initState();
-    // 🎞️ Animazione fade-in iniziale
     initFadeAnimation();
   }
 
@@ -48,24 +45,21 @@ class _SettingsPageState extends State<SettingsPage>
     super.dispose();
   }
 
+  // --- BUILD UI ---
+  // Costruzione della lista di opzioni divisa per sezioni (Aspetto, Notifiche).
+  // 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final notificationProvider = Provider.of<NotificationProvider>(context);
 
     return Scaffold(
-      // -------------------------------------------------------------------------
-      // 🔝 APPBAR IMPOSTAZIONI
-      // -------------------------------------------------------------------------
       appBar: CustomAppBar(
         title: "Impostazioni",
         icon: Icons.settings_rounded,
         isDark: isDark,
       ),
 
-      // -------------------------------------------------------------------------
-      // 🎨 BODY CON ANIMAZIONE
-      // -------------------------------------------------------------------------
       body: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
@@ -74,9 +68,8 @@ class _SettingsPageState extends State<SettingsPage>
           ListView(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
             children: [
-              // -----------------------------------------------------------------
-              // 🎨 SEZIONE ASPETTO
-              // -----------------------------------------------------------------
+              // --- SEZIONE ASPETTO ---
+              // Gestione del cambio tema tramite ThemeProvider.
               const SettingsSectionHeader(
                 icon: Icons.palette_outlined,
                 title: "Aspetto",
@@ -126,9 +119,11 @@ class _SettingsPageState extends State<SettingsPage>
 
               SizedBox(height: 32.h),
 
-              // -----------------------------------------------------------------
-              // 🔔 SEZIONE NOTIFICHE
-              // -----------------------------------------------------------------
+              // --- SEZIONE NOTIFICHE ---
+              // Configurazione dei promemoria locali.
+              // Include logica condizionale per mostrare/nascondere le opzioni secondarie
+              // (es. orario o importo limite) solo se il toggle principale è attivo.
+              // 
               const SettingsSectionHeader(
                 icon: Icons.notifications_outlined,
                 title: "Notifiche",
@@ -154,69 +149,69 @@ class _SettingsPageState extends State<SettingsPage>
                 ),
                 child: Column(
                   children: [
-                    // 📅 Promemoria giornaliero
+                    // Promemoria Giornaliero (Toggle)
                     SettingsTile(
                       icon: Icons.alarm_rounded,
                       title: "Promemoria giornaliero",
-                      subtitle: settingsProvider.dailyReminderEnabled
-                          ? "Attivo alle ${settingsProvider.reminderTime.format(context)}"
+                      subtitle: notificationProvider.dailyReminderEnabled
+                          ? "Attivo alle ${notificationProvider.reminderTime.format(context)}"
                           : "Disattivato",
                       trailingWidget: Transform.scale(
                         scale: 0.9,
                         child: Switch(
-                          value: settingsProvider.dailyReminderEnabled,
+                          value: notificationProvider.dailyReminderEnabled,
                           onChanged: (value) {
-                            settingsProvider.toggleDailyReminder(value);
+                            notificationProvider.toggleDailyReminder(value);
                           },
                           activeThumbColor: AppColors.primary,
                         ),
                       ),
                     ),
 
-                    // Mostra selettore orario solo se attivo
-                    if (settingsProvider.dailyReminderEnabled) ...[
+                    // Selettore Orario (Visibile solo se attivo)
+                    if (notificationProvider.dailyReminderEnabled) ...[
                       _buildDivider(isDark),
                       SettingsTile(
                         icon: Icons.schedule_rounded,
                         title: "Orario promemoria",
-                        subtitle: settingsProvider.reminderTime.format(context),
+                        subtitle: notificationProvider.reminderTime.format(context),
                         trailingIcon: Icons.chevron_right_rounded,
-                        onPressed: () => _selectTime(context, settingsProvider),
+                        onPressed: () => _selectTime(context, notificationProvider),
                       ),
                     ],
 
                     _buildDivider(isDark),
 
-                    // 💰 Avviso limite spesa
+                    // Avviso Limite Spesa (Toggle)
                     SettingsTile(
                       icon: Icons.warning_amber_rounded,
                       title: "Avviso limite spesa",
-                      subtitle: settingsProvider.limitAlertEnabled
-                          ? "Attivo (€${settingsProvider.monthlyLimit.toStringAsFixed(0)}/mese)"
+                      subtitle: notificationProvider.limitAlertEnabled
+                          ? "Attivo (€${notificationProvider.monthlyLimit.toStringAsFixed(0)}/mese)"
                           : "Disattivato",
                       trailingWidget: Transform.scale(
                         scale: 0.9,
                         child: Switch(
-                          value: settingsProvider.limitAlertEnabled,
+                          value: notificationProvider.limitAlertEnabled,
                           onChanged: (value) {
-                            settingsProvider.toggleLimitAlert(value);
+                            notificationProvider.toggleLimitAlert(value);
                           },
                           activeThumbColor: AppColors.primary,
                         ),
                       ),
                     ),
 
-                    // Mostra selettore limite solo se attivo
-                    if (settingsProvider.limitAlertEnabled) ...[
+                    // Selettore Importo Limite (Visibile solo se attivo)
+                    if (notificationProvider.limitAlertEnabled) ...[
                       _buildDivider(isDark),
                       SettingsTile(
                         icon: Icons.euro_rounded,
                         title: "Limite mensile",
                         subtitle:
-                            "€${settingsProvider.monthlyLimit.toStringAsFixed(0)}",
+                            "€${notificationProvider.monthlyLimit.toStringAsFixed(0)}",
                         trailingIcon: Icons.chevron_right_rounded,
                         onPressed: () =>
-                            _selectLimit(context, settingsProvider),
+                            _selectLimit(context, notificationProvider),
                       ),
                     ],
                   ],
@@ -225,9 +220,7 @@ class _SettingsPageState extends State<SettingsPage>
 
               SizedBox(height: 24.h),
 
-              // -----------------------------------------------------------------
-              // ℹ️ INFO NOTIFICHE
-              // -----------------------------------------------------------------
+              // Box Informativo
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
@@ -268,12 +261,11 @@ class _SettingsPageState extends State<SettingsPage>
     );
   }
 
-  // -----------------------------------------------------------------------------
-  // 🕐 SELETTORE ORARIO PROMEMORIA
-  // -----------------------------------------------------------------------------
+  // --- HELPER SELETTORI ---
+  // Funzioni per aprire i dialoghi di scelta orario (TimePicker) e importo (InputDialog).
   Future<void> _selectTime(
     BuildContext context,
-    SettingsProvider provider,
+    NotificationProvider provider,
   ) async {
     final picked = await DialogUtils.showTimePickerAdaptive(
       context,
@@ -285,12 +277,9 @@ class _SettingsPageState extends State<SettingsPage>
     }
   }
 
-  // -----------------------------------------------------------------------------
-  // 💶 SELETTORE LIMITE SPESA (dialog adattivo)
-  // -----------------------------------------------------------------------------
   Future<void> _selectLimit(
     BuildContext context,
-    SettingsProvider provider,
+    NotificationProvider provider,
   ) async {
     final result = await DialogUtils.showInputDialogAdaptive(
       context,
@@ -315,9 +304,7 @@ class _SettingsPageState extends State<SettingsPage>
     }
   }
 
-  // -----------------------------------------------------------------------------
-  // ➖ DIVIDER SEZIONI
-  // -----------------------------------------------------------------------------
+  // --- UTILS UI ---
   Widget _buildDivider(bool isDark) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),

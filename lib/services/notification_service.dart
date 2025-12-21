@@ -1,72 +1,62 @@
-// notification_service.dart
-// -----------------------------------------------------------------------------
-// 🔔 SERVIZIO NOTIFICHE LOCALI
-// -----------------------------------------------------------------------------
-// Gestisce tutte le notifiche locali dell'app:
-// - Inizializzazione e permessi
-// - Notifiche giornaliere programmabili
-// - Notifiche per superamento limite spesa
-// - Cancellazione notifiche
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'dart:io' show Platform;
 
+/// FILE: notification_service.dart
+/// DESCRIZIONE: Service per la gestione delle notifiche locali.
+/// Astrarre la complessità del plugin 'flutter_local_notifications', gestendo:
+/// 1. Configurazione canali Android e permessi iOS.
+/// 2. Calcolo delle date per notifiche ricorrenti (Scheduling).
+/// 3. Trigger immediati per avvisi critici (es. Budget superato).
+
 class NotificationService {
-  // 📱 Plugin per notifiche locali
+  // --- CONFIGURAZIONE PLUGIN ---
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
-  // 🆔 ID notifiche
+  // ID costanti per evitare sovrapposizioni o duplicati
   static const int _dailyReminderId = 0;
   static const int _budgetLimitId = 1;
 
-  // 🎯 Canali notifiche Android
+  // Canali Android (richiesti per Android 8.0+)
   static const String _dailyReminderChannel = 'daily_reminder';
   static const String _budgetAlertChannel = 'budget_alert';
 
-  // -----------------------------------------------------------------------------
-  // 🚀 INIZIALIZZAZIONE
-  // -----------------------------------------------------------------------------
+  // --- INIZIALIZZAZIONE ---
+  // Configura i settings specifici per piattaforma e inizializza i fusi orari.
+  // Su iOS, configura anche la presentazione delle notifiche quando l'app è in primo piano.
+  // 
   Future<void> initialize() async {
-    // Inizializza timezone per notifiche programmate
+    // Setup Timezone (essenziale per zonedSchedule)
     tz.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('Europe/Rome'));
 
-    // ⚙️ Impostazioni Android
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // ⚙️ Impostazioni iOS - AGGIUNTO: Richiedi permessi all'inizializzazione
+    // Configurazione iOS: Richiede permessi e abilita alert in foreground
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
-      // ✅ FIX: Abilita presentazione in foreground
       defaultPresentAlert: true,
       defaultPresentSound: true,
       defaultPresentBadge: true,
     );
 
-    // ⚙️ Impostazioni generali
     const initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
     );
 
-    // 🎬 Inizializza plugin
     await _notifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
-      onDidReceiveBackgroundNotificationResponse:
-          _onNotificationTappedBackground,
+      onDidReceiveBackgroundNotificationResponse: _onNotificationTappedBackground,
     );
 
-    // ✅ iOS: Richiedi permessi esplicitamente
+    // Richiesta permessi specifica per iOS post-init
     if (Platform.isIOS) {
       final iosImplementation = _notifications
           .resolvePlatformSpecificImplementation<
@@ -82,15 +72,13 @@ class NotificationService {
       }
     }
 
-    // 📢 Crea canali Android
     await _createAndroidChannels();
   }
 
-  // -----------------------------------------------------------------------------
-  // 📢 CREA CANALI ANDROID
-  // -----------------------------------------------------------------------------
+  // --- CANALI ANDROID ---
+  // Crea i canali di notifica necessari per Android O e superiori.
+  // Definisce l'importanza e il comportamento (suono, vibrazione) per ogni tipo di avviso.
   Future<void> _createAndroidChannels() async {
-    // Canale per promemoria giornaliero
     const dailyChannel = AndroidNotificationChannel(
       _dailyReminderChannel,
       'Promemoria giornaliero',
@@ -100,7 +88,6 @@ class NotificationService {
       playSound: true,
     );
 
-    // Canale per avvisi limite budget
     const budgetChannel = AndroidNotificationChannel(
       _budgetAlertChannel,
       'Avvisi budget',
@@ -110,61 +97,46 @@ class NotificationService {
       playSound: true,
     );
 
-    await _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(dailyChannel);
-
-    await _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(budgetChannel);
-  }
-
-  // -----------------------------------------------------------------------------
-  // 🔔 RICHIEDI PERMESSI
-  // -----------------------------------------------------------------------------
-  Future<bool> requestPermissions() async {
-    // iOS - richiedi permessi esplicitamente
-    final iosImplementation = _notifications
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-
-    if (iosImplementation != null) {
-      final granted = await iosImplementation.requestPermissions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      return granted ?? false;
-    }
-
-    // Android 13+ - richiedi permessi
     final androidImplementation = _notifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >();
 
-    if (androidImplementation != null) {
-      final granted = await androidImplementation
-          .requestNotificationsPermission();
-      return granted ?? false;
-    }
-
-    return true;
+    await androidImplementation?.createNotificationChannel(dailyChannel);
+    await androidImplementation?.createNotificationChannel(budgetChannel);
   }
 
-  // -----------------------------------------------------------------------------
-  // 📅 PROGRAMMA NOTIFICA GIORNALIERA
-  // -----------------------------------------------------------------------------
+  // --- GESTIONE PERMESSI ---
+  // Wrapper per richiedere o verificare i permessi su entrambe le piattaforme.
+  Future<bool> requestPermissions() async {
+    if (Platform.isIOS) {
+      final iosImplementation = _notifications
+          .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin
+          >();
+      final granted = await iosImplementation?.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return granted ?? false;
+    } else {
+      final androidImplementation = _notifications
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      final granted = await androidImplementation?.requestNotificationsPermission();
+      return granted ?? false;
+    }
+  }
+
+  // --- SCHEDULAZIONE PROMEMORIA ---
+  // Calcola la prossima occorrenza dell'orario scelto.
+  // Se l'orario è già passato per la giornata odierna, programma per il giorno successivo.
+  // 
   Future<void> scheduleDailyReminder({required TimeOfDay time}) async {
-    // Cancella notifica esistente
     await cancelDailyReminder();
 
-    // Crea data/ora per la notifica
     final now = DateTime.now();
     var scheduledDate = DateTime(
       now.year,
@@ -174,15 +146,13 @@ class NotificationService {
       time.minute,
     );
 
-    // Se l'orario è già passato oggi, programma per domani
+    // Logica "Next Day": Se è passato, aggiungi 24h
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
 
-    // Converti in TZDateTime
     final tzScheduledDate = tz.TZDateTime.from(scheduledDate, tz.local);
 
-    // 📱 Dettagli notifica Android
     const androidDetails = AndroidNotificationDetails(
       _dailyReminderChannel,
       'Promemoria giornaliero',
@@ -192,12 +162,11 @@ class NotificationService {
       icon: '@mipmap/ic_launcher',
     );
 
-    // 🍎 Dettagli notifica iOS - ✅ FIX: Abilita presentazione foreground
     const iosDetails = DarwinNotificationDetails(
-      presentAlert: true, // 🔑 Mostra in foreground
-      presentBadge: true, // 🔑 Badge in foreground
-      presentSound: true, // 🔑 Suona in foreground
-      sound: 'default', // Suono di sistema
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'default',
       badgeNumber: 1,
     );
 
@@ -206,7 +175,6 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // 🔔 Programma notifica ricorrente giornaliera
     await _notifications.zonedSchedule(
       _dailyReminderId,
       '💰 Promemoria spese',
@@ -214,30 +182,19 @@ class NotificationService {
       tzScheduledDate,
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
+      matchDateTimeComponents: DateTimeComponents.time, // Ripeti ogni giorno alla stessa ora
     );
 
-    debugPrint(
-      '✅ Notifica giornaliera programmata per le ${time.hour}:${time.minute.toString().padLeft(2, '0')}',
-    );
+    debugPrint('✅ Notifica programmata per: $tzScheduledDate');
   }
 
-  // -----------------------------------------------------------------------------
-  // ❌ CANCELLA NOTIFICA GIORNALIERA
-  // -----------------------------------------------------------------------------
-  Future<void> cancelDailyReminder() async {
-    await _notifications.cancel(_dailyReminderId);
-    debugPrint('🗑️ Notifica giornaliera cancellata');
-  }
-
-  // -----------------------------------------------------------------------------
-  // 💰 MOSTRA NOTIFICA LIMITE BUDGET
-  // -----------------------------------------------------------------------------
+  // --- TRIGGER IMMEDIATI (BUDGET) ---
+  // Mostra una notifica istantanea ad alta priorità quando il budget viene superato.
+  // 
   Future<void> showBudgetLimitNotification({
     required double currentSpent,
     required double limit,
   }) async {
-    // 📱 Dettagli notifica Android
     const androidDetails = AndroidNotificationDetails(
       _budgetAlertChannel,
       'Avvisi budget',
@@ -248,59 +205,63 @@ class NotificationService {
       styleInformation: BigTextStyleInformation(''),
     );
 
-    // 🍎 Dettagli notifica iOS - ✅ FIX: Presentazione in foreground
     const iosDetails = DarwinNotificationDetails(
-      presentAlert: true, // 🔑 CRITICO: Mostra anche in foreground
-      presentBadge: true, // 🔑 Badge anche in foreground
-      presentSound: true, // 🔑 Suona anche in foreground
-      sound: 'default', // Suono di sistema
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
       badgeNumber: 1,
-      interruptionLevel: InterruptionLevel.timeSensitive, // ⚡ Alta priorità
+      interruptionLevel: InterruptionLevel.timeSensitive,
     );
 
-    const notificationDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    // 🔔 Mostra notifica immediata
     await _notifications.show(
       _budgetLimitId,
       '⚠️ Limite budget superato!',
       'Hai speso €${currentSpent.toStringAsFixed(2)} su €${limit.toStringAsFixed(2)} questo mese',
-      notificationDetails,
+      const NotificationDetails(android: androidDetails, iOS: iosDetails),
     );
-
-    debugPrint('⚠️ Notifica limite budget mostrata');
   }
 
-  // -----------------------------------------------------------------------------
-  // 🗑️ CANCELLA TUTTE LE NOTIFICHE
-  // -----------------------------------------------------------------------------
+  // --- CANCELLAZIONE E PULIZIA ---
+  // Metodi per rimuovere notifiche programmate, cancellare tutto o resettare i badge.
+  Future<void> cancelDailyReminder() async {
+    await _notifications.cancel(_dailyReminderId);
+  }
+
   Future<void> cancelAllNotifications() async {
     await _notifications.cancelAll();
-    debugPrint('🗑️ Tutte le notifiche cancellate');
   }
 
-  // -----------------------------------------------------------------------------
-  // 👆 GESTIONE TAP SU NOTIFICA (FOREGROUND)
-  // -----------------------------------------------------------------------------
+  Future<void> clearBadge() async {
+    if (Platform.isIOS) {
+      // Su iOS, resettiamo il badge inviando una notifica "silenziosa" o settando il numero
+      // (Qui simuliamo un reset tramite dettaglio notifica vuota ma con badge 0)
+      await _notifications.show(
+        0,
+        '',
+        '',
+        const NotificationDetails(
+          iOS: DarwinNotificationDetails(
+            badgeNumber: 0,
+            presentAlert: false,
+            presentSound: false,
+          ),
+        ),
+      );
+    } else if (Platform.isAndroid) {
+      await _notifications.cancelAll();
+    }
+  }
+
+  // --- UTILS E CALLBACK ---
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('📱 Notifica tappata (foreground): ${response.id}');
-    // Qui puoi navigare a schermate specifiche in base all'ID notifica
   }
 
-  // -----------------------------------------------------------------------------
-  // 👆 GESTIONE TAP SU NOTIFICA (BACKGROUND)
-  // -----------------------------------------------------------------------------
   @pragma('vm:entry-point')
   static void _onNotificationTappedBackground(NotificationResponse response) {
     debugPrint('📱 Notifica tappata (background): ${response.id}');
   }
 
-  // -----------------------------------------------------------------------------
-  // 📊 VERIFICA SE LE NOTIFICHE SONO ABILITATE
-  // -----------------------------------------------------------------------------
   Future<bool> areNotificationsEnabled() async {
     if (Platform.isAndroid) {
       final androidImplementation = _notifications
@@ -308,54 +269,14 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin
           >();
       return await androidImplementation?.areNotificationsEnabled() ?? false;
-    }
-
-    // iOS - controlla i permessi
-    if (Platform.isIOS) {
+    } else if (Platform.isIOS) {
       final iosImplementation = _notifications
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin
           >();
-
-      if (iosImplementation != null) {
-        // Verifica se l'utente ha concesso i permessi
-        final settings = await iosImplementation.checkPermissions();
-        return settings?.isEnabled ?? false;
-      }
+      final settings = await iosImplementation?.checkPermissions();
+      return settings?.isEnabled ?? false;
     }
-
     return true;
-  }
-
-  // -----------------------------------------------------------------------------
-  // 🔢 RESETTA BADGE NOTIFICHE
-  // -----------------------------------------------------------------------------
-  /// Resetta il numero del badge sull'icona dell'app a 0
-  /// Utile per rimuovere l'indicatore rosso quando l'utente apre l'app
-  Future<void> clearBadge() async {
-    // --- iOS ---
-    if (Platform.isIOS) {
-      await _notifications.show(
-        0,
-        '', // titolo vuoto
-        '', // corpo vuoto
-        const NotificationDetails(
-          iOS: DarwinNotificationDetails(
-            badgeNumber: 0, // azzera il badge
-            presentAlert: false, // non mostra alert
-            presentSound: false, // non suona
-          ),
-        ),
-      );
-
-      debugPrint('🔢 Badge iOS resettato senza suono o vibrazione');
-    }
-
-    // --- Android ---
-    if (Platform.isAndroid) {
-      // Su Android il badge si resetta solo se non ci sono notifiche attive
-      await _notifications.cancelAll();
-      debugPrint('🔢 Badge Android resettato');
-    }
   }
 }

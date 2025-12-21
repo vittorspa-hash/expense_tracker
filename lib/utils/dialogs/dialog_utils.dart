@@ -10,10 +10,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+/// FILE: dialog_utils.dart
+/// DESCRIZIONE: Classe di utilità statica per la gestione centralizzata dei dialoghi.
+/// Implementa il pattern "Adaptive": controlla la piattaforma (iOS o Android)
+/// e restituisce il widget nativo appropriato (Cupertino vs Material).
+/// Gestisce:
+/// 1. Alert (Info, Conferma, Istruzioni).
+/// 2. Input (Form in dialog).
+/// 3. Bottom Sheets (Menu, Profilo).
+/// 4. Pickers (Data, Ora, Anno).
+
 class DialogUtils {
-  // ===========================================================================
-  // BASIC DIALOGS (Info, Confirm)
-  // ===========================================================================
+  
+  // --- DIALOGHI DI BASE ---
+  // Metodi per mostrare avvisi semplici o richieste di conferma.
+  // Utilizzano un helper privato `_showGenericDialog` per astrarre la scelta del widget.
+  // 
 
   static Future<void> showInfoDialog(
     BuildContext context, {
@@ -54,6 +66,8 @@ class DialogUtils {
     );
   }
 
+  // Mostra un dialogo con una checkbox di stato (es. "Non mostrare più").
+  // Richiede StatefulBuilder interno per aggiornare la UI del dialog senza ricostruire l'intera pagina.
   static Future<bool> showInstructionDialog(
     BuildContext context, {
     required String title,
@@ -122,10 +136,8 @@ class DialogUtils {
     return dontShowAgain;
   }
 
-  // ===========================================================================
-  // INPUT DIALOGS
-  // ===========================================================================
-
+  // --- DIALOGHI DI INPUT ---
+  // Wrapper per mostrare form complessi (es. cambio password) dentro un dialog.
   static Future<List<String>?> showInputDialogAdaptive(
     BuildContext context, {
     required String title,
@@ -155,9 +167,9 @@ class DialogUtils {
     );
   }
 
-  // ===========================================================================
-  // SHEETS (Sort, Profile)
-  // ===========================================================================
+  // --- BOTTOM SHEETS & MENU ---
+  // Gestisce menu a comparsa dal basso.
+  // Su iOS usa `CupertinoActionSheet`, su Android `showModalBottomSheet`.
 
   static Future<String?> showSortSheet(
     BuildContext context, {
@@ -228,6 +240,8 @@ class DialogUtils {
     );
   }
 
+  // Menu Profilo complesso: gestisce navigazione e logica di logout.
+  // 
   static Future<void> showProfileSheet(BuildContext context) async {
     if (!context.mounted) return;
     final isDark = DialogStyles.isDark(context);
@@ -367,9 +381,11 @@ class DialogUtils {
     }
   }
 
-  // ===========================================================================
-  // PICKERS (Date, Time, Year)
-  // ===========================================================================
+  // --- DATE & TIME PICKERS ---
+  // Selettori di data e ora.
+  // Su iOS usano un container custom con altezza fissa per simulare lo slot machine style.
+  // Su Android usano i dialoghi nativi full-screen.
+  // 
 
   static Future<DateTime?> showDatePickerAdaptive(
     BuildContext context, {
@@ -599,10 +615,8 @@ class DialogUtils {
     );
   }
 
-  // ===========================================================================
-  // PRIVATE HELPERS
-  // ===========================================================================
-
+  // --- PRIVATE HELPERS ---
+  
   static Future<T?> _showGenericDialog<T>({
     required BuildContext context,
     required String title,

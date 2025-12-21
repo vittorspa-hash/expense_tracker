@@ -1,22 +1,30 @@
-// lib/utils/fade_animation_mixin.dart
 import 'package:flutter/material.dart';
 
-/// Mixin che fornisce un'animazione di fade-in per le pagine.
-/// Richiede che lo State usi SingleTickerProviderStateMixin.
+/// FILE: fade_animation_mixin.dart
+/// DESCRIZIONE: Mixin riutilizzabile per aggiungere un'animazione di ingresso (Fade In)
+/// a qualsiasi schermata o widget Stateful.
+/// Richiede che la classe ospitante fornisca un `TickerProvider` (solitamente
+/// tramite `SingleTickerProviderStateMixin`).
+
 mixin FadeAnimationMixin {
-  // Questi getter devono essere implementati dalla classe che usa il mixin
+  // --- REQUISITI ---
+  // Il mixin richiede accesso al TickerProvider dello stato per sincronizzare l'animazione col frame rate.
   TickerProvider get vsync;
 
   late AnimationController fadeAnimationController;
   late Animation<double> fadeAnimation;
 
-  /// Durata dell'animazione (può essere sovrascritta)
+  // --- CONFIGURAZIONE ---
+  // Getter sovrascrivibili per personalizzare durata e curva dell'animazione
+  // senza dover modificare la logica interna.
   Duration get fadeAnimationDuration => const Duration(milliseconds: 800);
 
-  /// Curva dell'animazione (può essere sovrascritta)
   Curve get fadeAnimationCurve => Curves.easeInOut;
 
-  /// Inizializza l'animazione di fade
+  // --- LIFECYCLE (INIT) ---
+  // Inizializza il controller e avvia l'animazione in avanti (0.0 -> 1.0).
+  // Va chiamato nel metodo `initState` del widget ospitante.
+  // 
   void initFadeAnimation() {
     fadeAnimationController = AnimationController(
       duration: fadeAnimationDuration,
@@ -31,12 +39,17 @@ mixin FadeAnimationMixin {
     fadeAnimationController.forward();
   }
 
-  /// Rilascia le risorse dell'animazione
+  // --- LIFECYCLE (DISPOSE) ---
+  // Pulisce le risorse del controller per evitare memory leak.
+  // Va chiamato nel metodo `dispose` del widget ospitante.
   void disposeFadeAnimation() {
     fadeAnimationController.dispose();
   }
 
-  /// Widget helper per wrappare il contenuto con FadeTransition
+  // --- UI HELPER ---
+  // Metodo wrapper che applica la FadeTransition al widget figlio.
+  // Semplifica il metodo `build` del widget ospitante riducendo il boilerplate.
+  // 
   Widget buildWithFadeAnimation(Widget child) {
     return FadeTransition(opacity: fadeAnimation, child: child);
   }

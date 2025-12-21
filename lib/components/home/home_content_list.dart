@@ -1,22 +1,6 @@
-// home_content_list.dart
-// -----------------------------------------------------------------------------
-// 📄 LISTA CONTENUTI HOME – RICERCA, ORDINAMENTO, LISTA SPESE, MULTISELECT
-//
-// Questo widget costruisce il corpo principale della Home Page:
-// ✔️ Barra di ricerca flottante con SliverPersistentHeader
-// ✔️ Ordinamento tramite bottom sheet (DialogUtils.showSortSheet)
-// ✔️ Integrazione con RefreshIndicator per pull-to-refresh
-// ✔️ Lista spese reattiva (Consumer) con filtro per descrizione
-// ✔️ Supporto al MultiSelectProvider (selezione multipla)
-// ✔️ Swipe-to-delete con snackbar di undo
-//
-// L'intera UI si adatta automaticamente a Dark Mode / Light Mode.
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
@@ -24,13 +8,19 @@ import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/components/shared/expense_tile.dart';
 
+/// FILE: home_content_list.dart
+/// DESCRIZIONE: Widget principale per il contenuto della Home Page.
+/// Gestisce la visualizzazione della lista delle spese utilizzando un approccio a "Slivers"
+/// per supportare header flottanti. Include la logica di ricerca locale,
+/// l'ordinamento, il pull-to-refresh e le interazioni sulle singole tile (swipe, selezione).
+
 class HomeContentList extends StatelessWidget {
-  final bool isDark; // 🌙 Tema attuale (dark / light)
-  final TextEditingController searchController; // 🔍 Controller barra di ricerca
-  final String searchQuery; // 🔎 Testo filtraggio dinamico
-  final String sortCriteria; // 🔽 Criterio di ordinamento selezionato
-  final ValueChanged<String> onSortChanged; // 📊 Callback cambio ordinamento
-  final Future<void> Function() onRefreshExpenses; // 🔄 Callback refresh spese
+  final bool isDark; 
+  final TextEditingController searchController; 
+  final String searchQuery; 
+  final String sortCriteria; 
+  final ValueChanged<String> onSortChanged; 
+  final Future<void> Function() onRefreshExpenses; 
 
   const HomeContentList({
     super.key,
@@ -44,11 +34,13 @@ class HomeContentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- GESTIONE STATO E FILTRAGGIO ---
+    // Utilizza Consumer2 per accedere sia alle spese che allo stato della selezione multipla.
+    // Esegue un filtro locale sulla lista in base alla query di ricerca inserita.
+    // 
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
       builder: (context, multiSelect, expenseProvider, child) {
-        // -----------------------------------------------------------------------
-        // 🔍 FILTRAGGIO LISTA SPESE
-        // -----------------------------------------------------------------------
+        
         final filteredExpenses = expenseProvider.expenses.where((expense) {
           final desc = expense.description?.toLowerCase() ?? "";
           return desc.contains(searchQuery.toLowerCase());
@@ -63,9 +55,8 @@ class HomeContentList extends StatelessWidget {
                 : AppColors.backgroundLight,
           ),
 
-          // ---------------------------------------------------------------------
-          // 🔄 REFRESH INDICATOR (Pull to refresh)
-          // ---------------------------------------------------------------------
+          // --- PULL TO REFRESH ---
+          // Widget che avvolge la scroll view per permettere l'aggiornamento manuale dei dati.
           child: RefreshIndicator(
             color: AppColors.primary,
             onRefresh: onRefreshExpenses,
@@ -74,9 +65,10 @@ class HomeContentList extends StatelessWidget {
               top: false,
               child: CustomScrollView(
                 slivers: [
-                  // -----------------------------------------------------------------
-                  // 🔍 HEADER DI RICERCA FLOTANTE (SliverPersistentHeader)
-                  // -----------------------------------------------------------------
+                  // --- HEADER PERSISTENTE (RICERCA & ORDINAMENTO) ---
+                  // Un header che rimane visibile o si nasconde parzialmente durante lo scroll.
+                  // Contiene la barra di ricerca e il pulsante per il sorting.
+                  // 
                   SliverPersistentHeader(
                     floating: true,
                     delegate: SearchHeaderDelegate(
@@ -97,9 +89,7 @@ class HomeContentList extends StatelessWidget {
 
                         child: Row(
                           children: [
-                            // -----------------------------------------------------
-                            // 🔍 BARRA DI RICERCA
-                            // -----------------------------------------------------
+                            // Input Ricerca
                             Expanded(
                               child: Container(
                                 height: 50.h,
@@ -149,9 +139,7 @@ class HomeContentList extends StatelessWidget {
 
                             SizedBox(width: 12.w),
 
-                            // -----------------------------------------------------
-                            // 🔽 BOTTONE ORDINAMENTO (Sheet Opzioni)
-                            // -----------------------------------------------------
+                            // Pulsante Ordinamento (Apre BottomSheet)
                             GestureDetector(
                               onTap: () async {
                                 final selected =
@@ -178,7 +166,6 @@ class HomeContentList extends StatelessWidget {
                                       ],
                                     );
 
-                                // Aggiorna sorting e riordina lista
                                 if (selected != null) {
                                   onSortChanged(selected);
                                   expenseProvider.sortBy(selected);
@@ -217,9 +204,9 @@ class HomeContentList extends StatelessWidget {
                     ),
                   ),
 
-                  // -----------------------------------------------------------------
-                  // 📋 LISTA SPESE
-                  // -----------------------------------------------------------------
+                  // --- LISTA SPESE (SLIVER) ---
+                  // Renderizza dinamicamente le card delle spese.
+                  // Utilizza SliverList per performance ottimizzate su lunghe liste.
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -233,15 +220,18 @@ class HomeContentList extends StatelessWidget {
                         final expense = filteredExpenses[index];
                         final isSelected = multiSelect.isSelected(expense.uuid);
 
+                        // --- INTERAZIONE SWIPE-TO-DELETE ---
+                        // Gestisce l'eliminazione tramite trascinamento laterale.
+                        // Disabilitato se è attiva la modalità selezione multipla.
+                        // 
                         return Dismissible(
                           key: Key(expense.uuid),
 
-                          // Swipe-to-delete disabilitato in selection mode
                           direction: isSelectionMode
                               ? DismissDirection.none
                               : DismissDirection.endToStart,
 
-                          // Conferma eliminazione
+                          // Dialogo di conferma pre-eliminazione
                           confirmDismiss: (_) async {
                             if (isSelectionMode) return false;
 
@@ -256,7 +246,7 @@ class HomeContentList extends StatelessWidget {
                             return confirm ?? false;
                           },
 
-                          // Background swipe rosso con icona
+                          // Background visivo durante lo swipe (Rosso + Icona)
                           background: Container(
                             margin: EdgeInsets.symmetric(vertical: 4.h),
                             decoration: BoxDecoration(
@@ -277,7 +267,7 @@ class HomeContentList extends StatelessWidget {
                             ),
                           ),
 
-                          // Eliminazione con snackbar undo
+                          // Esecuzione eliminazione e SnackBar per Undo
                           onDismissed: (_) {
                             SnackbarUtils.show(
                               context: context,
@@ -294,7 +284,7 @@ class HomeContentList extends StatelessWidget {
                             );
                           },
 
-                          // Tile spesa
+                          // Componente visuale della singola spesa
                           child: ExpenseTile(
                             expense,
                             isSelectionMode: isSelectionMode,
@@ -317,18 +307,18 @@ class HomeContentList extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// 📌 DELEGATE: HEADER RICERCA FISSATO (SliverPersistentHeader)
-// -----------------------------------------------------------------------------
+// --- DELEGATE PER HEADER ---
+// Classe di utilità necessaria per SliverPersistentHeader.
+// Definisce le dimensioni minime e massime del componente flottante.
 class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   const SearchHeaderDelegate({required this.child});
 
   @override
-  double get minExtent => 86.h; // Altezza minima header
+  double get minExtent => 86.h; 
 
   @override
-  double get maxExtent => 86.h; // Altezza massima header (fissa)
+  double get maxExtent => 86.h; 
 
   @override
   Widget build(
@@ -339,6 +329,6 @@ class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant SearchHeaderDelegate oldDelegate) {
-    return oldDelegate.child != child; // Ricostruisci solo se cambia widget
+    return oldDelegate.child != child; 
   }
 }

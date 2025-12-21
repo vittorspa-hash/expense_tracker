@@ -1,25 +1,21 @@
-// total_card_widget.dart
-// -----------------------------------------------------------------------------
-// 💰 WIDGET CARD TOTALE (TOTAL CARD WIDGET)
-// -----------------------------------------------------------------------------
-// Mostra il totale di un periodo (giorno/mese/anno) con:
-// - Etichetta descrittiva
-// - Icona rappresentativa
-// - Importo totale formattato
-// - Opzionale: conteggio elementi e label
-// - Adattamento modalità chiaro/scuro
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// FILE: total_card_widget.dart
+/// DESCRIZIONE: Componente UI per la visualizzazione di riepilogo (Card Totale).
+/// Mostra un importo aggregato con un'icona descrittiva e un contatore opzionale (es. numero di transazioni).
+/// Utilizzato nelle pagine di report (Mensile/Annuale).
+
 class TotalCardWidget extends StatelessWidget {
-  final String label; // 🔹 Testo descrittivo del totale
-  final double totalAmount; // 🔹 Valore numerico totale
-  final IconData icon; // 🔹 Icona della card
-  final int? itemCount; // 🔹 Conteggio opzionale di elementi
-  final String? itemLabel; // 🔹 Etichetta opzionale per il conteggio
+  // --- PARAMETRI ---
+  // Configurazione del contenuto: etichetta, importo, icona
+  // e dati opzionali per il contatore laterale.
+  final String label; 
+  final double totalAmount; 
+  final IconData icon; 
+  final int? itemCount; 
+  final String? itemLabel; 
 
   const TotalCardWidget({
     super.key,
@@ -34,6 +30,10 @@ class TotalCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- LAYOUT PRINCIPALE ---
+    // Container con ombra ed effetto elevazione.
+    // Organizza il contenuto in una riga orizzontale: Icona - Dati - Contatore.
+    // 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       padding: EdgeInsets.all(16.w),
@@ -50,9 +50,8 @@ class TotalCardWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // -------------------------------------------------------------------
-          // 🔹 ICONA CARD
-          // -------------------------------------------------------------------
+          // --- ICONA ---
+          // Box quadrato con angoli arrotondati e colore secondario.
           Container(
             padding: EdgeInsets.all(14.w),
             decoration: BoxDecoration(
@@ -70,9 +69,8 @@ class TotalCardWidget extends StatelessWidget {
 
           SizedBox(width: 16.w),
 
-          // -------------------------------------------------------------------
-          // 🔹 ETICHETTA E IMPORTO TOTALE
-          // -------------------------------------------------------------------
+          // --- DETTAGLI ---
+          // Colonna centrale espandibile per Etichetta e Valore Monetario.
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,9 +104,8 @@ class TotalCardWidget extends StatelessWidget {
 
           SizedBox(width: 16.w),
 
-          // -------------------------------------------------------------------
-          // 🔹 CONTEGGIO OPZIONALE ELEMENTI
-          // -------------------------------------------------------------------
+          // --- CONTATORE OPZIONALE ---
+          // Widget condizionale a destra per mostrare statistiche numeriche extra.
           if (itemCount != null && itemLabel != null)
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),

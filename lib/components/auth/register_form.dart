@@ -1,13 +1,17 @@
-// register_form.dart
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; // Importante
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+
+/// FILE: register_form.dart
+/// DESCRIZIONE: Widget contenente il form di registrazione. Raccoglie i dati dell'utente
+/// (Nome, Email, Password), gestisce la validazione dei campi e comunica con il
+/// Provider di autenticazione per la creazione di un nuovo account Firebase.
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -17,6 +21,9 @@ class RegisterForm extends StatefulWidget {
 }
 
 class _RegisterFormState extends State<RegisterForm> {
+  // --- GESTIONE STATO E CONTROLLER ---
+  // Controller per l'input testuale, nodi per la gestione del focus
+  // e variabili per la visibilità delle password.
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
@@ -32,6 +39,8 @@ class _RegisterFormState extends State<RegisterForm> {
   bool _obscure1 = true;
   bool _obscure2 = true;
 
+  // --- PULIZIA RISORSE ---
+  // Rilascio dei controller alla distruzione del widget.
   @override
   void dispose() {
     _nameController.dispose();
@@ -45,6 +54,8 @@ class _RegisterFormState extends State<RegisterForm> {
     super.dispose();
   }
 
+  // --- BUILD UI ---
+  // Costruzione interfaccia con adattamento al tema e ascolto dello stato di loading.
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -58,7 +69,8 @@ class _RegisterFormState extends State<RegisterForm> {
         key: _formKey,
         child: Column(
           children: [
-            // Card Principale
+            // --- CARD INSERIMENTO DATI ---
+            // Contenitore stilizzato con ombra e campi di input.
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -96,7 +108,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                   SizedBox(height: 18.h),
 
-                  // Nome
+                  // Input Nome
                   AuthTextField(
                     controller: _nameController,
                     focusNode: _nameFocus,
@@ -111,7 +123,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
                   SizedBox(height: 8.h),
 
-                  // Email
+                  // Input Email
                   AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
@@ -131,7 +143,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
                   SizedBox(height: 8.h),
 
-                  // Password
+                  // Input Password
                   AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
@@ -155,7 +167,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
                   SizedBox(height: 8.h),
 
-                  // Conferma Password
+                  // Input Conferma Password
                   AuthTextField(
                     controller: _confirmController,
                     focusNode: _confirmFocus,
@@ -182,7 +194,8 @@ class _RegisterFormState extends State<RegisterForm> {
 
             SizedBox(height: 10.h),
 
-            // Bottone Registrazione
+            // --- AZIONE DI REGISTRAZIONE ---
+            // Bottone principale per inviare il form.
             AuthButton(
               onPressed: isLoading ? null : _handleRegister,
               icon: isLoading ? null : FontAwesomeIcons.userPlus,
@@ -208,9 +221,8 @@ class _RegisterFormState extends State<RegisterForm> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 🕹️ HELPER UI
-  // ---------------------------------------------------------------------------
+  // --- FEEDBACK UTENTE ---
+  // Helper per mostrare messaggi tramite SnackBar.
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -221,14 +233,12 @@ class _RegisterFormState extends State<RegisterForm> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // ⚡️ GESTIONE REGISTRAZIONE
-  // ---------------------------------------------------------------------------
+  // --- LOGICA DI REGISTRAZIONE ---
+  // Gestisce la validazione dei dati, la corrispondenza delle password,
+  // la chiamata al servizio di registrazione e la visualizzazione del dialog di successo.
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // 1. Validazione UI (Password Match)
-    // Nota: Anche se il Validator lo fa, un controllo extra pre-chiamata è sicuro
     if (_passwordController.text != _confirmController.text) {
       _showSnack("Le password non coincidono", isError: true);
       return;
@@ -237,7 +247,6 @@ class _RegisterFormState extends State<RegisterForm> {
     final provider = context.read<AuthProvider>();
 
     try {
-      // 2. Chiamata Provider
       await provider.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -246,7 +255,7 @@ class _RegisterFormState extends State<RegisterForm> {
 
       if (!mounted) return;
 
-      // 3. Successo -> Feedback Utente (Dialog)
+      // Successo: Informa l'utente della verifica email necessaria
       await DialogUtils.showInfoDialog(
         context,
         title: "Verifica Email",
@@ -254,11 +263,7 @@ class _RegisterFormState extends State<RegisterForm> {
             "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
       );
 
-      // 4. Navigazione (es. torna al login o vai alla home)
-      // Dipende dal tuo flusso, es:
-      // Navigator.of(context).pop(); // Torna al login per accedere
     } catch (e) {
-      // 5. Gestione Errori
       _showSnack(e.toString(), isError: true);
     }
   }

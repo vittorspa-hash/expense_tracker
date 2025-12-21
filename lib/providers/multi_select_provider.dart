@@ -1,7 +1,11 @@
-// multi_select_provider.dart
 import 'package:flutter/foundation.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
+
+/// FILE: multi_select_provider.dart
+/// DESCRIZIONE: Provider dedicato alla gestione della selezione multipla degli elementi.
+/// Mantiene lo stato degli ID selezionati e coordina le operazioni massive (come l'eliminazione di gruppo)
+/// delegando la logica di persistenza all'ExpenseProvider.
 
 class MultiSelectProvider extends ChangeNotifier {
   final ExpenseProvider _expenseProvider;
@@ -9,23 +13,26 @@ class MultiSelectProvider extends ChangeNotifier {
   MultiSelectProvider({required ExpenseProvider expenseProvider})
       : _expenseProvider = expenseProvider;
 
-  // --- STATO ---
+  // --- STATO E GETTERS ---
+  // Gestisce il flag della modalità selezione e il Set di ID univoci selezionati.
+  // I getter espongono lo stato in sola lettura per la UI.
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
 
-  // --- GETTERS ---
   bool get isSelectionMode => _isSelectionMode;
   Set<String> get selectedIds => Set.unmodifiable(_selectedIds);
   int get selectedCount => _selectedIds.length;
 
-  // --- ATTIVA SELEZIONE ---
+  // --- LOGICA DI SELEZIONE ---
+  // Metodi per gestire le transizioni di stato: attivazione tramite long-press,
+  // toggle di singoli elementi, selezione globale e annullamento.
+  // 
   void onLongPress(ExpenseModel expense) {
     _isSelectionMode = true;
     _selectedIds.add(expense.uuid);
     notifyListeners();
   }
 
-  // --- TOGGLE SELEZIONE ---
   void onToggleSelect(ExpenseModel expense) {
     if (_selectedIds.contains(expense.uuid)) {
       _selectedIds.remove(expense.uuid);
@@ -38,7 +45,6 @@ class MultiSelectProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- SELEZIONA TUTTO ---
   void selectAll(List<ExpenseModel> expenses) {
     for (var expense in expenses) {
       _selectedIds.add(expense.uuid);
@@ -46,24 +52,22 @@ class MultiSelectProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- DESELEZIONA TUTTO ---
   void deselectAll() {
     _selectedIds.clear();
     _isSelectionMode = false;
     notifyListeners();
   }
 
-  // --- ANNULLA SELEZIONE ---
   void cancelSelection() {
     _isSelectionMode = false;
     _selectedIds.clear();
     notifyListeners();
   }
 
-  // --- ELIMINAZIONE MASSIVA (Logica Pura) ---
-
-  /// Elimina le spese selezionate e ritorna la lista degli elementi eliminati.
-  /// La lista di ritorno serve alla UI per implementare la funzione "Annulla/Undo".
+  // --- OPERAZIONI MASSIVE (DELETE & UNDO) ---
+  // Esegue l'eliminazione fisica tramite l'ExpenseProvider e restituisce
+  // la lista degli oggetti cancellati per permettere alla UI di gestire
+  // il ripristino (Undo) tramite SnackBar.
   Future<List<ExpenseModel>> deleteSelectedExpenses() async {
     // 1. Identifica le spese da eliminare
     final deletedExpenses = _expenseProvider.expenses
@@ -82,7 +86,6 @@ class MultiSelectProvider extends ChangeNotifier {
     return deletedExpenses;
   }
 
-  // --- RIPRISTINO (Per funzione Undo) ---
   Future<void> restoreExpenses(List<ExpenseModel> expenses) async {
     for (var expense in expenses) {
       await _expenseProvider.restoreExpense(expense);
@@ -91,5 +94,6 @@ class MultiSelectProvider extends ChangeNotifier {
   }
 
   // --- UTILITY ---
+  // Helper rapido per verificare se un elemento specifico è selezionato.
   bool isSelected(String uuid) => _selectedIds.contains(uuid);
 }

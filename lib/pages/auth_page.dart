@@ -1,12 +1,3 @@
-// auth_page.dart
-// -----------------------------------------------------------------------------
-// 🧭 Schermata di Autenticazione dell’app
-//
-// Gestisce il passaggio tra Login e Registrazione tramite TabBar e animazioni,
-// mostrando un header moderno e transizioni fluide.
-// Integra i form di accesso e registrazione tramite LoginForm e RegisterForm.
-// -----------------------------------------------------------------------------
-
 import 'package:expense_tracker/components/auth/login_form.dart';
 import 'package:expense_tracker/components/auth/register_form.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -14,6 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+/// FILE: auth_page.dart
+/// DESCRIZIONE: Schermata principale di autenticazione. Gestisce la navigazione
+/// tra Login e Registrazione tramite un TabController, offrendo un header
+/// personalizzato e transizioni animate per un'esperienza utente fluida.
 
 class AuthPage extends StatefulWidget {
   static const route = "/";
@@ -25,27 +21,25 @@ class AuthPage extends StatefulWidget {
 
 class _AuthPageState extends State<AuthPage>
     with TickerProviderStateMixin, FadeAnimationMixin {
-  // Controller per la TabBar (Login / Registrazione)
+  
+  // --- STATO E ANIMAZIONI ---
+  // Gestione del controller per i Tab e mixin per le animazioni di fade-in.
   late TabController _tabController;
 
-  // Getter per il vsync richiesto dal mixin
   @override
   TickerProvider get vsync => this;
 
+  // --- CICLO DI VITA ---
+  // Inizializzazione e dismissione dei controller per evitare memory leak.
   @override
   void initState() {
     super.initState();
-
-    // TabBar: 2 tab → Login e Registrazione
     _tabController = TabController(length: 2, vsync: this);
-
-    // Inizializzazione animazione fade-in
     initFadeAnimation();
   }
 
   @override
   void dispose() {
-    // Libera le animazioni quando la pagina viene chiusa
     _tabController.dispose();
     disposeFadeAnimation();
     super.dispose();
@@ -53,23 +47,24 @@ class _AuthPageState extends State<AuthPage>
 
   @override
   Widget build(BuildContext context) {
-    // Rileva tema scuro/chiaro
+    // --- BUILD UI ---
+    // Configurazione dello scaffold con background dinamico (Light/Dark)
+    // e struttura principale della pagina.
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: Container(
-        // Sfondo dinamico basato sul tema
         decoration: BoxDecoration(
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
         child: SafeArea(
-          top: false, // evita spazio sopra per header personalizzato
+          top: false, 
           child: buildWithFadeAnimation(
             Column(
               children: [
-                // -----------------------------------------------------------------
-                // 🌈 HEADER SUPERIORE CON LOGO E TITOLO
-                // -----------------------------------------------------------------
+                // --- HEADER PERSONALIZZATO ---
+                // Sezione superiore curva contenente il logo, il titolo dell'app
+                // e una breve descrizione.
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.only(
@@ -92,7 +87,6 @@ class _AuthPageState extends State<AuthPage>
                   ),
                   child: Column(
                     children: [
-                      // Logo circolare semi-trasparente
                       Container(
                         padding: EdgeInsets.all(20.w),
                         decoration: BoxDecoration(
@@ -113,7 +107,6 @@ class _AuthPageState extends State<AuthPage>
 
                       SizedBox(height: 16.h),
 
-                      // Titolo principale
                       Text(
                         "Expense Tracker",
                         style: TextStyle(
@@ -126,7 +119,6 @@ class _AuthPageState extends State<AuthPage>
 
                       SizedBox(height: 8.h),
 
-                      // Sottotitolo descrittivo
                       Text(
                         "Gestisci le tue spese in modo semplice",
                         style: TextStyle(
@@ -142,9 +134,8 @@ class _AuthPageState extends State<AuthPage>
 
                 SizedBox(height: 18.h),
 
-                // -----------------------------------------------------------------
-                // 🔀 TABBAR "Accedi / Registrati"
-                // -----------------------------------------------------------------
+                // --- SELETTORE TAB ---
+                // Switch grafico per alternare tra le modalità di Accesso e Registrazione.
                 Container(
                   margin: EdgeInsets.symmetric(horizontal: 20.w),
                   padding: EdgeInsets.all(4.w),
@@ -190,7 +181,6 @@ class _AuthPageState extends State<AuthPage>
                       fontWeight: FontWeight.w600,
                     ),
 
-                    // Bottoni tab
                     tabs: [
                       Tab(
                         child: Row(
@@ -218,16 +208,13 @@ class _AuthPageState extends State<AuthPage>
 
                 SizedBox(height: 10.h),
 
-                // -----------------------------------------------------------------
-                // 📝 CONTENUTO DEI TAB: Form di Login & Registrazione
-                // -----------------------------------------------------------------
+                // --- AREA CONTENUTO ---
+                // TabBarView che renderizza i form specifici (Login/Register) nello spazio rimanente.
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
                     children: const [
-                      // Form di login
                       LoginForm(),
-                      // Form di registrazione
                       RegisterForm(),
                     ],
                   ),

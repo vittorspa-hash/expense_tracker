@@ -1,22 +1,18 @@
-// bar_chart_widget.dart
-// -----------------------------------------------------------------------------
-// 📊 WIDGET GRAFICO A BARRE (BAR CHART WIDGET)
-// -----------------------------------------------------------------------------
-// Mostra un grafico a barre mensile delle spese con:
-// - Titoli asse X e Y
-// - Tooltip personalizzati
-// - Gradiente barre
-// - Adattamento modalità chiaro/scuro
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
+/// FILE: bar_chart_widget.dart
+/// DESCRIZIONE: Widget che renderizza un grafico a barre per i report mensili.
+/// Utilizza la libreria 'fl_chart' per disegnare i dati, calcolando dinamicamente
+/// le scale (Y-Axis) e formattando i tooltip e le etichette degli assi.
+
 class BarChartWidget extends StatelessWidget {
-  final List<double> values; // 🔹 Lista dei valori mensili
-  final List<String> monthNames; // 🔹 Nomi dei mesi
+  // --- PARAMETRI ---
+  // Dati numerici da rappresentare e relative etichette (mesi).
+  final List<double> values; 
+  final List<String> monthNames; 
 
   const BarChartWidget({
     super.key,
@@ -28,7 +24,9 @@ class BarChartWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // 🔹 Calcolo valore massimo Y e intervallo per linee orizzontali
+    // --- CALCOLO SCALE ---
+    // Determina il valore massimo per adattare l'asse Y e calcola
+    // intervalli "sicuri" per evitare sovrapposizioni nelle etichette.
     final double maxY = values.isNotEmpty
         ? values.reduce((a, b) => a > b ? a : b)
         : 0;
@@ -50,14 +48,15 @@ class BarChartWidget extends StatelessWidget {
           ),
         ],
       ),
+      // --- CONFIGURAZIONE GRAFICO ---
+      // 
+      // Configurazione completa del BarChart: Griglia, Titoli, Interazione e Dati.
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
           maxY: safeMaxY,
 
-          // ---------------------------------------------------------------------
-          // 🔹 GRIGLIA ORIZZONTALE
-          // ---------------------------------------------------------------------
+          // Configurazione Griglia (Linee orizzontali tratteggiate)
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
@@ -71,10 +70,9 @@ class BarChartWidget extends StatelessWidget {
             },
           ),
 
-          // ---------------------------------------------------------------------
-          // 🔹 TITOLI ASSE X E Y
-          // ---------------------------------------------------------------------
+          // Configurazione Assi (Titoli)
           titlesData: FlTitlesData(
+            // Asse Sinistro (Valori €)
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -105,6 +103,7 @@ class BarChartWidget extends StatelessWidget {
             topTitles: const AxisTitles(
               sideTitles: SideTitles(showTitles: false),
             ),
+            // Asse Inferiore (Mesi)
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -114,7 +113,7 @@ class BarChartWidget extends StatelessWidget {
                     return Padding(
                       padding: EdgeInsets.only(top: 8.h),
                       child: Text(
-                        monthNames[i].substring(0, 3),
+                        monthNames[i].substring(0, 3), // Tronca a 3 lettere
                         style: TextStyle(
                           fontSize: 9.sp,
                           color: isDark
@@ -131,14 +130,12 @@ class BarChartWidget extends StatelessWidget {
             ),
           ),
 
-          // ---------------------------------------------------------------------
-          // 🔹 BORDO ESTERNO
-          // ---------------------------------------------------------------------
+          // Nasconde bordo esterno grafico
           borderData: FlBorderData(show: false),
 
-          // ---------------------------------------------------------------------
-          // 🔹 TOOLTIPS AL PASSAGGIO SULLE BARRE
-          // ---------------------------------------------------------------------
+          // --- INTERAZIONE (TOOLTIP) ---
+          // Configura il comportamento al tocco: mostra un tooltip personalizzato
+          // con il valore esatto della spesa.
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
@@ -163,9 +160,8 @@ class BarChartWidget extends StatelessWidget {
             ),
           ),
 
-          // ---------------------------------------------------------------------
-          // 🔹 CREAZIONE BARRE
-          // ---------------------------------------------------------------------
+          // --- RENDERING BARRE ---
+          // Genera visivamente le barre applicando un gradiente verticale.
           barGroups: values.asMap().entries.map((entry) {
             final i = entry.key;
             final val = entry.value;

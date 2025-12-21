@@ -1,16 +1,3 @@
-// expense_tile.dart
-// -----------------------------------------------------------------------------
-// 📄 WIDGET TILE PER SINGOLA SPESA (ExpenseTile)
-// -----------------------------------------------------------------------------
-// Rappresenta una singola spesa nella lista giornaliera con:
-// - Visualizzazione importo in evidenza
-// - Data formattata in italiano
-// - Descrizione della spesa
-// - Stato di selezione per modalità multi-select
-// - Animazione di pressione (tap) con effetto scala
-// - Navigazione verso EditExpensePage se non in modalità selezione
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:expense_tracker/models/expense_model.dart';
@@ -18,12 +5,19 @@ import 'package:expense_tracker/pages/edit_expense_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// FILE: expense_tile.dart
+/// DESCRIZIONE: Componente UI che rappresenta una singola voce di spesa nella lista.
+/// Gestisce la visualizzazione dei dati, la formattazione della data, le animazioni al tocco
+/// e logica condizionale per la navigazione o la selezione multipla.
+
 class ExpenseTile extends StatefulWidget {
-  final ExpenseModel expenseModel; // 🔹 Modello dati della spesa
-  final bool isSelectionMode; // 🔹 Flag modalità selezione multipla
-  final bool isSelected; // 🔹 Flag se la spesa è selezionata
-  final VoidCallback? onLongPress; // 🔹 Callback su pressione prolungata
-  final VoidCallback? onSelectToggle; // 🔹 Callback per togglare selezione
+  // --- PARAMETRI ---
+  // Modello dati, flag per lo stato di selezione e callback per le interazioni.
+  final ExpenseModel expenseModel; 
+  final bool isSelectionMode; 
+  final bool isSelected; 
+  final VoidCallback? onLongPress; 
+  final VoidCallback? onSelectToggle; 
 
   const ExpenseTile(
     this.expenseModel, {
@@ -39,11 +33,11 @@ class ExpenseTile extends StatefulWidget {
 }
 
 class _ExpenseTileState extends State<ExpenseTile> {
-  bool _isPressed = false; // 🔹 Stato di pressione per animazione scala
+  // Stato interno per gestire l'animazione di "shrink" alla pressione.
+  bool _isPressed = false; 
 
-  // ---------------------------------------------------------------------------
-  // 🔹 FORMATTAZIONE DATA IN ITALIANO
-  // ---------------------------------------------------------------------------
+  // --- FORMATTAZIONE DATA ---
+  // Helper locale per convertire il timestamp in formato leggibile italiano.
   String formatDateItaliano(DateTime date) {
     final giorno = DateFormat("d", "it_IT").format(date);
     final mese = DateFormat("MMMM", "it_IT").format(date);
@@ -56,10 +50,13 @@ class _ExpenseTileState extends State<ExpenseTile> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- INTERAZIONE & GESTURE ---
+    // Gestisce:
+    // 1. LongPress: Attiva la modalità selezione.
+    // 2. Tap: Naviga al dettaglio O commuta la selezione (se in modalità edit).
+    // 3. Feedback Tattile: Modifica lo stato _isPressed per l'animazione.
+    // 
     return GestureDetector(
-      // -----------------------------------------------------------------------
-      // 🔹 GESTIONE TAP E LONGPRESS
-      // -----------------------------------------------------------------------
       onLongPress: widget.onLongPress,
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
@@ -77,9 +74,9 @@ class _ExpenseTileState extends State<ExpenseTile> {
         }
       },
 
-      // -----------------------------------------------------------------------
-      // 🔹 ANIMAZIONE SCALA SU TAP
-      // -----------------------------------------------------------------------
+      // --- CONTENITORE VISIVO ANIMATO ---
+      // Applica un fattore di scala quando premuto.
+      // Il bordo e il colore di sfondo cambiano dinamicamente se l'elemento è selezionato.
       child: AnimatedScale(
         scale: _isPressed ? 0.98 : 1.0,
         duration: const Duration(milliseconds: 100),
@@ -107,16 +104,13 @@ class _ExpenseTileState extends State<ExpenseTile> {
             ],
           ),
 
-          // ---------------------------------------------------------------------
-          // 🔹 CONTENUTO DEL TILE
-          // ---------------------------------------------------------------------
+          // --- LAYOUT CONTENUTO ---
+          // Struttura a riga: Importo (Box) - Dettagli (Testo) - Indicatore (Icona).
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
             child: Row(
               children: [
-                // -----------------------------------------------------------------
-                // 🔹 CONTAINER IMPORTO SPESA
-                // -----------------------------------------------------------------
+                // Box Importo
                 Container(
                   width: 90.w,
                   padding: EdgeInsets.symmetric(
@@ -155,9 +149,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
 
                 SizedBox(width: 16.w),
 
-                // -----------------------------------------------------------------
-                // 🔹 COLONNA CON DATA E DESCRIZIONE
-                // -----------------------------------------------------------------
+                // Dettagli (Data e Descrizione)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,9 +185,9 @@ class _ExpenseTileState extends State<ExpenseTile> {
 
                 SizedBox(width: 12.w),
 
-                // -----------------------------------------------------------------
-                // 🔹 ICONA SELEZIONE O NAVIGAZIONE
-                // -----------------------------------------------------------------
+                // --- INDICATORE DI STATO ---
+                // Mostra un Chevron (Navigazione) o un Checkbox/Radio (Selezione)
+                // in base alla modalità corrente.
                 SizedBox(
                   width: 40.w,
                   height: 40.h,

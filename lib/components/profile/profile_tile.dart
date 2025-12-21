@@ -1,9 +1,16 @@
-// profile_tile.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
+/// FILE: profile_tile.dart
+/// DESCRIZIONE: Componente UI riutilizzabile per visualizzare un singolo dato del profilo
+/// (es. Nome, Email, Password). Combina un'icona decorativa, le informazioni testuali
+/// e un pulsante di azione (solitamente per la modifica), gestendo anche lo stato di caricamento.
+
 class ProfileTile extends StatelessWidget {
+  // --- CONFIGURAZIONE ---
+  // Parametri per i dati da visualizzare (Icona, Titolo, Valore),
+  // callback per l'interazione e gestione dello stato di loading per l'azione.
   final IconData icon;
   final String title;
   final String? value;
@@ -29,11 +36,17 @@ class ProfileTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- STRUTTURA LAYOUT ---
+    // Riga orizzontale composta da:
+    // 1. Icona decorativa a sinistra.
+    // 2. Colonna di testo centrale (Etichetta + Valore).
+    // 3. Widget di azione a destra (Edit button o Spinner).
+    // 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
         children: [
-          // Icona sinistra
+          // Icona sinistra (con Gradiente e Ombra)
           Container(
             width: 44.w,
             height: 44.h,
@@ -60,7 +73,7 @@ class ProfileTile extends StatelessWidget {
 
           SizedBox(width: 16.w),
 
-          // Testi
+          // Informazioni Testuali
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,7 +105,9 @@ class ProfileTile extends StatelessWidget {
 
           SizedBox(width: 12.w),
 
-          // Azione
+          // Azione Laterale (Trailing)
+          // Mostra un indicatore di caricamento se l'operazione è in corso,
+          // altrimenti mostra il pulsante di azione configurato.
           trailingWidget ??
               Container(
                 width: 36.w,

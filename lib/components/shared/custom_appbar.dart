@@ -1,14 +1,16 @@
-// custom_app_bar.dart
-// AppBar personalizzata dell'app.
-// Supporta modalità normale e modalità selezione multipla.
-// Mostra titolo, sottotitolo opzionale, icona opzionale e azioni personalizzate.
-// Gestisce automaticamente lo stato dark/light e i colori del tema.
-
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// FILE: custom_app_bar.dart
+/// DESCRIZIONE: AppBar personalizzata che gestisce dinamicamente due stati:
+/// navigazione standard e modalità "selezione multipla".
+/// Adatta automaticamente icone, titoli e azioni in base al contesto e al tema.
+
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  // --- CONFIGURAZIONE ---
+  // Parametri per contenuto statico, stato del tema e gestione
+  // della modalità di selezione (conteggi e callback).
   final String title;
   final String? subtitle;
   final IconData? icon;
@@ -42,13 +44,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    // --- COSTRUZIONE UI ---
+    // Gestisce il cambio di stato visivo tra modalità normale e selezione.
+    // 
     return AppBar(
       elevation: 0,
       iconTheme: IconThemeData(
         color: isDark ? AppColors.textDark : AppColors.textLight,
       ),
 
-      // Leading personalizzato o pulsante di chiusura in modalità selezione
+      // --- LEADING ACTION ---
+      // In modalità selezione mostra una "X" per annullare,
+      // altrimenti mostra il widget standard (es. Back Button o Menu).
       leading: isSelectionMode
           ? Container(
               margin: EdgeInsets.only(left: 20.w),
@@ -63,9 +70,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : leading,
 
-      // Titolo della AppBar:
-      // - mostra il numero di elementi selezionati in modalità selezione
-      // - altrimenti mostra il titolo standard
+      // --- TITOLO DINAMICO ---
+      // Alterna tra il contatore degli elementi selezionati e il titolo/sottotitolo standard.
       title: isSelectionMode
           ? Text(
               "$selectedCount ${selectedCount == 1 ? "selezionata" : "selezionate"}",
@@ -78,18 +84,16 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : _buildTitle(),
 
-      // Centra sempre il titolo
       centerTitle: true,
 
-      // Azioni della AppBar:
-      // - pulsante "seleziona tutto" + pulsante di eliminazione in modalità selezione
-      // - azioni personalizzate in modalità normale
+      // --- AZIONI CONTESTUALI ---
+      // Modalità Selezione: Pulsanti per "Seleziona tutto" e "Elimina".
+      // Modalità Normale: Azioni passate dal parent (es. Filtri, Impostazioni).
       actions: isSelectionMode
           ? [
               // Toggle Seleziona/Deseleziona Tutto
               IconButton(
                 icon: Icon(
-                  // Se sono già tutti selezionati, mostra l'icona per deselezionare
                   (totalCount != null && selectedCount == totalCount)
                       ? Icons.remove_done_rounded
                       : Icons.done_all_rounded,
@@ -106,7 +110,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
               SizedBox(width: 8.w),
 
-              // Pulsante eliminazione
+              // Pulsante Eliminazione
               Container(
                 margin: EdgeInsets.only(right: 20.w),
                 decoration: BoxDecoration(
@@ -123,17 +127,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             ]
           : actions,
 
-      // Sfondo della AppBar con colore primario
       flexibleSpace: Container(
         decoration: BoxDecoration(color: AppColors.primary),
       ),
     );
   }
 
-  // Costruisce il titolo della AppBar in modalità normale
-  // Supporta:
-  // - titolo con sottotitolo
-  // - titolo con icona opzionale
+  // --- LAYOUT TITOLO STANDARD ---
+  // Gestisce la visualizzazione combinata di Titolo + Icona ed eventuale Sottotitolo.
   Widget _buildTitle() {
     if (subtitle != null) {
       return Column(
@@ -202,7 +203,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  // Altezza standard della AppBar
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

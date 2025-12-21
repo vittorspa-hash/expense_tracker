@@ -1,5 +1,3 @@
-// days_page.dart
-
 import 'package:expense_tracker/components/report/total_card_widget.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
@@ -13,6 +11,13 @@ import 'package:intl/intl.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/components/shared/expense_tile.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+/// FILE: days_page.dart
+/// DESCRIZIONE: Schermata di dettaglio giornaliero.
+/// Mostra la lista delle spese di un giorno specifico.
+/// Supporta due modalità di interazione:
+/// 1. Navigazione/Swipe: Visualizzazione standard e swipe-to-delete.
+/// 2. Selezione Multipla: Attivata da long-press per eliminazioni di gruppo.
 
 class DaysPage extends StatefulWidget {
   static const route = "/days";
@@ -34,15 +39,18 @@ class DaysPage extends StatefulWidget {
 
 class _DaysPageState extends State<DaysPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  
   @override
   TickerProvider get vsync => this;
 
+  // --- LIFECYCLE ---
+  // Inizializza l'animazione e resetta lo stato di selezione multipla
+  // per evitare che selezioni precedenti rimangano attive entrando in questa pagina.
   @override
   void initState() {
     super.initState();
     initFadeAnimation();
 
-    // Reset della selezione quando si entra nella pagina per evitare residui
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<MultiSelectProvider>().cancelSelection();
@@ -56,6 +64,7 @@ class _DaysPageState extends State<DaysPage>
     super.dispose();
   }
 
+  // --- FORMATTAZIONE DATE ---
   String formatDateItaliano(DateTime date) {
     final giorno = DateFormat("d", "it_IT").format(date);
     final mese = DateFormat("MMMM", "it_IT").format(date);
@@ -76,9 +85,12 @@ class _DaysPageState extends State<DaysPage>
     final dateLabel = formatDateItaliano(date);
     final dayOfWeek = getDayOfWeek(date);
 
+    // --- GESTIONE STATO COMBINATA ---
+    // Utilizza Consumer2 per reagire sia ai cambiamenti delle spese (ExpenseProvider)
+    // sia allo stato della selezione (MultiSelectProvider).
     return Consumer2<ExpenseProvider, MultiSelectProvider>(
       builder: (context, expenseProvider, multiSelect, child) {
-        // Recupero la lista delle spese del giorno
+        
         final expensesList = expenseProvider.expensesOfDay(
           widget.year,
           widget.month,
@@ -89,6 +101,9 @@ class _DaysPageState extends State<DaysPage>
         final selectedCount = multiSelect.selectedCount;
 
         return Scaffold(
+          // --- APPBAR DINAMICA ---
+          // Cambia aspetto e azioni in base alla modalità corrente (Normale vs Selezione).
+          // 
           appBar: isSelectionMode
               ? CustomAppBar(
                   title: "",
@@ -97,8 +112,7 @@ class _DaysPageState extends State<DaysPage>
                   selectedCount: selectedCount,
                   totalCount: expensesList.length,
                   onCancelSelection: multiSelect.cancelSelection,
-                  // 👇 Qui colleghiamo la funzione locale
-                  onDeleteSelected: _handleDeleteSelected,
+                  onDeleteSelected: _handleDeleteSelected, // Batch Delete
                   onSelectAll: () => multiSelect.selectAll(expensesList),
                   onDeselectAll: multiSelect.deselectAll,
                 )
@@ -108,6 +122,7 @@ class _DaysPageState extends State<DaysPage>
                   isDark: isDark,
                   icon: Icons.calendar_today_rounded,
                 ),
+          
           body: Container(
             decoration: BoxDecoration(
               color: isDark
@@ -130,6 +145,7 @@ class _DaysPageState extends State<DaysPage>
     );
   }
 
+  // --- COSTRUZIONE CORPO PAGINA ---
   Widget _buildBody(
     BuildContext context,
     List<dynamic> expensesList,
@@ -138,6 +154,7 @@ class _DaysPageState extends State<DaysPage>
     ExpenseProvider expenseprovider,
     bool isDark,
   ) {
+    // Stato Vuoto
     if (expensesList.isEmpty) {
       return buildWithFadeAnimation(Center(child: _buildEmptyState(isDark)));
     }
@@ -150,6 +167,7 @@ class _DaysPageState extends State<DaysPage>
     return buildWithFadeAnimation(
       Column(
         children: [
+          // Card Totale Giorno
           TotalCardWidget(
             label: "Totale giornata",
             totalAmount: totalDay,
@@ -157,6 +175,7 @@ class _DaysPageState extends State<DaysPage>
             itemCount: expensesList.length,
             itemLabel: expensesList.length == 1 ? "spesa" : "spese",
           ),
+
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 20.w),
             child: Align(
@@ -173,6 +192,9 @@ class _DaysPageState extends State<DaysPage>
             ),
           ),
           SizedBox(height: 12.h),
+
+          // --- LISTA SPESE ---
+          // Supporta RefreshIndicator e Swipe-to-delete.
           Expanded(
             child: RefreshIndicator(
               color: AppColors.primary,
@@ -190,11 +212,16 @@ class _DaysPageState extends State<DaysPage>
                     expense.uuid,
                   );
 
+                  // --- DISMISSIBLE (SWIPE) ---
+                  // Abilitato solo se NON siamo in modalità selezione.
+                  // 
                   return Dismissible(
                     key: Key(expense.uuid),
                     direction: isSelectionMode
                         ? DismissDirection.none
                         : DismissDirection.endToStart,
+                    
+                    // Conferma eliminazione singola
                     confirmDismiss: (_) async {
                       if (isSelectionMode) return false;
                       final confirm = await DialogUtils.showConfirmDialog(
@@ -206,18 +233,22 @@ class _DaysPageState extends State<DaysPage>
                       );
                       return confirm ?? false;
                     },
+                    
                     background: _buildDismissibleBackground(),
+                    
+                    // Esecuzione eliminazione e SnackBar Undo
                     onDismissed: (_) {
                       SnackbarUtils.show(
                         context: context,
                         title: "Eliminata!",
                         message: "Spesa eliminata con successo.",
                         deletedItem: expense,
-                        // Qui chiamiamo direttamente il provider perché è uno Swipe Singolo
                         onDelete: (exp) => expenseprovider.deleteExpense(exp),
                         onRestore: (exp) => expenseprovider.restoreExpense(exp),
                       );
                     },
+                    
+                    // Tile Spesa (Gestisce LongPress e Tap)
                     child: ExpenseTile(
                       expense,
                       isSelectionMode: isSelectionMode,
@@ -235,6 +266,7 @@ class _DaysPageState extends State<DaysPage>
     );
   }
 
+  // --- HELPER UI ---
   Widget _buildEmptyState(bool isDark) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -283,9 +315,9 @@ class _DaysPageState extends State<DaysPage>
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 🗑️ GESTIONE ELIMINAZIONE SELEZIONATI
-  // ---------------------------------------------------------------------------
+  // --- LOGICA BATCH DELETE ---
+  // Gestisce l'eliminazione di massa degli elementi selezionati.
+  // 
   Future<void> _handleDeleteSelected() async {
     final multiSelect = context.read<MultiSelectProvider>();
     final count = multiSelect.selectedCount;

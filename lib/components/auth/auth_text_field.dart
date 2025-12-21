@@ -1,33 +1,29 @@
-// auth_text_field.dart
-// -----------------------------------------------------------------------------
-// 📝 TEXTFIELD RIUTILIZZABILE
-//
-// Campo di testo personalizzato utilizzato nel Login e Register form.
-// Comprende: icona, hint, gestione del focus, validazione, modalità password,
-// supporto al tema scuro, animazioni fluide e possibilità di disabilitazione.
-// -----------------------------------------------------------------------------
-
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-// -----------------------------------------------------------------------------
-// 🧱 AuthTextField – Widget riutilizzabile
-// -----------------------------------------------------------------------------
+/// FILE: auth_text_field.dart
+/// DESCRIZIONE: Componente UI riutilizzabile per i campi di input nei form di autenticazione.
+/// Centralizza la logica di stile, validazione, gestione del focus, visibilità password
+/// e adattamento cromatico (Light/Dark mode) e di stato (Abilitato/Disabilitato).
+
 class AuthTextField extends StatelessWidget {
-  final TextEditingController controller; // Controller del campo
-  final String hint; // Testo segnaposto
-  final IconData icon; // Icona a sinistra
-  final String? Function(String?)? validator; // Validazione personalizzata
-  final bool obscure; // Obscure text per password
-  final VoidCallback? onToggleObscure; // Funzione per cambiare visibilità password
-  final TextInputType keyboardType; // Tipo tastiera (email, testo, numeri)
-  final TextCapitalization capitalization; // Comportamento di capitalizzazione
-  final FocusNode? focusNode; // Focus attuale
-  final FocusNode? nextFocus; // Focus del campo successivo
-  final bool isLast; // Ultimo campo del form?
-  final bool enabled; // Abilita/disabilita il campo
+  // --- PARAMETRI DI CONFIGURAZIONE ---
+  // Controller per il testo, callback per azioni (es. toggle password),
+  // nodi per la gestione del focus e flag di stato.
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final String? Function(String?)? validator;
+  final bool obscure;
+  final VoidCallback? onToggleObscure;
+  final TextInputType keyboardType;
+  final TextCapitalization capitalization;
+  final FocusNode? focusNode;
+  final FocusNode? nextFocus;
+  final bool isLast;
+  final bool enabled;
 
   const AuthTextField({
     super.key,
@@ -47,7 +43,9 @@ class AuthTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔦 Determiniamo se il tema è scuro o chiaro
+    // --- TEMA E STILE TESTO ---
+    // Rileva il tema corrente per adattare i colori del testo e disabilita visivamente
+    // il componente se la proprietà 'enabled' è falsa.
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return TextFormField(
@@ -65,7 +63,6 @@ class AuthTextField extends StatelessWidget {
       style: TextStyle(
         fontSize: 14.sp,
         fontWeight: FontWeight.w500,
-        // Colore testo ridotto quando disabilitato
         color: enabled
             ? null
             : (isDark
@@ -73,28 +70,27 @@ class AuthTextField extends StatelessWidget {
                 : AppColors.greyLight.withValues(alpha: 0.5)),
       ),
 
-      // 🔄 Gestione del focus quando l'utente preme "invio"
+      // --- GESTIONE FOCUS ---
+      // Logica per spostare il focus al campo successivo o chiudere la tastiera
+      // quando l'utente preme il tasto di conferma.
       onFieldSubmitted: (_) {
         if (nextFocus != null) {
-          // Sposta il focus al prossimo
           FocusScope.of(focusNode!.context!).requestFocus(nextFocus);
         } else {
-          // Rimuove la tastiera
           FocusScope.of(focusNode!.context!).unfocus();
         }
       },
 
-      // -------------------------------------------------------------------------
-      // 🎨 DECORAZIONE DEL CAMPO – stile moderno, pulito ed elevato
-      // -------------------------------------------------------------------------
+      // --- DECORAZIONE VISIVA ---
+      // Configurazione completa di icone (Prefix/Suffix), colori di riempimento
+      // e bordi differenziati per stato (Abilitato, Focus, Errore, Disabilitato).
       decoration: InputDecoration(
-        // 📌 Icona principale a sinistra
+        // Icona sinistra
         prefixIcon: Container(
           margin: EdgeInsets.only(right: 12.w),
           child: Icon(
             icon,
             size: 16.sp,
-            //  Icona più scura quando disabilitato
             color: enabled
                 ? AppColors.primary
                 : (isDark
@@ -103,7 +99,7 @@ class AuthTextField extends StatelessWidget {
           ),
         ),
 
-        // 👁‍🗨 Icona per mostra/nascondi password
+        // Toggle Password (Occhio)
         suffixIcon: onToggleObscure == null
             ? null
             : IconButton(
@@ -116,31 +112,28 @@ class AuthTextField extends StatelessWidget {
                           ? AppColors.greyDark.withValues(alpha: 0.3)
                           : AppColors.greyLight.withValues(alpha: 0.3)),
                 ),
-                onPressed: enabled ? onToggleObscure : null, //  Disabilita il toggle quando il campo è disabilitato
+                onPressed: enabled ? onToggleObscure : null,
               ),
 
-        // 💬 Hint text
         hintText: hint,
         hintStyle: TextStyle(
           fontSize: 14.sp,
           color: isDark ? AppColors.greyDark : AppColors.greyLight,
         ),
 
-        // 🎨 Colore di sfondo diverso per light/dark mode
         filled: true,
         fillColor: enabled
             ? (isDark ? AppColors.borderDark : AppColors.borderLight)
             : (isDark
                 ? AppColors.borderDark.withValues(alpha: 0.5)
-                : AppColors.borderLight.withValues(alpha: 0.5)), //  Sfondo più chiaro quando disabilitato
+                : AppColors.borderLight.withValues(alpha: 0.5)),
 
-        // 🔲 Bordi moderni
+        // Configurazione Bordi
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
           borderSide: BorderSide.none,
         ),
 
-        // Bordo quando non è selezionato
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
           borderSide: BorderSide(
@@ -149,7 +142,6 @@ class AuthTextField extends StatelessWidget {
           ),
         ),
 
-        //  Bordo quando disabilitato
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
           borderSide: BorderSide(
@@ -160,13 +152,11 @@ class AuthTextField extends StatelessWidget {
           ),
         ),
 
-        // Bordo in focus
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
           borderSide: BorderSide(color: AppColors.primary, width: 1),
         ),
 
-        // Bordi in caso di errore
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14.r),
           borderSide: BorderSide(color: AppColors.delete, width: 1),
@@ -176,7 +166,6 @@ class AuthTextField extends StatelessWidget {
           borderSide: BorderSide(color: AppColors.delete, width: 1),
         ),
 
-        // 🔘 Spaziatura interna
         contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       ),
     );

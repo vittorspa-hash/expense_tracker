@@ -1,18 +1,15 @@
-// settings_section_header.dart
-// -----------------------------------------------------------------------------
-// 📋 WIDGET INTESTAZIONE SEZIONE IMPOSTAZIONI
-// -----------------------------------------------------------------------------
-// Mostra l'intestazione di una sezione nelle impostazioni con:
-// - Icona a sinistra
-// - Titolo in grassetto
-// - Stile coerente con il tema dell'app
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
+/// FILE: settings_section_header.dart
+/// DESCRIZIONE: Componente UI per le intestazioni delle sezioni nella pagina Impostazioni.
+/// Visualizza un'icona tematica e un titolo in maiuscolo, garantendo uniformità visiva
+/// tra le diverse categorie di configurazione (es. Aspetto, Notifiche).
+
 class SettingsSectionHeader extends StatelessWidget {
+  // --- PARAMETRI ---
+  // Icona rappresentativa della sezione e titolo testuale.
   final IconData icon;
   final String title;
 
@@ -26,6 +23,9 @@ class SettingsSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- LAYOUT ---
+    // Riga contenente l'icona (colorata con il primary color) e il testo
+    // stilizzato in maiuscolo con spaziatura aumentata per leggibilità.
     return Padding(
       padding: EdgeInsets.only(left: 4.w, bottom: 4.h),
       child: Row(

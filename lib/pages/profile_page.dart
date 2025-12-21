@@ -1,19 +1,22 @@
-// profile_page.dart
 import 'dart:io';
-
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; // Necessario ora qui
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Necessario ora qui
+import 'package:image_picker/image_picker.dart'; 
 import 'package:provider/provider.dart';
-
 import 'package:expense_tracker/providers/profile_provider.dart';
-import 'package:expense_tracker/providers/auth_provider.dart'; // Per il reset password
+import 'package:expense_tracker/providers/auth_provider.dart'; 
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+/// FILE: profile_page.dart
+/// DESCRIZIONE: Schermata di gestione del profilo utente.
+/// Permette di visualizzare e modificare le informazioni personali (Avatar, Nome, Email, Password)
+/// e gestire la sicurezza dell'account (Eliminazione).
+/// Interagisce con ProfileProvider per la logica di business e AuthProvider per il reset password.
 
 class ProfilePage extends StatefulWidget {
   static const route = "/profile/page";
@@ -25,7 +28,10 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  // UI Controller Resources
+  
+  // --- INIZIALIZZAZIONE ---
+  // Configura il picker immagini, le animazioni e richiede il caricamento
+  // dei dati locali del profilo all'avvio del widget.
   final ImagePicker _picker = ImagePicker();
 
   @override
@@ -36,7 +42,6 @@ class _ProfilePageState extends State<ProfilePage>
     super.initState();
     initFadeAnimation();
 
-    // Caricamento iniziale
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<ProfileProvider>().loadLocalData();
@@ -50,14 +55,15 @@ class _ProfilePageState extends State<ProfilePage>
     super.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // 🎨 BUILD
-  // ---------------------------------------------------------------------------
+  // --- BUILD UI ---
+  // Costruisce la lista scrollabile delle impostazioni.
+  // Include un RefreshIndicator per sincronizzare i dati con il server
+  // e sezioni distinte per Avatar, Dati Anagrafici e Azioni Critiche.
+  // 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Ascoltiamo le modifiche del provider
     final provider = context.watch<ProfileProvider>();
     final user = provider.user;
 
@@ -89,7 +95,7 @@ class _ProfilePageState extends State<ProfilePage>
             ListView(
               padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
               children: [
-                // 🖼️ AVATAR
+                // SEZIONE AVATAR
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 20.h),
                   decoration: BoxDecoration(
@@ -106,7 +112,6 @@ class _ProfilePageState extends State<ProfilePage>
                     ],
                   ),
                   child: ProfileAvatar(
-                    // Key per forzare il refresh se cambia il file
                     key: ObjectKey(provider.localImage),
                     image: provider.localImage,
                     isUploading: provider.isLoading,
@@ -117,7 +122,7 @@ class _ProfilePageState extends State<ProfilePage>
 
                 SizedBox(height: 32.h),
 
-                // 📑 DATI PERSONALI
+                // SEZIONE DATI PERSONALI
                 Container(
                   decoration: BoxDecoration(
                     color: isDark
@@ -172,7 +177,7 @@ class _ProfilePageState extends State<ProfilePage>
 
                       _buildDivider(isDark),
 
-                      // ID
+                      // ID Utente (Copiabile)
                       ProfileTile(
                         icon: Icons.badge_outlined,
                         title: "ID utente",
@@ -191,7 +196,7 @@ class _ProfilePageState extends State<ProfilePage>
 
                 SizedBox(height: 24.h),
 
-                // 🗑️ ELIMINA
+                // BOTTONE ELIMINAZIONE ACCOUNT
                 ElevatedButton(
                   onPressed: provider.isLoading ? null : _handleDeleteAccount,
                   style: ElevatedButton.styleFrom(
@@ -252,6 +257,7 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  // Helper per divisori grafici
   Widget _buildDivider(bool isDark) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -265,10 +271,8 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 🕹️ LOGICA UI (Gestione Dialoghi e Chiamate al Provider)
-  // ---------------------------------------------------------------------------
-
+  // --- HELPER LOGICA UI ---
+  // Funzioni di utilità per mostrare feedback all'utente (SnackBar).
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -279,11 +283,12 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  /// 📸 CAMBIO IMMAGINE
+  // --- GESTIONE AVATAR ---
+  // Logica per selezionare una nuova immagine dalla galleria o rimuovere quella esistente.
+  // 
   Future<void> _handleChangePicture() async {
     final provider = context.read<ProfileProvider>();
 
-    // 1. Scelta Immagine (UI)
     try {
       final pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
@@ -293,7 +298,6 @@ class _ProfilePageState extends State<ProfilePage>
 
       if (pickedFile == null) return;
 
-      // 2. Logica Provider
       await provider.setProfileImage(File(pickedFile.path));
       _showSnack("Immagine profilo aggiornata!");
     } catch (e) {
@@ -301,7 +305,6 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  /// ❌ RIMOZIONE IMMAGINE
   Future<void> _handleRemovePicture() async {
     final provider = context.read<ProfileProvider>();
 
@@ -323,7 +326,10 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  /// 📝 MODIFICA NOME
+  // --- MODIFICA DATI UTENTE ---
+  // Serie di metodi che aprono dialoghi di input specifici (Nome, Email, Password),
+  // validano i dati inseriti e invocano i metodi di aggiornamento del Provider.
+  // 
   Future<void> _handleChangeDisplayName() async {
     final provider = context.read<ProfileProvider>();
 
@@ -351,7 +357,6 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  /// 📧 MODIFICA EMAIL
   Future<void> _handleChangeEmail() async {
     final provider = context.read<ProfileProvider>();
 
@@ -392,10 +397,8 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  /// 🔒 MODIFICA PASSWORD
   Future<void> _handleChangePassword() async {
     final provider = context.read<ProfileProvider>();
-    // Otteniamo l'email in anticipo per usarla nella callback
     final userEmail = provider.user?.email;
 
     final result = await DialogUtils.showInputDialogAdaptive(
@@ -408,16 +411,14 @@ class _ProfilePageState extends State<ProfilePage>
       ],
       confirmText: "Salva",
       cancelText: "Annulla",
-      // Callback aggiornata per il nuovo AuthProvider
+      // Callback per AuthProvider
       onForgotPassword: () async {
         try {
           await context.read<AuthProvider>().resetPassword(email: userEmail);
-          // Messaggio gestito qui nella UI
           if (mounted) {
             _showSnack("Email di recupero inviata a $userEmail");
           }
         } catch (e) {
-          // Errore gestito qui nella UI
           if (mounted) {
             _showSnack(e.toString(), isError: true);
           }
@@ -447,7 +448,8 @@ class _ProfilePageState extends State<ProfilePage>
     }
   }
 
-  /// 🗑 ELIMINA ACCOUNT
+  // --- CANCELLAZIONE ACCOUNT ---
+  // Flusso critico per l'eliminazione definitiva dell'utente.
   Future<void> _handleDeleteAccount() async {
     final provider = context.read<ProfileProvider>();
 

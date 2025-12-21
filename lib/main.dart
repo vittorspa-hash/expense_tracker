@@ -1,7 +1,7 @@
 import 'package:expense_tracker/app.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
-import 'package:expense_tracker/providers/settings_provider.dart';
+import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
 import 'package:expense_tracker/services/auth_service.dart';
@@ -20,7 +20,14 @@ import 'firebase_options.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 
+/// FILE: main.dart
+/// DESCRIZIONE: Entry point dell'applicazione. Gestisce il setup dell'ambiente,
+/// la Dependency Injection (GetIt), l'inizializzazione asincrona dei servizi
+/// critici e l'avvio della UI con i relativi Provider.
+
 void main() async {
+  // --- CONFIGURAZIONE AMBIENTE E SISTEMA ---
+  // Inizializza binding Flutter, Firebase, orientamento schermo e localizzazione (IT).
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -28,32 +35,32 @@ void main() async {
   Intl.defaultLocale = "it_IT";
   await initializeDateFormatting("it_IT", null);
 
-  // Registrazione in GetIt di repository e servizi
+  // --- DEPENDENCY INJECTION (GETIT) ---
+  // Registrazione di Repository e Servizi come Singleton (Lazy o immediati).
   final getIt = GetIt.instance;
 
-  // Repository (singleton perché gestisce connessione Firebase)
   getIt.registerLazySingleton<FirebaseRepository>(() => FirebaseRepository());
 
-  // Services (lazy singleton - istanziati solo quando necessari)
   getIt.registerLazySingleton<AuthService>(() => AuthService());
   getIt.registerLazySingleton<ProfileService>(() => ProfileService());
   getIt.registerLazySingleton<ExpenseService>(
     () => ExpenseService(firebaseRepository: getIt<FirebaseRepository>()),
   );
 
-  // NotificationService come singleton normale (deve essere inizializzato subito)
   getIt.registerSingleton<NotificationService>(NotificationService());
 
-  // Inizializzazione SettingsProvider (DEVE essere fuori perché ha await)
-  final settingsProvider = SettingsProvider(
+  // --- INIZIALIZZAZIONE SERVIZI ASINCRONI ---
+  // Setup di Notification e Theme che devono completarsi prima del rendering UI.
+  final notificationProvider = NotificationProvider(
     notificationService: getIt<NotificationService>(),
   );
-  await settingsProvider.initialize();
+  await notificationProvider.initialize();
 
-  // Inizializzazione ThemeProvider (DEVE essere fuori perché ha await)
   final themeProvider = ThemeProvider();
   await themeProvider.initialize();
 
+  // --- AVVIO APPLICAZIONE ---
+  // Configurazione responsive (ScreenUtil) e iniezione dei Provider globali.
   runApp(
     ScreenUtilInit(
       designSize: const Size(375, 812),
@@ -62,32 +69,24 @@ void main() async {
       builder: (context, child) {
         return MultiProvider(
           providers: [
-            // SettingsProvider usa .value() perché già inizializzato fuori
-            ChangeNotifierProvider.value(value: settingsProvider),
-
-            // ThemeProvider usa .value() perché già inizializzato fuori
+            // Provider pre-inizializzati
+            ChangeNotifierProvider.value(value: notificationProvider),
             ChangeNotifierProvider.value(value: themeProvider),
 
-            // AuthProvider
+            // Provider dipendenti dai servizi GetIt
             ChangeNotifierProvider(
               create: (_) => AuthProvider(authService: getIt<AuthService>()),
             ),
-
-            // ProfileProvider
             ChangeNotifierProvider(
               create: (_) =>
                   ProfileProvider(profileService: getIt<ProfileService>()),
             ),
-
-            // ExpenseProvider (dipende da SettingsProvider)
             ChangeNotifierProvider(
               create: (_) => ExpenseProvider(
-                settingsProvider: settingsProvider,
+                notificationProvider: notificationProvider,
                 expenseService: getIt<ExpenseService>(),
               ),
             ),
-
-            // MultiSelectProvider (dipende da ExpenseProvider)
             ChangeNotifierProvider(
               create: (context) => MultiSelectProvider(
                 expenseProvider: context.read<ExpenseProvider>(),

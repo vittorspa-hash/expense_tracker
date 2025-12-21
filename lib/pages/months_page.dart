@@ -1,17 +1,19 @@
-// months_page.dart
-
 import 'package:expense_tracker/components/report/period_list_item_widget.dart';
 import 'package:expense_tracker/components/report/total_card_widget.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/pages/days_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
-// Rimosso GetX e aggiunto Provider
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+/// FILE: months_page.dart
+/// DESCRIZIONE: Schermata di dettaglio mensile.
+/// Visualizza il totale delle spese per il mese selezionato e una lista
+/// aggregata per giorni. Cliccando su un giorno si naviga al dettaglio giornaliero.
 
 class MonthsPage extends StatefulWidget {
   static const route = "/months";
@@ -27,19 +29,11 @@ class MonthsPage extends StatefulWidget {
 
 class _MonthsPageState extends State<MonthsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  
+  // --- COSTANTI ---
   final List<String> monthNames = [
-    "Gennaio",
-    "Febbraio",
-    "Marzo",
-    "Aprile",
-    "Maggio",
-    "Giugno",
-    "Luglio",
-    "Agosto",
-    "Settembre",
-    "Ottobre",
-    "Novembre",
-    "Dicembre",
+    "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+    "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
   ];
 
   @override
@@ -57,6 +51,8 @@ class _MonthsPageState extends State<MonthsPage>
     super.dispose();
   }
 
+  // --- HELPER FORMATTAZIONE ---
+  // Funzioni di utilità per convertire oggetti DateTime in stringhe localizzate (IT).
   String formatDateItaliano(DateTime date) {
     final giorno = DateFormat("d", "it_IT").format(date);
     final mese = DateFormat("MMMM", "it_IT").format(date);
@@ -86,16 +82,21 @@ class _MonthsPageState extends State<MonthsPage>
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
         child: SafeArea(
-          // SOSTITUITO Obx con Consumer<ExpenseStore>
+          // --- RECUPERO DATI (CONSUMER) ---
+          // Ascolta il Provider per ottenere le spese aggregate per giorno.
+          // La logica di raggruppamento (Map<Giorno, Totale>) è delegata al Provider.
+          // 
           child: Consumer<ExpenseProvider>(
             builder: (context, expenseProvider, child) {
-              // Recupera spese giornaliere tramite lo store passato dal Consumer
+              
               final dailyExpenses = expenseProvider.expensesByDay(
                 widget.year,
                 widget.month,
               );
 
-              // ⚠️ Nessuna spesa per il mese
+              // --- STATO VUOTO ---
+              // Visualizzazione alternativa se non ci sono dati per il periodo selezionato.
+              // 
               if (dailyExpenses.isEmpty) {
                 return buildWithFadeAnimation(
                   Center(
@@ -147,9 +148,13 @@ class _MonthsPageState extends State<MonthsPage>
 
               final totalMonth = dailyExpenses.values.reduce((a, b) => a + b);
 
+              // --- CONTENUTO LISTA ---
+              // Visualizza la Card Totale e la lista dei giorni.
+              // 
               return buildWithFadeAnimation(
                 Column(
                   children: [
+                    // Riepilogo Mese
                     TotalCardWidget(
                       label: "Totale $monthName",
                       totalAmount: totalMonth,
@@ -180,18 +185,22 @@ class _MonthsPageState extends State<MonthsPage>
 
                     SizedBox(height: 12.h),
 
+                    // Lista Giorni
                     Expanded(
                       child: ListView.separated(
                         padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
                         itemCount: dailyExpenses.length,
                         separatorBuilder: (_, _) => SizedBox(height: 6.h),
                         itemBuilder: (context, index) {
+                          // Parsing della chiave data (es. "dd/MM/yyyy")
                           final day = dailyExpenses.keys.elementAt(index);
                           final total = dailyExpenses[day]!;
                           final date = DateTime.parse(
                             day.split('/').reversed.join('-'),
                           );
 
+                          // Navigazione al dettaglio giornaliero (DaysPage)
+                          // 
                           return PeriodListItemWidget(
                             badgeText: "${date.day}",
                             badgeSubtext: DateFormat(

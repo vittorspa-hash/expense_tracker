@@ -1,29 +1,29 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Importa la tua classe di eccezione personalizzata se l'hai messa in un altro file,
-// altrimenti puoi definirla in fondo a questo file.
+/// FILE: auth_service.dart
+/// DESCRIZIONE: Service che gestisce l'interazione diretta con Firebase Authentication.
+/// Fornisce metodi per registrazione, login, logout e reset password, incapsulando
+/// la gestione degli errori (traduzione codici) e implementando un rate-limit
+/// di sicurezza per l'invio delle email di sistema.
 
 class AuthService {
+  // --- CONFIGURAZIONE E STATO ---
+  // Istanza di Firebase Auth e timestamp per gestire il rate-limit delle email.
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // Timestamp per rate-limit
   DateTime? _lastEmailSent;
 
-  // Getter utile per l'esterno
   User? get currentUser => _auth.currentUser;
 
-  // ---------------------------------------------------------------------------
-  // 🟦 REGISTRAZIONE
-  // ---------------------------------------------------------------------------
+  // --- REGISTRAZIONE UTENTE ---
+  // Crea un nuovo utente su Firebase, aggiorna il nome visualizzato (DisplayName)
+  // e invia automaticamente l'email di verifica.
   Future<void> signUp({
     required String email,
     required String password,
     required String nome,
   }) async {
     try {
-      // Nota: Il controllo "password != confermaPassword" deve essere fatto nel UI/Provider prima di chiamare questo metodo.
-
       final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password.trim(),
@@ -34,6 +34,7 @@ class AuthService {
         throw AuthException("Errore sconosciuto nella creazione utente.");
       }
 
+      // Aggiornamento profilo e ricarica stato utente
       await user.updateDisplayName(nome.trim());
       await user.reload();
       user = _auth.currentUser;
@@ -45,9 +46,9 @@ class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 LOGIN
-  // ---------------------------------------------------------------------------
+  // --- ACCESSO ---
+  // Effettua il login con email e password. Ricarica lo stato dell'utente
+  // per garantire che il flag 'emailVerified' sia aggiornato prima di restituirlo.
   Future<User> signIn({required String email, required String password}) async {
     try {
       var userCredential = await _auth.signInWithEmailAndPassword(
@@ -59,16 +60,14 @@ class AuthService {
       if (user == null) throw AuthException("Utente non trovato.");
 
       await user.reload();
-      // Restituiamo l'utente così il Provider può controllare se emailVerified è true/false
       return _auth.currentUser!;
     } on FirebaseAuthException catch (e) {
       throw AuthException(_errorMessageLogin(e));
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 LOGOUT
-  // ---------------------------------------------------------------------------
+  // --- DISCONNESSIONE ---
+  // Termina la sessione corrente su Firebase.
   Future<void> signOut() async {
     try {
       await _auth.signOut();
@@ -77,9 +76,9 @@ class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 RESET PASSWORD
-  // ---------------------------------------------------------------------------
+  // --- RECUPERO PASSWORD ---
+  // Invia un link per il reset della password all'email specificata.
+  // Include un controllo di rate-limit per prevenire spam.
   Future<void> resetPassword(String? email) async {
     final targetEmail = email?.trim() ?? _auth.currentUser?.email;
 
@@ -99,9 +98,9 @@ class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🟦 INVIO EMAIL DI VERIFICA (Con Rate Limit)
-  // ---------------------------------------------------------------------------
+  // --- VERIFICA EMAIL ---
+  // Invia nuovamente l'email di conferma all'utente corrente.
+  // Soggetto a rate-limit (60 secondi).
   Future<void> sendVerificationEmail([User? user]) async {
     final u = user ?? _auth.currentUser;
     if (u == null) throw AuthException("Nessun utente loggato.");
@@ -118,9 +117,8 @@ class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🛠 HELPER: RATE LIMIT CHECK
-  // ---------------------------------------------------------------------------
+  // --- HELPER DI CONTROLLO ---
+  // Verifica se è passato abbastanza tempo dall'ultimo invio di email.
   void _checkRateLimit(String errorMessage) {
     if (_lastEmailSent != null &&
         DateTime.now().difference(_lastEmailSent!) <
@@ -129,9 +127,9 @@ class AuthService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🛠 MAPPATURA ERRORI (Preservata dal tuo codice originale)
-  // ---------------------------------------------------------------------------
+  // --- MAPPATURA ERRORI ---
+  // Metodi helper per tradurre i codici di errore Firebase in messaggi
+  // leggibili in italiano per l'utente finale.
   String _errorMessageSignup(FirebaseAuthException e) {
     switch (e.code) {
       case "email-already-in-use":
@@ -176,6 +174,8 @@ class AuthService {
   }
 }
 
+// --- ECCEZIONI PERSONALIZZATE ---
+// Wrapper per gestire errori specifici del service di autenticazione.
 class AuthException implements Exception {
   final String message;
   AuthException(this.message);

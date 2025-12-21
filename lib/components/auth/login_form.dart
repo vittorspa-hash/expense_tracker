@@ -1,13 +1,17 @@
-// login_form.dart
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; // Importante per i dialog
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
+
+/// FILE: login_form.dart
+/// DESCRIZIONE: Widget contenente il form di accesso. Gestisce l'input utente,
+/// la validazione dei campi, la chiamata al Provider di autenticazione e
+/// la logica di verifica email/recupero password.
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -17,6 +21,9 @@ class LoginForm extends StatefulWidget {
 }
 
 class _LoginFormState extends State<LoginForm> {
+  // --- GESTIONE STATO E CONTROLLER ---
+  // Definizione delle chiavi per la validazione del form e dei controller
+  // per gestire l'input testuale e il focus dei campi.
   final _formKey = GlobalKey<FormState>();
 
   final _emailController = TextEditingController();
@@ -27,6 +34,8 @@ class _LoginFormState extends State<LoginForm> {
 
   bool _obscure = true;
 
+  // --- PULIZIA RISORSE ---
+  // Rilascio dei controller e focus node alla chiusura del widget per evitare memory leak.
   @override
   void dispose() {
     _emailController.dispose();
@@ -36,11 +45,13 @@ class _LoginFormState extends State<LoginForm> {
     super.dispose();
   }
 
+  // --- BUILD UI ---
+  // Costruzione dell'interfaccia con gestione adattiva del tema (Light/Dark)
+  // e monitoraggio dello stato di caricamento dal Provider.
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Ascoltiamo il provider per lo stato loading
     final provider = context.watch<AuthProvider>();
     final isLoading = provider.isLoading;
 
@@ -87,7 +98,9 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                   SizedBox(height: 18.h),
 
-                  // Email
+                  // --- CAMPI DI INPUT ---
+                  // Componenti personalizzati per l'inserimento di Email e Password
+                  // con validazione integrata.
                   AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
@@ -109,7 +122,6 @@ class _LoginFormState extends State<LoginForm> {
 
                   SizedBox(height: 8.h),
 
-                  // Password
                   AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
@@ -129,7 +141,8 @@ class _LoginFormState extends State<LoginForm> {
 
                   SizedBox(height: 8.h),
 
-                  // Link Password dimenticata
+                  // --- LINK AZIONI SECONDARIE ---
+                  // Pulsante per avviare il flusso di reset della password.
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -170,7 +183,8 @@ class _LoginFormState extends State<LoginForm> {
 
             SizedBox(height: 10.h),
 
-            // Bottone Login
+            // --- AZIONI PRINCIPALI ---
+            // Bottone di Login che mostra un indicatore di caricamento durante l'attesa.
             AuthButton(
               onPressed: isLoading ? null : _handleLogin,
               icon: isLoading ? null : FontAwesomeIcons.rightToBracket,
@@ -196,9 +210,8 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // 🕹️ HELPER UI
-  // ---------------------------------------------------------------------------
+  // --- FEEDBACK UTENTE ---
+  // Metodo helper per mostrare messaggi (errori o conferme) tramite SnackBar.
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -209,9 +222,9 @@ class _LoginFormState extends State<LoginForm> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // ⚡️ GESTIONE LOGIN (Logica UI + Chiamata Provider)
-  // ---------------------------------------------------------------------------
+  // --- LOGICA DI LOGIN ---
+  // Coordina la validazione del form, l'autenticazione tramite Provider,
+  // la gestione degli errori e il controllo obbligatorio della verifica email.
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -263,9 +276,8 @@ class _LoginFormState extends State<LoginForm> {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔑 RESET PASSWORD
-  // ---------------------------------------------------------------------------
+  // --- RECUPERO PASSWORD ---
+  // Gestisce l'invio dell'email di reset password tramite il Provider.
   Future<void> _handleResetPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {

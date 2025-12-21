@@ -1,28 +1,25 @@
-// period_list_item_widget.dart
-// -----------------------------------------------------------------------------
-// 📄 WIDGET PER ITEM DEL DETTAGLIO PERIODICO (PeriodListItemWidget)
-// -----------------------------------------------------------------------------
-// Rappresenta un singolo elemento di un periodo (giorno/mese/anno) con:
-// - Badge numerico e opzionale sottotitolo
-// - Titolo principale e sottotitolo opzionale
-// - Totale importo e percentuale sul totale
-// - Clickable con effetto InkWell
-// - Adattamento chiaro/scuro
-// -----------------------------------------------------------------------------
-
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// FILE: period_list_item_widget.dart
+/// DESCRIZIONE: Widget riutilizzabile per visualizzare i dettagli di un periodo
+/// (giorno o mese) nelle liste di reportistica.
+/// Include un badge visivo, titoli descrittivi, il totale monetario e la percentuale
+/// di incidenza rispetto al totale generale.
+
 class PeriodListItemWidget extends StatelessWidget {
-  final String badgeText; // 🔹 Testo principale del badge (es. giorno o numero mese)
-  final String? badgeSubtext; // 🔹 Sottotesto opzionale del badge (es. abbreviazione mese)
-  final String title; // 🔹 Titolo principale (es. nome giorno/mese)
-  final String? subtitle; // 🔹 Sottotitolo opzionale (es. data completa)
-  final double totalAmount; // 🔹 Totale spesa del periodo
-  final double percentage; // 🔹 Percentuale rispetto al totale
-  final VoidCallback onTap; // 🔹 Azione al click
-  final Color? badgeBackgroundColor; // 🔹 Colore personalizzato del badge
+  // --- PARAMETRI ---
+  // Configurazione del contenuto visivo (testi), dati finanziari
+  // e gestione dell'interazione (tap).
+  final String badgeText; 
+  final String? badgeSubtext; 
+  final String title; 
+  final String? subtitle; 
+  final double totalAmount; 
+  final double percentage; 
+  final VoidCallback onTap; 
+  final Color? badgeBackgroundColor; 
 
   const PeriodListItemWidget({
     super.key,
@@ -40,6 +37,9 @@ class PeriodListItemWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- CONTENITORE INTERATTIVO ---
+    // Gestisce l'effetto "InkWell" al tocco e definisce lo stile della card
+    // (Bordi, Ombre, Colore di sfondo).
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16.r),
@@ -60,11 +60,13 @@ class PeriodListItemWidget extends StatelessWidget {
             ),
           ],
         ),
+        // --- LAYOUT A RIGA ---
+        // Organizza gli elementi orizzontalmente: Badge -> Testi -> Totali -> Freccia.
+        // 
         child: Row(
           children: [
-            // -----------------------------------------------------------------
-            // 🔹 BADGE CON TESTO E SOTTOTESTO
-            // -----------------------------------------------------------------
+            // --- BADGE (SINISTRA) ---
+            // Box quadrato colorato che mostra il numero del giorno o mese.
             Container(
               width: 50.w,
               height: 50.h,
@@ -104,9 +106,8 @@ class PeriodListItemWidget extends StatelessWidget {
 
             SizedBox(width: 16.w),
 
-            // -----------------------------------------------------------------
-            // 🔹 COLONNA CON TITOLI
-            // -----------------------------------------------------------------
+            // --- INFO TESTUALI (CENTRO) ---
+            // Titolo e sottotitolo opzionale.
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,9 +138,9 @@ class PeriodListItemWidget extends StatelessWidget {
               ),
             ),
 
-            // -----------------------------------------------------------------
-            // 🔹 COLONNA CON TOTALE E PERCENTUALE
-            // -----------------------------------------------------------------
+            // --- DATI FINANZIARI (DESTRA) ---
+            // Importo totale e percentuale. Usa SingleChildScrollView per evitare
+            // overflow su importi molto grandi.
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -176,9 +177,8 @@ class PeriodListItemWidget extends StatelessWidget {
 
             SizedBox(width: 8.w),
 
-            // -----------------------------------------------------------------
-            // 🔹 ICONA FRECCIA PER INDICARE CLICK
-            // -----------------------------------------------------------------
+            // --- NAVIGAZIONE ---
+            // Icona Chevron indicativa.
             Icon(
               Icons.chevron_right_rounded,
               color: isDark ? AppColors.greyDark : AppColors.greyLight,

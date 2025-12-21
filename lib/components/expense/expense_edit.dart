@@ -11,6 +11,12 @@ import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+/// FILE: expense_edit.dart
+/// DESCRIZIONE: Widget riutilizzabile per la creazione e la modifica di una spesa.
+/// Gestisce l'input dell'importo, della descrizione e della data.
+/// Caratteristica peculiare: utilizza un'interazione "Long Press" (pressione prolungata)
+/// sullo sfondo per confermare e salvare i dati, invece di un classico bottone "Salva".
+
 class ExpenseEdit extends StatefulWidget {
   final double? initialValue;
   final String? initialDescription;
@@ -39,6 +45,9 @@ class ExpenseEdit extends StatefulWidget {
 }
 
 class _ExpenseEditState extends State<ExpenseEdit> {
+  // --- STATO E INIZIALIZZAZIONE ---
+  // Controller per i campi di testo e variabili per gestire lo stato visivo
+  // (es. cambio colore alla pressione) e i dati temporanei (data selezionata).
   final priceController = TextEditingController();
   final descriptionController = TextEditingController();
   bool isTappedDown = false;
@@ -47,10 +56,12 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   @override
   void initState() {
     super.initState();
+    // Pre-popolamento dati in caso di modifica
     priceController.text = widget.initialValue?.toString() ?? "";
     descriptionController.text = widget.initialDescription ?? "";
     selectedDate = widget.initialDate ?? DateTime.now();
 
+    // Controllo tutorial "Long Press" al primo avvio
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInstructionDialogIfNeeded();
     });
@@ -60,6 +71,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- UI PRINCIPALE ---
+    // Struttura a tutto schermo sensibile al tocco.
+    // L'InkWell gestisce il "Long Press" per il submit e cambia colore (highlight)
+    // per dare feedback visivo all'utente mentre preme.
+    // 
     return Scaffold(
       backgroundColor: isDark
           ? AppColors.editPageBackgroundDark
@@ -74,6 +90,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         focusColor: Colors.transparent,
         highlightColor: AppColors.primary,
         onTap: () {
+          // Chiude la tastiera se si tocca fuori dai campi
           FocusScope.of(context).unfocus();
         },
         child: Column(
@@ -86,12 +103,17 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           ],
         ),
       ),
+      // FAB opzionale (usato principalmente per eliminare la spesa in fase di edit)
       floatingActionButton: widget.floatingActionButtonIcon == null
           ? null
           : floatingActionButton(context, isDark), 
     );
   }
 
+  // --- COMPONENTI DI INPUT ---
+  // Widget modulari per l'inserimento di Prezzo (Text), Descrizione (Text) e Data (Picker).
+  // I colori del testo cambiano dinamicamente se l'utente sta premendo lo sfondo (isTappedDown).
+  // 
   Widget inputPrice() => Padding(
     padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: Row(
@@ -182,6 +204,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     final formattedDate = DateFormat("d MMMM y", "it_IT").format(selectedDate);
     final displayDate = capitalizeMonth(formattedDate);
 
+    // 
     return GestureDetector(
       onTap: () => _pickDate(context),
       child: Row(
@@ -210,6 +233,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
+  // --- AZIONI SUPPLEMENTARI (DELETE) ---
+  // Bottone flottante per gestire l'eliminazione della spesa (se presente).
+  // Include logica di conferma e feedback undo tramite SnackBar.
   Widget floatingActionButton(BuildContext context, bool isDark) {
     // Recuperiamo lo store tramite context.read (essendo un'azione non serve watch)
     final expense = context.read<ExpenseProvider>();
@@ -253,6 +279,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
+  // --- LOGICA DI SALVATAGGIO E UTILITY ---
+  // Validazione input, esecuzione del submit tramite callback padre,
+  // apertura del date picker e gestione del tutorial iniziale.
   void onSubmit() {
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
     final description = descriptionController.text.trim();

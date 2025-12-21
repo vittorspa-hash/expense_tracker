@@ -6,12 +6,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'dialog_styles.dart';
 
-// -----------------------------------------------------------------------------
-// INPUT DIALOG WIDGET
-// -----------------------------------------------------------------------------
+/// FILE: dialog_widgets.dart
+/// DESCRIZIONE: Raccolta di widget specifici utilizzati all'interno dei dialoghi complessi.
+/// Include:
+/// 1. InputDialogWidget: Un form dinamico per l'inserimento dati.
+/// 2. Helper per Pickers.
+/// 3. Componenti Profilo.
+
+// --- INPUT DIALOG WIDGET ---
 class InputDialogWidget extends StatefulWidget {
   final String title;
-  final List<Map<String, dynamic>> fields;
+  final List<Map<String, dynamic>> fields; 
   final String confirmText;
   final String cancelText;
   final VoidCallback? onForgotPassword;
@@ -31,7 +36,7 @@ class InputDialogWidget extends StatefulWidget {
 
 class _InputDialogWidgetState extends State<InputDialogWidget> {
   late final List<TextEditingController> _controllers;
-  late final List<ValueNotifier<bool>> _obscureStates;
+  late final List<ValueNotifier<bool>> _obscureStates; 
   late final List<FocusNode> _focusNodes;
 
   Color get _textColor => DialogStyles.textColor(context);
@@ -50,15 +55,9 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
 
   @override
   void dispose() {
-    for (var c in _controllers) {
-      c.dispose();
-    }
-    for (var n in _obscureStates) {
-      n.dispose();
-    }
-    for (var f in _focusNodes) {
-      f.dispose();
-    }
+    for (var c in _controllers) c.dispose();
+    for (var n in _obscureStates) n.dispose();
+    for (var f in _focusNodes) f.dispose();
     super.dispose();
   }
 
@@ -66,6 +65,8 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
     Navigator.pop(context, _controllers.map((c) => c.text).toList());
   }
 
+  // Costruisce il TextField gestendo focus e visibilità password
+  // 
   Widget _buildTextField(int index) {
     final field = widget.fields[index];
     final isLast = index == widget.fields.length - 1;
@@ -198,9 +199,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
   }
 }
 
-// -----------------------------------------------------------------------------
-// CHECKBOX ROW (Per Instruction Dialog)
-// -----------------------------------------------------------------------------
+// --- CHECKBOX ROW ---
 class DialogCheckboxRow extends StatelessWidget {
   final bool value;
   final String label;
@@ -236,9 +235,7 @@ class DialogCheckboxRow extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// PICKER HEADER
-// -----------------------------------------------------------------------------
+// --- PICKER HEADER ---
 class PickerHeader extends StatelessWidget {
   final Color textColor;
   final VoidCallback? onCancel;
@@ -284,9 +281,10 @@ class PickerHeader extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// PROFILE COMPONENTS (Header, Actions)
-// -----------------------------------------------------------------------------
+// --- COMPONENTI PROFILO ---
+
+// Header con avatar e dati utente
+// 
 class ProfileHeader extends StatelessWidget {
   final User? user;
   final File? localAvatar;

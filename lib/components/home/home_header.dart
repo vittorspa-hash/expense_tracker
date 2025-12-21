@@ -1,18 +1,22 @@
-// home_header.dart
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/providers/profile_provider.dart'; // 👈 Importa il ProfileProvider
+import 'package:expense_tracker/providers/profile_provider.dart'; 
 import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
+/// FILE: home_header.dart
+/// DESCRIZIONE: Componente superiore della Home Page (Dashboard).
+/// Visualizza i totali delle spese (Oggi, Settimana, Mese, Anno) e l'avatar utente.
+/// Utilizza un [Consumer2] per aggiornarsi reattivamente sia ai cambiamenti
+/// delle spese (ExpenseProvider) che del profilo utente (ProfileProvider).
+
 class HomeHeader extends StatelessWidget {
   final Animation<double> fadeAnimation;
   final bool isDark;
   final VoidCallback onTapProfile;
 
-  // ✂️ RIMOSSI: localAvatar e user. Ora li prendiamo dal provider.
   const HomeHeader({
     super.key,
     required this.fadeAnimation,
@@ -22,10 +26,13 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🎧 Usiamo Consumer2 per ascoltare SIA le spese CHE il profilo
+    // --- GESTIONE DATI MULTIPLA (CONSUMER) ---
+    // Ascolta simultaneamente ExpenseProvider (per i totali) e ProfileProvider (per l'avatar).
+    // Questo evita rebuild inutili dell'intera pagina se cambiano solo questi dati.
+    // 
     return Consumer2<ExpenseProvider, ProfileProvider>(
       builder: (context, expenseProvider, profileProvider, child) {
-        // Recuperiamo i dati dal ProfileProvider
+        // Recupero dati profilo per visualizzazione avatar
         final user = profileProvider.user;
         final localAvatar = profileProvider.localImage;
 
@@ -49,13 +56,13 @@ class HomeHeader extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // -----------------------------------------------------------------
-                    // 🔷 RIGA SUPERIORE
-                    // -----------------------------------------------------------------
+                    // --- BARRA NAVIGAZIONE SUPERIORE ---
+                    // Include il pulsante per il resoconto annuale e l'avatar cliccabile.
+                    // 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // 📅 Pulsante "Resoconto annuale"
+                        // Pulsante Navigazione Anni
                         GestureDetector(
                           onTap: () =>
                               Navigator.pushNamed(context, YearsPage.route),
@@ -103,7 +110,9 @@ class HomeHeader extends StatelessWidget {
                           ),
                         ),
 
-                        // 👤 Avatar utente (Aggiornato automaticamente dal Provider)
+                        // Avatar Utente con Fallback Logic
+                        // Priorità: Immagine Locale > URL Network (Firebase) > Icona Default
+                        // 
                         GestureDetector(
                           onTap: onTapProfile,
                           child: Container(
@@ -121,14 +130,12 @@ class HomeHeader extends StatelessWidget {
                               radius: 20.r,
                               backgroundColor: AppColors.backgroundLight
                                   .withValues(alpha: 0.3),
-                              // Logica immagine: Locale > Rete > Null
                               backgroundImage: localAvatar != null
                                   ? FileImage(localAvatar)
                                   : (user?.photoURL != null
                                         ? NetworkImage(user!.photoURL!)
                                         : null),
 
-                              // Icona fallback
                               child:
                                   localAvatar == null && user?.photoURL == null
                                   ? Icon(
@@ -147,9 +154,8 @@ class HomeHeader extends StatelessWidget {
 
                     SizedBox(height: 20.h),
 
-                    // -----------------------------------------------------------------
-                    // 💰 SEZIONE SPESA DEL MESE
-                    // -----------------------------------------------------------------
+                    // --- INDICATORE TOTALE MENSILE ---
+                    // Focus principale della dashboard.
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -185,9 +191,8 @@ class HomeHeader extends StatelessWidget {
 
                     SizedBox(height: 24.h),
 
-                    // -----------------------------------------------------------------
-                    // 📊 STATISTICHE
-                    // -----------------------------------------------------------------
+                    // --- CARDS STATISTICHE RAPIDE ---
+                    // Griglia orizzontale per i totali di Oggi, Settimana e Anno.
                     Row(
                       children: [
                         Expanded(
@@ -223,7 +228,8 @@ class HomeHeader extends StatelessWidget {
   }
 }
 
-// ... HeaderExpenseState rimane invariato ...
+// --- WIDGET HELPER STATISTICHE ---
+// Card riutilizzabile per visualizzare una singola statistica (Valore + Etichetta).
 class HeaderExpenseState extends StatelessWidget {
   final double value;
   final String label;

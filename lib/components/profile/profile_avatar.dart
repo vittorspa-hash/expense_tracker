@@ -1,11 +1,16 @@
-// profile_avatar.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// FILE: profile_avatar.dart
+/// DESCRIZIONE: Componente UI che visualizza l'immagine del profilo utente.
+/// Utilizza uno Stack per sovrapporre l'immagine circolare, i pulsanti di azione
+/// (Modifica/Rimuovi) e gli indicatori di stato (Caricamento).
+
 class ProfileAvatar extends StatelessWidget {
-  // 🔧 Parametri
+  // --- PARAMETRI ---
+  // File immagine locale (se presente), stato di upload e callback per le azioni.
   final File? image;
   final bool isUploading;
   final VoidCallback? onChangePicture;
@@ -23,12 +28,18 @@ class ProfileAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // --- LAYOUT PRINCIPALE (STACK) ---
+    // Sovrappone i vari elementi grafici:
+    // 1. Sfondo decorativo.
+    // 2. Contenitore Avatar (Immagine o Icona default).
+    // 3. Pulsanti flottanti (Camera e Rimuovi).
+    // 
     return Center(
       child: Stack(
         alignment: Alignment.center,
         clipBehavior: Clip.none,
         children: [
-          // Sfondo Cerchio
+          // Sfondo Cerchio (Decorativo)
           Container(
             width: 125.r,
             height: 125.r,
@@ -38,7 +49,7 @@ class ProfileAvatar extends StatelessWidget {
             ),
           ),
 
-          // Cerchio Avatar
+          // Cerchio Avatar (Immagine o Fallback)
           Container(
             width: 120.r,
             height: 120.r,
@@ -68,7 +79,8 @@ class ProfileAvatar extends StatelessWidget {
             ),
           ),
 
-          // Bottone Camera
+          // Pulsante Modifica (Camera)
+          // Mostra uno spinner se è in corso un caricamento.
           Positioned(
             bottom: 5.h,
             right: 5.w,
@@ -92,7 +104,8 @@ class ProfileAvatar extends StatelessWidget {
             ),
           ),
 
-          // Bottone Rimuovi
+          // Pulsante Rimuovi (X)
+          // Visibile solo se esiste un'immagine da rimuovere.
           if (image != null)
             Positioned(
               bottom: 5.h,
@@ -112,6 +125,8 @@ class ProfileAvatar extends StatelessWidget {
     );
   }
 
+  // --- WIDGET AUSILIARIO ---
+  // Crea pulsanti circolari stilizzati con gradiente e ombra per mantenere coerenza visiva.
   Widget _buildActionButton({
     required VoidCallback? onTap,
     required Color color,

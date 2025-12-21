@@ -1,24 +1,19 @@
-// expense_model.dart
-// Modello che rappresenta una singola spesa dell'utente.
-// Contiene informazioni su valore, descrizione, data di creazione e proprietario.
+// FILE: expense_model.dart
+// DESCRIZIONE: Modello dati fondamentale per una singola spesa.
+// Gestisce la struttura dati, la serializzazione per il database (Firebase)
+// e include metodi di utilità per la clonazione immutabile.
 
 class ExpenseModel {
-  // Identificatore univoco della spesa
-  String uuid;
+  // --- PROPRIETÀ ---
+  // Definiscono lo stato della spesa. 
+  // 
+  String uuid;          // ID univoco della spesa
+  double value;         // Importo
+  String? description;  // Note opzionali
+  DateTime createdOn;   // Timestamp creazione
+  String userId;        // Riferimento proprietario (Foreign Key logica)
 
-  // Valore numerico della spesa
-  double value;
-
-  // Descrizione opzionale della spesa
-  String? description;
-
-  // Data e ora in cui è stata creata la spesa
-  DateTime createdOn;
-
-  // ID dell'utente proprietario della spesa
-  String userId;
-
-  // Costruttore principale
+  // --- COSTRUTTORE ---
   ExpenseModel({
     required this.uuid,
     required this.value,
@@ -27,31 +22,35 @@ class ExpenseModel {
     required this.userId,
   });
 
-  // Factory per creare un ExpenseModel da una mappa (es. dati Firebase)
+  // --- SERIALIZZAZIONE (DB -> APP) ---
+  // Factory method per creare un'istanza partendo da una Mappa (es. JSON da Firebase).
+  // Gestisce la conversione sicura dei tipi numerici e delle date (Epoch ms -> DateTime).
   factory ExpenseModel.fromMap(Map<String, dynamic> data) {
     return ExpenseModel(
-      uuid: data["uuid"], // Recupera l'UUID
-      value: (data["value"] as num).toDouble(), // Converte il valore in double
-      description: data["description"], // Descrizione opzionale
+      uuid: data["uuid"], 
+      value: (data["value"] as num).toDouble(), // Gestione sicura int/double
+      description: data["description"], 
       createdOn: DateTime.fromMillisecondsSinceEpoch(
         data["createdOn"],
-      ), // Converte millisecondi in DateTime
-      userId: data["userId"], // ID dell'utente
+      ), 
+      userId: data["userId"], 
     );
   }
 
-  // Converte l'oggetto in mappa (utile per salvare su Firebase)
+  // --- SERIALIZZAZIONE (APP -> DB) ---
+  // Converte l'oggetto in Mappa per il salvataggio su database.
+  // Le date vengono convertite in millisecondi (Epoch) per compatibilità.
   Map<String, dynamic> toMap() => {
     "uuid": uuid,
     "value": value,
     "description": description,
-    "createdOn":
-        createdOn.millisecondsSinceEpoch, // Salva la data in millisecondi
+    "createdOn": createdOn.millisecondsSinceEpoch,
     "userId": userId,
   };
 
-  // Crea una copia modificata dell'oggetto
-  // Utile per aggiornamenti senza alterare l'originale
+  // --- UTILITY (COPYWITH) ---
+  // Pattern standard per creare una copia modificata dell'oggetto corrente
+  // senza alterare l'istanza originale (utile per aggiornamenti di stato parziali).
   ExpenseModel copyWith({
     String? uuid,
     double? value,

@@ -1,13 +1,24 @@
-// expense_calculator.dart
-// Classe statica per tutti i calcoli e raggruppamenti delle spese.
-// Funzioni pure senza side effects, facilmente testabili.
-
 import 'package:expense_tracker/models/expense_model.dart';
 
+/// FILE: expense_calculator.dart
+/// DESCRIZIONE: Classe di utilità (Helper) contenente metodi statici puri.
+/// Si occupa di tutta la matematica e la manipolazione delle liste di spese:
+/// 1. Calcolo dei totali per periodi temporali (Oggi, Settimana, Mese, Anno).
+/// 2. Raggruppamento dei dati per la generazione di report e grafici.
+/// 3. Ordinamento ottimizzato (In-Place) delle liste.
+
 class ExpenseCalculator {
+  
+  // --- CALCOLO TOTALI TEMPORALI ---
+  // Questi metodi filtrano la lista completa delle spese basandosi su un intervallo
+  // di date calcolato a runtime (es. dall'inizio della giornata odierna) e
+  // sommano i valori risultanti.
+  // 
+
   // Totale spese di oggi
   static double totalExpenseToday(List<ExpenseModel> expenses) {
     final currentDate = DateTime.now();
+    // Crea un DateTime all'ora 00:00:00 di oggi
     final startOfDay = DateTime(
       currentDate.year,
       currentDate.month,
@@ -19,15 +30,22 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.value);
   }
 
-  // Totale spese della settimana corrente
+  // Totale spese della settimana corrente (Lun-Dom)
   static double totalExpenseWeek(List<ExpenseModel> expenses) {
     final currentDate = DateTime.now();
+    // Calcola l'inizio della settimana (Lunedì)
     final startOfWeek = currentDate.subtract(
       Duration(days: currentDate.weekday - 1),
     );
+    // Azzera l'orario per includere tutte le spese del Lunedì
+    final startOfWeekMidnight = DateTime(
+      startOfWeek.year, 
+      startOfWeek.month, 
+      startOfWeek.day
+    );
 
     return expenses
-        .where((expense) => expense.createdOn.isAfter(startOfWeek))
+        .where((expense) => expense.createdOn.isAfter(startOfWeekMidnight))
         .fold(0.0, (acc, expense) => acc + expense.value);
   }
 
@@ -51,7 +69,13 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.value);
   }
 
-  // Raggruppa le spese per mese (key: "YYYY-MM")
+  // --- AGGREGAZIONE DATI (RAGGRUPPAMENTO) ---
+  // Questi metodi trasformano una lista piatta di spese in una Mappa,
+  // dove la chiave è il periodo (Mese o Giorno) e il valore è la somma delle spese.
+  // Utile per popolare grafici e liste riepilogative.
+  // 
+
+  // Raggruppa le spese per mese (Format Key: "YYYY-MM")
   static Map<String, double> expensesByMonth(List<ExpenseModel> expenses) {
     final Map<String, double> grouped = {};
 
@@ -61,11 +85,12 @@ class ExpenseCalculator {
       grouped[key] = (grouped[key] ?? 0) + expense.value;
     }
 
+    // Ordina le chiavi (Mesi) in ordine decrescente (dal più recente)
     final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
     return {for (var k in sortedKeys) k: grouped[k]!};
   }
 
-  // Raggruppa le spese per giorno di un determinato mese
+  // Raggruppa le spese per giorno all'interno di un mese specifico (Format Key: "dd/MM/yyyy")
   static Map<String, double> expensesByDay(
     List<ExpenseModel> expenses,
     int year,
@@ -75,6 +100,7 @@ class ExpenseCalculator {
 
     for (var expense in expenses) {
       final date = expense.createdOn;
+      // Filtra solo le spese dell'anno e mese richiesti
       if (date.year == year && date.month == month) {
         final key =
             "${date.day.toString().padLeft(2, '0')}/"
@@ -84,6 +110,7 @@ class ExpenseCalculator {
       }
     }
 
+    // Ordina le chiavi (Giorni) parsando la stringa data
     final sortedKeys = grouped.keys.toList()
       ..sort((a, b) {
         final da = DateTime.parse(a.split('/').reversed.join('-'));
@@ -94,7 +121,8 @@ class ExpenseCalculator {
     return {for (var k in sortedKeys) k: grouped[k]!};
   }
 
-  // Restituisce le spese di un giorno specifico
+  // --- FILTRAGGIO SPECIFICO ---
+  // Restituisce la lista grezza delle spese per un singolo giorno specifico.
   static List<ExpenseModel> expensesOfDay(
     List<ExpenseModel> expenses,
     int year,
@@ -110,8 +138,9 @@ class ExpenseCalculator {
     return list;
   }
 
-  // ✅ OTTIMIZZATO: Ora fa sort IN-PLACE invece di creare una nuova lista
-  // Modifica direttamente la lista passata per riferimento
+  // --- ORDINAMENTO (OTTIMIZZATO) ---
+  // Esegue un sort IN-PLACE sulla lista passata per riferimento.
+  // Evita di creare copie inutili della lista, risparmiando memoria.
   static void sortInPlace(List<ExpenseModel> expenses, String criteria) {
     switch (criteria) {
       case "date_desc":

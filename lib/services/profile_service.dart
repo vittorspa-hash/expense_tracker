@@ -1,18 +1,22 @@
-// profile_service.dart
 import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:path_provider/path_provider.dart';
+
+/// FILE: profile_service.dart
+/// DESCRIZIONE: Service che gestisce le operazioni sul profilo utente.
+/// Si occupa della persistenza locale dell'immagine profilo (utilizzando l'UID
+/// per garantire univocità) e comunica con Firebase Auth per aggiornare
+/// dati sensibili come Nome, Email e Password.
 
 class ProfileService {
   final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
 
   fb_auth.User? get currentUser => _auth.currentUser;
 
-  // ---------------------------------------------------------------------------
-  // 🛠 HELPER PRIVATO: Genera il percorso file basato sull'UID
-  // ---------------------------------------------------------------------------
-  /// Restituisce il riferimento al File specifico per l'utente loggato.
-  /// Es: .../documents/profile_pic_AbCdEf123456.jpg
+  // --- GESTIONE FILE LOCALE ---
+  // Genera il percorso del file immagine basandosi sull'UID dell'utente corrente.
+  // Questo previene conflitti di sovrascrittura tra utenti diversi sullo stesso dispositivo.
+  // 
   Future<File> _getUserFile() async {
     final user = _auth.currentUser;
     if (user == null) {
@@ -22,32 +26,25 @@ class ProfileService {
     }
 
     final appDir = await getApplicationDocumentsDirectory();
-    // 🔑 QUI È LA MAGIA: Usiamo user.uid nel nome del file
     return File('${appDir.path}/profile_pic_${user.uid}.jpg');
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔄 REFRESH UTENTE
-  // ---------------------------------------------------------------------------
+  // --- SINCRONIZZAZIONE ---
+  // Ricarica i dati dell'utente da Firebase per assicurarsi di avere lo stato più recente.
   Future<void> reloadUser() async {
     await _auth.currentUser?.reload();
   }
 
-  // ---------------------------------------------------------------------------
-  // 💾 SALVATAGGIO IMMAGINE
-  // ---------------------------------------------------------------------------
+  // --- GESTIONE IMMAGINE PROFILO ---
+  // Metodi per salvare, recuperare ed eliminare l'immagine del profilo dalla memoria locale.
   Future<File> saveLocalImage(File sourceFile) async {
     try {
-      // Ottengo il file di destinazione specifico per questo utente
       final destinationFile = await _getUserFile();
 
-      // Se esiste già un file vecchio per questo utente, lo sovrascriviamo.
-      // Opzionale: cancellarlo esplicitamente prima della copia per pulizia
       if (await destinationFile.exists()) {
         await destinationFile.delete();
       }
 
-      // Copia il file dalla cache/galleria alla cartella documenti
       final savedImage = await sourceFile.copy(destinationFile.path);
 
       return savedImage;
@@ -56,9 +53,6 @@ class ProfileService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🗑 RIMOZIONE IMMAGINE
-  // ---------------------------------------------------------------------------
   Future<void> deleteLocalImage() async {
     try {
       final file = await _getUserFile();
@@ -70,23 +64,17 @@ class ProfileService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 📂 CARICAMENTO IMMAGINE ESISTENTE
-  // ---------------------------------------------------------------------------
   Future<File?> getLocalImage() async {
     try {
       final file = await _getUserFile();
       return (await file.exists()) ? file : null;
     } catch (e) {
-      // Se non c'è utente loggato (es. fase di logout/inizializzazione),
-      // ritorniamo null invece di lanciare eccezione
       return null;
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 📝 UPDATE DISPLAY NAME
-  // ---------------------------------------------------------------------------
+  // --- AGGIORNAMENTO DATI UTENTE ---
+  // Wrapper per le chiamate a Firebase Auth per modificare i dati anagrafici.
   Future<void> updateDisplayName(String newName) async {
     try {
       await _auth.currentUser?.updateDisplayName(newName);
@@ -96,9 +84,9 @@ class ProfileService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 📧 UPDATE EMAIL
-  // ---------------------------------------------------------------------------
+  // --- OPERAZIONI SENSIBILI (EMAIL & PASSWORD) ---
+  // Richiedono la ri-autenticazione dell'utente per motivi di sicurezza
+  // prima di procedere con le modifiche.
   Future<void> updateEmail({
     required String newEmail,
     required String password,
@@ -114,19 +102,14 @@ class ProfileService {
       );
       await user.reauthenticateWithCredential(cred);
 
-      // 2. Verifica prima dell'aggiornamento
+      // 2. Verifica e Logout
       await user.verifyBeforeUpdateEmail(newEmail);
-
-      // 3. Logout (richiesto dal tuo flusso originale)
       await _auth.signOut();
     } on fb_auth.FirebaseAuthException catch (e) {
       throw ProfileException("Errore cambio email: ${e.message}");
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 🔒 UPDATE PASSWORD
-  // ---------------------------------------------------------------------------
   Future<void> updatePassword({
     required String currentPassword,
     required String newPassword,
@@ -147,9 +130,8 @@ class ProfileService {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 💀 DELETE ACCOUNT
-  // ---------------------------------------------------------------------------
+  // --- ELIMINAZIONE ACCOUNT ---
+  // Rimuove definitivamente l'utente da Firebase Auth.
   Future<void> deleteAccount() async {
     try {
       await _auth.currentUser?.delete();
@@ -159,6 +141,7 @@ class ProfileService {
   }
 }
 
+// --- ECCEZIONI PERSONALIZZATE ---
 class ProfileException implements Exception {
   final String message;
   ProfileException(this.message);

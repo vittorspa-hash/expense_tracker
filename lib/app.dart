@@ -1,7 +1,3 @@
-// app.dart
-// Configurazione principale dell'applicazione Expense Tracker.
-// Gestisce tema, localizzazione, routing e la struttura generale dell'app.
-
 import 'package:expense_tracker/pages/auth_wrapper.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/pages/edit_expense_page.dart';
@@ -17,8 +13,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get_it/get_it.dart';
 import 'package:provider/provider.dart';
 
-/// Widget principale dell'app.
-/// Configura tema, localizzazione, routing e la pagina iniziale tramite Provider.
+/// FILE: app.dart
+/// DESCRIZIONE: Widget radice dell'applicazione. Configura la struttura base di Flutter (MaterialApp),
+/// gestisce i provider globali (Tema), la localizzazione (Italiano), il routing centralizzato
+/// e il monitoraggio del ciclo di vita dell'app per la gestione dei badge di notifica.
+
 class App extends StatefulWidget {
   const App({super.key});
 
@@ -29,39 +28,42 @@ class App extends StatefulWidget {
 class _AppState extends State<App> with WidgetsBindingObserver {
   final NotificationService _notificationService = GetIt.instance<NotificationService>();
 
+  // --- 1. GESTIONE CICLO DI VITA & NOTIFICHE ---
+  // Monitora lo stato dell'app (background/foreground) per resettare il badge
+  // delle notifiche quando l'utente apre o riprende l'applicazione.
+
   @override
   void initState() {
     super.initState();
-    // Aggiungi observer per monitorare il ciclo di vita dell'app
     WidgetsBinding.instance.addObserver(this);
-    // Resetta il badge delle notifiche all'avvio
     _notificationService.clearBadge();
   }
 
   @override
   void dispose() {
-    // Rimuovi observer per evitare memory leak
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Quando l'app torna in primo piano, resetta il badge
     if (state == AppLifecycleState.resumed) {
       _notificationService.clearBadge();
     }
   }
 
+  // --- 2. BUILD E CONFIGURAZIONE GENERALE ---
+  // Configurazione di MaterialApp con localizzazione italiana, temi dinamici
+  // e gestione della navigazione.
+
   @override
   Widget build(BuildContext context) {
-    // Ascolta i cambiamenti del tema tramite Provider
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      // Configurazione Localizzazione Italiana
+      // Configurazione Localizzazione (Italiano predefinito)
       locale: const Locale('it', 'IT'),
       supportedLocales: const [Locale('it', 'IT'), Locale('en', 'US')],
       localizationsDelegates: const [
@@ -70,15 +72,17 @@ class _AppState extends State<App> with WidgetsBindingObserver {
         GlobalCupertinoLocalizations.delegate,
       ],
 
-      // Gestione dinamica del tema
+      // Configurazione Tema (gestito da ThemeProvider)
       themeMode: themeProvider.themeMode,
       theme: ThemeData.light(useMaterial3: true),
       darkTheme: ThemeData.dark(useMaterial3: true),
 
-      // Punto di ingresso che gestisce lo stato dell'autenticazione
+      // AuthWrapper decide se mostrare la Login o la Home
       home: const AuthWrapper(),
 
-      // Navigazione centralizzata con gestione sicura degli errori
+      // --- 3. ROUTING MANAGER ---
+      // Gestione centralizzata delle rotte. Mappa i nomi delle rotte ai widget
+      // e gestisce il passaggio di argomenti (es. per EditExpensePage).
       onGenerateRoute: (RouteSettings settings) {
         final Map<String, WidgetBuilder> routes = {
           HomePage.route: (_) => const HomePage(),
@@ -92,13 +96,10 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
         final WidgetBuilder? builder = routes[settings.name];
 
-        // Se la rotta esiste, restituisce la pagina, altrimenti ritorna null
-        // permettendo a Flutter di gestire rotte sconosciute
         if (builder != null) {
           return MaterialPageRoute(
             builder: builder,
-            settings:
-                settings, // Passa i settings per mantenere traccia dei nomi rotta
+            settings: settings,
           );
         }
 
