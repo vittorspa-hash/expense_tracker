@@ -5,6 +5,7 @@ import 'package:expense_tracker/providers/settings_provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
 import 'package:expense_tracker/services/auth_service.dart';
+import 'package:expense_tracker/services/expense_service.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:expense_tracker/services/profile_service.dart';
 import 'package:flutter/material.dart';
@@ -21,44 +22,37 @@ import 'package:expense_tracker/providers/multi_select_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   Intl.defaultLocale = "it_IT";
   await initializeDateFormatting("it_IT", null);
 
-  // Registrazione in GetIt solo dei repository/servizi
+  // Registrazione in GetIt di repository e servizi
   final getIt = GetIt.instance;
 
+  // Repository (singleton perché gestisce connessione Firebase)
   getIt.registerLazySingleton<FirebaseRepository>(() => FirebaseRepository());
+
+  // Services (lazy singleton - istanziati solo quando necessari)
   getIt.registerLazySingleton<AuthService>(() => AuthService());
   getIt.registerLazySingleton<ProfileService>(() => ProfileService());
+  getIt.registerLazySingleton<ExpenseService>(
+    () => ExpenseService(firebaseRepository: getIt<FirebaseRepository>()),
+  );
+
+  // NotificationService come singleton normale (deve essere inizializzato subito)
   getIt.registerSingleton<NotificationService>(NotificationService());
 
+  // Inizializzazione SettingsProvider (DEVE essere fuori perché ha await)
   final settingsProvider = SettingsProvider(
     notificationService: getIt<NotificationService>(),
   );
   await settingsProvider.initialize();
 
+  // Inizializzazione ThemeProvider (DEVE essere fuori perché ha await)
   final themeProvider = ThemeProvider();
-
-  final expenseProvider = ExpenseProvider(
-    settingsProvider: settingsProvider,
-    firebaseRepository: getIt<FirebaseRepository>(),
-  );
-
-  final multiSelectProvider = MultiSelectProvider(
-    expenseProvider: expenseProvider,
-  );
-
-  final authProvider = AuthProvider(
-    authService: getIt<AuthService>(),
-  );
-
-  final profileProvider = ProfileProvider(
-    profileService: getIt<ProfileService>(),
-  );
+  await themeProvider.initialize();
 
   runApp(
     ScreenUtilInit(
@@ -68,12 +62,37 @@ void main() async {
       builder: (context, child) {
         return MultiProvider(
           providers: [
+            // SettingsProvider usa .value() perché già inizializzato fuori
             ChangeNotifierProvider.value(value: settingsProvider),
+
+            // ThemeProvider usa .value() perché già inizializzato fuori
             ChangeNotifierProvider.value(value: themeProvider),
-            ChangeNotifierProvider.value(value: expenseProvider),
-            ChangeNotifierProvider.value(value: multiSelectProvider),
-            ChangeNotifierProvider.value(value: authProvider),
-            ChangeNotifierProvider.value(value: profileProvider),
+
+            // AuthProvider
+            ChangeNotifierProvider(
+              create: (_) => AuthProvider(authService: getIt<AuthService>()),
+            ),
+
+            // ProfileProvider
+            ChangeNotifierProvider(
+              create: (_) =>
+                  ProfileProvider(profileService: getIt<ProfileService>()),
+            ),
+
+            // ExpenseProvider (dipende da SettingsProvider)
+            ChangeNotifierProvider(
+              create: (_) => ExpenseProvider(
+                settingsProvider: settingsProvider,
+                expenseService: getIt<ExpenseService>(),
+              ),
+            ),
+
+            // MultiSelectProvider (dipende da ExpenseProvider)
+            ChangeNotifierProvider(
+              create: (context) => MultiSelectProvider(
+                expenseProvider: context.read<ExpenseProvider>(),
+              ),
+            ),
           ],
           child: const App(),
         );

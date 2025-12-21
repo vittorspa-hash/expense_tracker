@@ -18,9 +18,12 @@ class ThemeProvider extends ChangeNotifier {
   // Restituisce il ThemeMode corrente in base allo stato
   ThemeMode get themeMode => _isDarkMode ? ThemeMode.dark : ThemeMode.light;
 
-  // Costruttore: carica la preferenza salvata al momento dell’inizializzazione
-  ThemeProvider() {
-    _loadTheme();
+  // 🚀 NUOVO: Metodo di inizializzazione esplicita
+  // Da chiamare nel main prima di runApp
+  Future<void> initialize() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isDarkMode = prefs.getBool(_key) ?? false;
+    notifyListeners();
   }
 
   // Cambia il tema e salva la nuova impostazione nelle SharedPreferences
@@ -29,12 +32,5 @@ class ThemeProvider extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_key, _isDarkMode);
-  }
-
-  // Carica la preferenza del tema salvata in precedenza
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    _isDarkMode = prefs.getBool(_key) ?? false;
-    notifyListeners();
   }
 }

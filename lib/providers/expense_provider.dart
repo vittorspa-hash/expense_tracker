@@ -1,254 +1,152 @@
-// expense_store.dart
-// Store centrale per gestire tutte le spese dell'applicazione.
-// Include funzioni per creare, modificare, cancellare e raggruppare le spese.
-// Supporta anche i calcoli di totali giornalieri, settimanali, mensili e annuali.
+// expense_provider.dart
+// Provider per gestire lo stato delle spese nell'applicazione.
+// Delega la logica di business al service e i calcoli al calculator.
 
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/settings_provider.dart';
-import 'package:expense_tracker/repositories/firebase_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:expense_tracker/services/expense_service.dart';
+import 'package:expense_tracker/utils/expense_calculator.dart';
 import 'package:flutter/foundation.dart';
-import 'package:uuid/uuid.dart';
 
 class ExpenseProvider extends ChangeNotifier {
   final SettingsProvider _settingsProvider;
-  final FirebaseRepository _firebaseRepository;
+  final ExpenseService _expenseService;
 
   ExpenseProvider({
     required SettingsProvider settingsProvider,
-    required FirebaseRepository firebaseRepository,
+    required ExpenseService expenseService,
   }) : _settingsProvider = settingsProvider,
-       _firebaseRepository = firebaseRepository;
+       _expenseService = expenseService;
 
-  // Lista interna di tutte le spese
   List<ExpenseModel> _expenses = [];
-
-  // Getter pubblico per accedere alle spese (immutabile)
   List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
-  // Inizializza lo store caricando le spese dell'utente dal repository
+  // --- CACHE DEI TOTALI (Performance Boost) ---
+  // I getter ora sono istantanei (O(1)) invece che calcolati (O(N))
+  double _todayTotal = 0.0;
+  double _weekTotal = 0.0;
+  double _monthTotal = 0.0;
+  double _yearTotal = 0.0;
+
+  double get totalExpenseToday => _todayTotal;
+  double get totalExpenseWeek => _weekTotal;
+  double get totalExpenseMonth => _monthTotal;
+  double get totalExpenseYear => _yearTotal;
+
+  // Funzione privata per aggiornare tutti i totali in un colpo solo
+  void _refreshTotals() {
+    _todayTotal = ExpenseCalculator.totalExpenseToday(_expenses);
+    _weekTotal = ExpenseCalculator.totalExpenseWeek(_expenses);
+    _monthTotal = ExpenseCalculator.totalExpenseMonth(_expenses);
+    _yearTotal = ExpenseCalculator.totalExpenseYear(_expenses);
+  }
+
+  // Helper privato per ordinare per data decrescente (usato internamente)
+  void _sortByDateDesc() {
+    ExpenseCalculator.sortInPlace(_expenses, "date_desc");
+  }
+
   Future<void> initialise() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      _expenses = [];
-      notifyListeners();
-      return;
-    }
-
-    _expenses = await _firebaseRepository.allExpensesForUser(user.uid);
-
-    _expenses.sort(
-      (a, b) => b.createdOn.compareTo(a.createdOn),
-    ); // Ordine decrescente per data
+    _expenses = await _expenseService.loadUserExpenses();
+    _refreshTotals();
     notifyListeners();
   }
 
-  // Pulisce tutte le spese dallo store
   void clear() {
     _expenses = [];
+    _refreshTotals();
     notifyListeners();
   }
 
-  // Totale spese di oggi
-  double get totalExpenseToday {
-    final currentDate = DateTime.now();
-    final startOfDay = DateTime(
-      currentDate.year,
-      currentDate.month,
-      currentDate.day,
-    );
-
-    return _expenses
-        .where((expense) => expense.createdOn.isAfter(startOfDay))
-        .fold(0.0, (acc, expense) => acc + expense.value);
-  }
-
-  // Totale spese della settimana corrente
-  double get totalExpenseWeek {
-    final currentDate = DateTime.now();
-    final startOfWeek = currentDate.subtract(
-      Duration(days: currentDate.weekday - 1),
-    );
-
-    return _expenses
-        .where((expense) => expense.createdOn.isAfter(startOfWeek))
-        .fold(0.0, (acc, expense) => acc + expense.value);
-  }
-
-  // Totale spese del mese corrente
-  double get totalExpenseMonth {
-    final currentDate = DateTime.now();
-    final startOfMonth = DateTime(currentDate.year, currentDate.month, 1);
-
-    return _expenses
-        .where((expense) => expense.createdOn.isAfter(startOfMonth))
-        .fold(0.0, (acc, expense) => acc + expense.value);
-  }
-
-  // Totale spese dell'anno corrente
-  double get totalExpenseYear {
-    final currentDate = DateTime.now();
-    final startOfYear = DateTime(currentDate.year, 1, 1);
-
-    return _expenses
-        .where((expense) => expense.createdOn.isAfter(startOfYear))
-        .fold(0.0, (acc, expense) => acc + expense.value);
-  }
-
-  // Crea una nuova spesa
   Future<void> createExpense({
     required double value,
     required String? description,
     required DateTime date,
   }) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("Utente non loggato");
-
-    final expense = ExpenseModel(
-      uuid: const Uuid().v4(),
+    final expense = await _expenseService.createExpense(
       value: value,
       description: description,
-      createdOn: date,
-      userId: user.uid,
+      date: date,
     );
 
     _expenses.add(expense);
-    _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-    _firebaseRepository.createExpense(expense);
+    _sortByDateDesc(); // ✅ Sort in-place, nessuna allocazione
+
+    _refreshTotals();
     notifyListeners();
 
     if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
+      await _settingsProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
-  // Ripristina una spesa già esistente (utilizzato per undo)
   Future<void> restoreExpense(ExpenseModel expenseModel) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("Utente non loggato");
+    final expense = await _expenseService.restoreExpense(expenseModel);
 
-    // Assicuriamoci che il userId sia corretto
-    if (expenseModel.userId != user.uid) {
-      expenseModel.userId = user.uid;
-    }
+    _expenses.add(expense);
+    _sortByDateDesc(); // ✅ Sort in-place
 
-    _expenses.add(expenseModel);
-    _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-    _firebaseRepository.createExpense(expenseModel);
+    _refreshTotals();
     notifyListeners();
 
     if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
+      await _settingsProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
-  // Modifica una spesa esistente
   Future<void> editExpense(
     ExpenseModel expenseModel, {
     required double value,
     required String? description,
     required DateTime date,
   }) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null || expenseModel.userId != user.uid) {
-      throw Exception("Non hai permesso di modificare questa spesa");
-    }
+    await _expenseService.editExpense(
+      expenseModel,
+      value: value,
+      description: description,
+      date: date,
+    );
 
-    expenseModel.value = value;
-    expenseModel.description = description;
-    expenseModel.createdOn = date;
+    _sortByDateDesc(); // ✅ Sort in-place
 
-    _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-    _firebaseRepository.updateExpense(expenseModel);
+    _refreshTotals();
     notifyListeners();
 
     if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
+      await _settingsProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
-  // Elimina una spesa
   Future<void> deleteExpense(ExpenseModel expenseModel) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null || expenseModel.userId != user.uid) {
-      throw Exception("Non hai permesso di eliminare questa spesa");
-    }
+    await _expenseService.deleteExpense(expenseModel);
 
     _expenses.remove(expenseModel);
-    _firebaseRepository.deleteExpense(expenseModel);
+
+    _refreshTotals();
     notifyListeners();
 
     if (_settingsProvider.limitAlertEnabled) {
-      await _settingsProvider.checkBudgetLimit(totalExpenseMonth);
+      await _settingsProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
-  // Ordina la lista delle spese in base al criterio
+  // Metodo pubblico per ordinare secondo diversi criteri
   void sortBy(String criteria) {
-    switch (criteria) {
-      case "date_desc":
-        _expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-        break;
-      case "date_asc":
-        _expenses.sort((a, b) => a.createdOn.compareTo(b.createdOn));
-        break;
-      case "amount_desc":
-        _expenses.sort((a, b) => b.value.compareTo(a.value));
-        break;
-      case "amount_asc":
-        _expenses.sort((a, b) => a.value.compareTo(b.value));
-        break;
-    }
+    ExpenseCalculator.sortInPlace(_expenses, criteria); // ✅ Sort in-place
     notifyListeners();
   }
 
-  // Raggruppa le spese per mese (key: "YYYY-MM")
+  // Questi metodi ritornano Map o List filtrate, quindi va bene lasciarli dinamici
+  // perché non vengono chiamati ad ogni frame come i totali semplici.
   Map<String, double> get expensesByMonth {
-    final Map<String, double> grouped = {};
-
-    for (var expense in _expenses) {
-      final date = expense.createdOn;
-      final key = "${date.year}-${date.month.toString().padLeft(2, '0')}";
-      grouped[key] = (grouped[key] ?? 0) + expense.value;
-    }
-
-    final sortedKeys = grouped.keys.toList()..sort((a, b) => b.compareTo(a));
-    return {for (var k in sortedKeys) k: grouped[k]!};
+    return ExpenseCalculator.expensesByMonth(_expenses);
   }
 
-  // Raggruppa le spese per giorno di un determinato mese
   Map<String, double> expensesByDay(int year, int month) {
-    final Map<String, double> grouped = {};
-
-    for (var expense in _expenses) {
-      final date = expense.createdOn;
-      if (date.year == year && date.month == month) {
-        final key =
-            "${date.day.toString().padLeft(2, '0')}/"
-            "${date.month.toString().padLeft(2, '0')}/"
-            "${date.year}";
-        grouped[key] = (grouped[key] ?? 0) + expense.value;
-      }
-    }
-
-    final sortedKeys = grouped.keys.toList()
-      ..sort((a, b) {
-        final da = DateTime.parse(a.split('/').reversed.join('-'));
-        final db = DateTime.parse(b.split('/').reversed.join('-'));
-        return db.compareTo(da);
-      });
-
-    return {for (var k in sortedKeys) k: grouped[k]!};
+    return ExpenseCalculator.expensesByDay(_expenses, year, month);
   }
 
-  // Restituisce le spese di un giorno specifico
   List<ExpenseModel> expensesOfDay(int year, int month, int day) {
-    final list = _expenses.where((expense) {
-      final date = expense.createdOn;
-      return date.year == year && date.month == month && date.day == day;
-    }).toList();
-
-    list.sort((a, b) => b.createdOn.compareTo(a.createdOn));
-    return list;
+    return ExpenseCalculator.expensesOfDay(_expenses, year, month, day);
   }
 }
