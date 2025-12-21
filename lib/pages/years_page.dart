@@ -4,7 +4,7 @@ import 'package:expense_tracker/components/report/bar_chart_widget.dart';
 import 'package:expense_tracker/components/report/period_list_item_widget.dart';
 import 'package:expense_tracker/components/report/total_card_widget.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
-import 'package:expense_tracker/utils/dialog_utils.dart';
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/pages/months_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';

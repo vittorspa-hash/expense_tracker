@@ -5,7 +5,7 @@ import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:expense_tracker/utils/dialog_utils.dart';
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

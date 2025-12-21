@@ -10,7 +10,7 @@
 // -----------------------------------------------------------------------------
 
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
-import 'package:expense_tracker/utils/dialog_utils.dart';
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

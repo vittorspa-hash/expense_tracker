@@ -1,5 +1,5 @@
 import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:expense_tracker/utils/dialog_utils.dart';
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:flutter/material.dart';

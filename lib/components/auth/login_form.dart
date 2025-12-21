@@ -3,7 +3,7 @@ import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
-import 'package:expense_tracker/utils/dialog_utils.dart'; // Importante per i dialog
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; // Importante per i dialog
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
-import 'package:expense_tracker/utils/dialog_utils.dart'; // Necessario ora qui
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; // Necessario ora qui
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // Necessario ora qui
 import 'package:provider/provider.dart';
