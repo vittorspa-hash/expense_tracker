@@ -17,17 +17,17 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 ---
 
 ## 📱 Funzionalità principali
-- **Autenticazione Firebase** (login / registrazione)
-- **Gestione spese**: aggiunta, modifica e cancellazione delle spese
+- **Autenticazione Firebase** (Login / Registrazione)
+- **Gestione spese**: Aggiunta, modifica e cancellazione delle spese
 - **Resoconti**:
-  - DaysPage → riepilogo giornaliero
-  - MonthsPage → riepilogo mensile
-  - YearsPage → riepilogo annuale con grafico 
+  - DaysPage → Riepilogo giornaliero
+  - MonthsPage → Riepilogo mensile
+  - YearsPage → Riepilogo annuale con grafico 
 - **Pagine principali**:
-  - AuthPage → login e registrazione
-  - HomePage → overview delle spese recenti
-  - ProfilePage → informazioni utente
-  - SettingsPage → impostazioni app, notifiche, limiti di spesa
+  - AuthPage → Login e registrazione
+  - HomePage → Overview delle spese recenti
+  - ProfilePage → Informazioni utente
+  - SettingsPage → Impostazioni app
 - **Notifiche locali**:
   - Giornaliera
   - Superamento limite spesa
@@ -49,30 +49,32 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 ---
 
 ## 🗂️ Struttura del progetto
-- `lib/main.dart` → Entry point: inizializza Firebase, localizzazione e registra i servizi tramite GetIt
-- `lib/app.dart` → Configurazione app: tema, localizzazione, routing e gestione lifecycle
-- `lib/components/` →  Widget riutilizzabili e componenti UI custom
+- `lib/main.dart` → Entry Point: Configurazione ambiente, inizializzazione Firebase, Dependency Injection (GetIt) e iniezione dei MultiProvider
+- `lib/app.dart` → App Configuration: Tema, localizzazione, routing e gestione lifecycle
+- `lib/components/` →  Widget UI riutilizzabili divisi per contesto
 - `lib/models/` → Data classes e modelli di dominio (ExpenseModel)
 - `lib/pages/` → Schermate dell'applicazione
-- `lib/providers/` → Provider per la gestione dello stato globale (settings, tema, spese, selezione multipla)
-- `lib/repositories/` → Pattern Repository per l'accesso ai dati (Firestore)
-- `lib/services/` → Servizi che incapsulano logica condivisa dell'app (autenticazione, profilo, notifiche)
-- `lib/theme/` → Palette colori
-- `lib/utils/` → Utility, helper e mixin riutilizzabili (dialog, snackbar, animazioni)
+- `lib/providers/` → State Layer: Collegano la UI alla logica di business
+- `lib/repositories/` → Data Layer: Accesso diretto ai dati (Firestore)
+- `lib/services/` → Business Logic: Logica pura condivisa iniettata tramite GetIt
+- `lib/theme/` → Definizione palette colori
+- `lib/utils/` → Utilities: Motore di calcolo, sistema dialoghi adattivi, gestione snackbar e animazioni
 - `lib/firebase_options.dart` → Configurazione Firebase autogenerata
 
 ---
 
 ## 🧱 Stack Tecnologico
 - **Framework:** Flutter & Dart  
-- **State Management:** Provider (gestione stato reattivo e globale)
-- **Service Locator:** GetIt (per l'iniezione delle dipendenze e singleton)
+- **Architecture:** Layered Architecture (UI ↔ Provider ↔ Service ↔ Repository)
+- **State Management:** Provider
+- **Dependency Injection:** GetIt 
 - **Database:** Firebase Firestore  
 - **Autenticazione:** Firebase Auth  
-- **Notifiche:** `flutter_local_notifications`  
-- **Gestione layout responsive:** `flutter_screenutil`  
-- **Grafici:** `fl_chart`  
-- **Localizzazione:** `intl`  
+- **UI/UX Pattern:** Adaptive Design (Material per Android, Cupertino per iOS)
+- **Responsive Layout:** `flutter_screenutil`  
+- **Notifications:** `flutter_local_notifications`  
+- **Charts:** `fl_chart`  
+- **Utilities:** `uuid` (ID univoci), `intl` (Formattazione date)
 
 ---
 
