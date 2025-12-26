@@ -1,36 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:expense_tracker/services/theme_service.dart';
 
 /// FILE: theme_provider.dart
-/// DESCRIZIONE: Provider responsabile della gestione del tema (Chiaro/Scuro).
-/// Utilizza SharedPreferences per persistere la scelta dell'utente e
-/// notifica l'app per aggiornare l'interfaccia in tempo reale.
+/// DESCRIZIONE: Provider che gestisce lo stato globale del tema (Chiaro/Scuro) dell'applicazione.
+/// Estende ChangeNotifier per notificare l'interfaccia utente quando la modalità cambia
+/// e utilizza un servizio dedicato per persistere la scelta dell'utente.
 
 class ThemeProvider extends ChangeNotifier {
-  // --- STATO E GETTERS ---
-  // Gestione dello stato interno e mappatura verso le configurazioni del tema Flutter.
-  static const _key = "isDarkMode";
-  bool _isDarkMode = false;
+  // --- DIPENDENZE E STATO INTERNO ---
+  // Iniezione del servizio che si occupa del salvataggio fisico del dato (SharedPreferences).
+  final ThemeService _themeService;
 
+  ThemeProvider({required ThemeService themeService})
+      : _themeService = themeService;
+
+  // Variabile privata che mantiene lo stato corrente (true = Dark Mode).
+  bool _isDarkMode = false;
+  
+  // --- GETTERS PUBBLICI ---
+  // Espone lo stato booleano per gli switch UI e converte lo stato
+  // nel formato ThemeMode richiesto dal widget MaterialApp.
   bool get isDarkMode => _isDarkMode;
   ThemeMode get themeMode => _isDarkMode ? ThemeMode.dark : ThemeMode.light;
 
   // --- INIZIALIZZAZIONE ---
-  // Caricamento asincrono della preferenza salvata.
-  // Viene chiamato esplicitamente nel main prima di runApp per evitare flash visivi.
+  // Metodo asincrono chiamato all'avvio dell'app. Recupera l'ultima preferenza
+  // salvata dall'utente per garantire continuità tra le sessioni.
   Future<void> initialize() async {
-    final prefs = await SharedPreferences.getInstance();
-    _isDarkMode = prefs.getBool(_key) ?? false;
+    _isDarkMode = await _themeService.loadThemePreference();
     notifyListeners();
   }
 
-  // --- LOGICA DI AGGIORNAMENTO ---
-  // Cambia il tema corrente, notifica i listener e salva la nuova impostazione
-  // in memoria persistente.
+  // --- LOGICA DI CAMBIO TEMA ---
+  // Aggiorna lo stato locale, forza il rebuild della UI tramite notifyListeners()
+  // e salva la nuova preferenza in modo persistente tramite il servizio.
   Future<void> toggleTheme(bool isOn) async {
     _isDarkMode = isOn;
     notifyListeners();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key, _isDarkMode);
+    await _themeService.saveThemePreference(_isDarkMode);
   }
 }

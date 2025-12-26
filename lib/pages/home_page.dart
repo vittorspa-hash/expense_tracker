@@ -204,6 +204,7 @@ class _HomePageState extends State<HomePage>
   // 
   Future<void> _handleDeleteSelected() async {
     final multiSelect = context.read<MultiSelectProvider>();
+    final expenseProvider = context.read<ExpenseProvider>();
     final count = multiSelect.selectedCount;
 
     if (count == 0) return;
@@ -222,7 +223,7 @@ class _HomePageState extends State<HomePage>
     if (!mounted) return;
 
     // 2. Chiamata al Provider (che ritorna gli oggetti eliminati)
-    final deletedItems = await multiSelect.deleteSelectedExpenses();
+    final deletedItems = await multiSelect.deleteSelectedExpenses(expenseProvider.expenses);
 
     if (!mounted) return;
 

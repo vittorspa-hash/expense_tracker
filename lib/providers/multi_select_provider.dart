@@ -1,38 +1,44 @@
-import 'package:flutter/foundation.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:expense_tracker/services/multi_select_service.dart';
+import 'package:flutter/material.dart';
 
 /// FILE: multi_select_provider.dart
-/// DESCRIZIONE: Provider dedicato alla gestione della selezione multipla degli elementi.
-/// Mantiene lo stato degli ID selezionati e coordina le operazioni massive (come l'eliminazione di gruppo)
-/// delegando la logica di persistenza all'ExpenseProvider.
+/// DESCRIZIONE: Gestore di stato per la funzionalità di selezione multipla.
+/// Controlla l'attivazione della modalità di selezione (es. dopo long press),
+/// tiene traccia degli ID selezionati e coordina le operazioni di eliminazione
+/// di massa tramite il servizio dedicato.
 
 class MultiSelectProvider extends ChangeNotifier {
-  final ExpenseProvider _expenseProvider;
+  // --- DIPENDENZE ---
+  final MultiSelectService _multiSelectService;
 
-  MultiSelectProvider({required ExpenseProvider expenseProvider})
-      : _expenseProvider = expenseProvider;
+  MultiSelectProvider({required MultiSelectService multiSelectService})
+      : _multiSelectService = multiSelectService;
 
-  // --- STATO E GETTERS ---
-  // Gestisce il flag della modalità selezione e il Set di ID univoci selezionati.
-  // I getter espongono lo stato in sola lettura per la UI.
+  // --- STATO INTERNO ---
+  // _isSelectionMode: Indica se la UI deve mostrare checkbox o app bar contestuale.
+  // _selectedIds: Insieme univoco degli UUID delle spese attualmente selezionate.
   bool _isSelectionMode = false;
   final Set<String> _selectedIds = {};
 
+  // --- GETTERS ---
+  // Espone lo stato in sola lettura. Restituisce una copia non modificabile del Set
+  // per prevenire modifiche dirette dall'esterno senza passare per i metodi del provider.
   bool get isSelectionMode => _isSelectionMode;
   Set<String> get selectedIds => Set.unmodifiable(_selectedIds);
   int get selectedCount => _selectedIds.length;
 
-  // --- LOGICA DI SELEZIONE ---
-  // Metodi per gestire le transizioni di stato: attivazione tramite long-press,
-  // toggle di singoli elementi, selezione globale e annullamento.
-  // 
+  // --- GESTIONE INPUT UTENTE ---
+  // Attivato alla pressione prolungata su una spesa.
+  // Abilita la modalità selezione e aggiunge l'elemento corrente.
   void onLongPress(ExpenseModel expense) {
     _isSelectionMode = true;
     _selectedIds.add(expense.uuid);
     notifyListeners();
   }
 
+  // Gestisce il tap su una spesa quando la modalità selezione è già attiva.
+  // Aggiunge o rimuove l'ID. Se la lista si svuota, esce dalla modalità selezione.
   void onToggleSelect(ExpenseModel expense) {
     if (_selectedIds.contains(expense.uuid)) {
       _selectedIds.remove(expense.uuid);
@@ -45,6 +51,8 @@ class MultiSelectProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // --- AZIONI DI SELEZIONE GLOBALE ---
+  // Seleziona tutte le spese presenti nella lista passata (utile per "Seleziona tutto").
   void selectAll(List<ExpenseModel> expenses) {
     for (var expense in expenses) {
       _selectedIds.add(expense.uuid);
@@ -52,48 +60,36 @@ class MultiSelectProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Deseleziona tutto e disattiva la modalità selezione (es. pulsante "Annulla" o back).
   void deselectAll() {
     _selectedIds.clear();
     _isSelectionMode = false;
     notifyListeners();
   }
 
+  // Alias funzionale per la pulizia della selezione.
   void cancelSelection() {
     _isSelectionMode = false;
     _selectedIds.clear();
     notifyListeners();
   }
 
-  // --- OPERAZIONI MASSIVE (DELETE & UNDO) ---
-  // Esegue l'eliminazione fisica tramite l'ExpenseProvider e restituisce
-  // la lista degli oggetti cancellati per permettere alla UI di gestire
-  // il ripristino (Undo) tramite SnackBar.
-  Future<List<ExpenseModel>> deleteSelectedExpenses() async {
-    // 1. Identifica le spese da eliminare
-    final deletedExpenses = _expenseProvider.expenses
-        .where((e) => _selectedIds.contains(e.uuid))
-        .toList();
-
-    // 2. Elimina dal DB/Store
-    for (var expense in deletedExpenses) {
-      await _expenseProvider.deleteExpense(expense);
-    }
-
-    // 3. Pulisce la selezione
+  // --- OPERAZIONI CRUD BATCH ---
+  // Esegue l'eliminazione fisica tramite il servizio.
+  // Restituisce la lista degli oggetti eliminati per permettere un'eventuale Undo (Snackbar).
+  // Al termine, resetta la modalità di selezione.
+  Future<List<ExpenseModel>> deleteSelectedExpenses(List<ExpenseModel> allExpenses) async {
+    final deletedExpenses = await _multiSelectService.deleteExpenses(_selectedIds, allExpenses);
     cancelSelection();
-
-    // 4. Ritorna gli elementi per eventuale ripristino
     return deletedExpenses;
   }
 
+  // Ripristina una lista di spese precedentemente eliminate (logica Undo).
   Future<void> restoreExpenses(List<ExpenseModel> expenses) async {
-    for (var expense in expenses) {
-      await _expenseProvider.restoreExpense(expense);
-    }
-    // Opzionale: se vuoi riselezionarli dopo il ripristino, puoi farlo qui
+    await _multiSelectService.restoreExpenses(expenses);
   }
 
-  // --- UTILITY ---
-  // Helper rapido per verificare se un elemento specifico è selezionato.
+  // --- HELPER UI ---
+  // Metodo di utilità per verificare rapidamente se una specifica spesa è selezionata.
   bool isSelected(String uuid) => _selectedIds.contains(uuid);
 }

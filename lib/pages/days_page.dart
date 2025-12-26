@@ -320,6 +320,7 @@ class _DaysPageState extends State<DaysPage>
   // 
   Future<void> _handleDeleteSelected() async {
     final multiSelect = context.read<MultiSelectProvider>();
+    final expenseProvider = context.read<ExpenseProvider>(); 
     final count = multiSelect.selectedCount;
 
     if (count == 0) return;
@@ -338,7 +339,7 @@ class _DaysPageState extends State<DaysPage>
     if (!mounted) return;
 
     // 2. Esecuzione tramite Provider
-    final deletedItems = await multiSelect.deleteSelectedExpenses();
+    final deletedItems = await multiSelect.deleteSelectedExpenses(expenseProvider.expenses);
 
     if (!mounted) return;
 
