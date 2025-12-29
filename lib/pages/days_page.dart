@@ -1,6 +1,7 @@
 import 'package:expense_tracker/components/report/total_card_widget.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
+import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
@@ -39,7 +40,6 @@ class DaysPage extends StatefulWidget {
 
 class _DaysPageState extends State<DaysPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   @override
   TickerProvider get vsync => this;
 
@@ -90,7 +90,6 @@ class _DaysPageState extends State<DaysPage>
     // sia allo stato della selezione (MultiSelectProvider).
     return Consumer2<ExpenseProvider, MultiSelectProvider>(
       builder: (context, expenseProvider, multiSelect, child) {
-        
         final expensesList = expenseProvider.expensesOfDay(
           widget.year,
           widget.month,
@@ -103,7 +102,7 @@ class _DaysPageState extends State<DaysPage>
         return Scaffold(
           // --- APPBAR DINAMICA ---
           // Cambia aspetto e azioni in base alla modalità corrente (Normale vs Selezione).
-          // 
+          //
           appBar: isSelectionMode
               ? CustomAppBar(
                   title: "",
@@ -112,7 +111,7 @@ class _DaysPageState extends State<DaysPage>
                   selectedCount: selectedCount,
                   totalCount: expensesList.length,
                   onCancelSelection: multiSelect.cancelSelection,
-                  onDeleteSelected: _handleDeleteSelected, // Batch Delete
+                  onDeleteSelected: () => ExpenseActionHandler.handleDeleteSelected(context),
                   onSelectAll: () => multiSelect.selectAll(expensesList),
                   onDeselectAll: multiSelect.deselectAll,
                 )
@@ -122,7 +121,7 @@ class _DaysPageState extends State<DaysPage>
                   isDark: isDark,
                   icon: Icons.calendar_today_rounded,
                 ),
-          
+
           body: Container(
             decoration: BoxDecoration(
               color: isDark
@@ -214,13 +213,13 @@ class _DaysPageState extends State<DaysPage>
 
                   // --- DISMISSIBLE (SWIPE) ---
                   // Abilitato solo se NON siamo in modalità selezione.
-                  // 
+                  //
                   return Dismissible(
                     key: Key(expense.uuid),
                     direction: isSelectionMode
                         ? DismissDirection.none
                         : DismissDirection.endToStart,
-                    
+
                     // Conferma eliminazione singola
                     confirmDismiss: (_) async {
                       if (isSelectionMode) return false;
@@ -233,9 +232,9 @@ class _DaysPageState extends State<DaysPage>
                       );
                       return confirm ?? false;
                     },
-                    
+
                     background: _buildDismissibleBackground(),
-                    
+
                     // Esecuzione eliminazione e SnackBar Undo
                     onDismissed: (_) {
                       SnackbarUtils.show(
@@ -243,11 +242,11 @@ class _DaysPageState extends State<DaysPage>
                         title: "Eliminata!",
                         message: "Spesa eliminata con successo.",
                         deletedItem: expense,
-                        onDelete: (exp) => expenseprovider.deleteExpense(exp),
-                        onRestore: (exp) => expenseprovider.restoreExpense(exp),
+                        onDelete: (exp) => expenseprovider.deleteExpenses([exp]),
+                        onRestore: (exp) => expenseprovider.restoreExpenses([exp]),
                       );
                     },
-                    
+
                     // Tile Spesa (Gestisce LongPress e Tap)
                     child: ExpenseTile(
                       expense,
@@ -312,50 +311,6 @@ class _DaysPageState extends State<DaysPage>
         color: AppColors.textLight,
         size: 28.sp,
       ),
-    );
-  }
-
-  // --- LOGICA BATCH DELETE ---
-  // Gestisce l'eliminazione di massa degli elementi selezionati.
-  // 
-  Future<void> _handleDeleteSelected() async {
-    final multiSelect = context.read<MultiSelectProvider>();
-    final expenseProvider = context.read<ExpenseProvider>(); 
-    final count = multiSelect.selectedCount;
-
-    if (count == 0) return;
-
-    // 1. Dialogo di conferma
-    final confirm = await DialogUtils.showConfirmDialog(
-      context,
-      title: "Eliminazione ${count == 1 ? 'singola' : 'multipla'}",
-      content:
-          "Vuoi eliminare $count ${count == 1 ? 'spesa selezionata' : 'spese selezionate'}?",
-      confirmText: "Elimina",
-      cancelText: "Annulla",
-    );
-
-    if (confirm != true) return;
-    if (!mounted) return;
-
-    // 2. Esecuzione tramite Provider
-    final deletedItems = await multiSelect.deleteSelectedExpenses(expenseProvider.expenses);
-
-    if (!mounted) return;
-
-    // 3. SnackBar con Undo
-    SnackbarUtils.show(
-      context: context,
-      title: count == 1 ? "Eliminata!" : "Eliminate!",
-      message:
-          "$count ${count == 1 ? 'spesa eliminata' : 'spese eliminate'} con successo.",
-      deletedItem: deletedItems,
-      // La cancellazione reale è già avvenuta nel provider
-      onDelete: (_) {},
-      // Ripristino
-      onRestore: (_) async {
-        await multiSelect.restoreExpenses(deletedItems);
-      },
     );
   }
 }

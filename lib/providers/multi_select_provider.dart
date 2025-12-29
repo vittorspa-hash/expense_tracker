@@ -1,19 +1,12 @@
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/services/multi_select_service.dart';
 import 'package:flutter/material.dart';
 
 /// FILE: multi_select_provider.dart
 /// DESCRIZIONE: Gestore di stato per la funzionalità di selezione multipla.
 /// Controlla l'attivazione della modalità di selezione (es. dopo long press),
-/// tiene traccia degli ID selezionati e coordina le operazioni di eliminazione
-/// di massa tramite il servizio dedicato.
 
 class MultiSelectProvider extends ChangeNotifier {
   // --- DIPENDENZE ---
-  final MultiSelectService _multiSelectService;
-
-  MultiSelectProvider({required MultiSelectService multiSelectService})
-      : _multiSelectService = multiSelectService;
 
   // --- STATO INTERNO ---
   // _isSelectionMode: Indica se la UI deve mostrare checkbox o app bar contestuale.
@@ -72,21 +65,6 @@ class MultiSelectProvider extends ChangeNotifier {
     _isSelectionMode = false;
     _selectedIds.clear();
     notifyListeners();
-  }
-
-  // --- OPERAZIONI CRUD BATCH ---
-  // Esegue l'eliminazione fisica tramite il servizio.
-  // Restituisce la lista degli oggetti eliminati per permettere un'eventuale Undo (Snackbar).
-  // Al termine, resetta la modalità di selezione.
-  Future<List<ExpenseModel>> deleteSelectedExpenses(List<ExpenseModel> allExpenses) async {
-    final deletedExpenses = await _multiSelectService.deleteExpenses(_selectedIds, allExpenses);
-    cancelSelection();
-    return deletedExpenses;
-  }
-
-  // Ripristina una lista di spese precedentemente eliminate (logica Undo).
-  Future<void> restoreExpenses(List<ExpenseModel> expenses) async {
-    await _multiSelectService.restoreExpenses(expenses);
   }
 
   // --- HELPER UI ---

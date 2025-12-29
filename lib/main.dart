@@ -6,7 +6,6 @@ import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
 import 'package:expense_tracker/services/auth_service.dart';
 import 'package:expense_tracker/services/expense_service.dart';
-import 'package:expense_tracker/services/multi_select_service.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:expense_tracker/services/profile_service.dart';
 import 'package:expense_tracker/services/theme_service.dart';
@@ -48,10 +47,6 @@ void main() async {
   getIt.registerLazySingleton<ExpenseService>(
     () => ExpenseService(firebaseRepository: getIt<FirebaseRepository>()),
   );
-  getIt.registerLazySingleton<MultiSelectService>(
-    () => MultiSelectService(expenseService: getIt<ExpenseService>()),
-  );
-
   getIt.registerSingleton<NotificationService>(NotificationService());
   getIt.registerSingleton<ThemeService>(ThemeService());
 
@@ -86,8 +81,7 @@ void main() async {
               create: (_) => AuthProvider(authService: getIt<AuthService>()),
             ),
             ChangeNotifierProvider(
-              create: (_) =>
-                  ProfileProvider(profileService: getIt<ProfileService>()),
+              create: (_) => ProfileProvider(profileService: getIt<ProfileService>()),
             ),
             ChangeNotifierProvider(
               create: (_) => ExpenseProvider(
@@ -96,9 +90,7 @@ void main() async {
               ),
             ),
             ChangeNotifierProvider(
-              create: (_) => MultiSelectProvider(
-                multiSelectService: getIt<MultiSelectService>(),
-              ),
+              create: (_) => MultiSelectProvider(),
             ),
           ],
           child: const App(),

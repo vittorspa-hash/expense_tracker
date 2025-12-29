@@ -275,12 +275,8 @@ class HomeContentList extends StatelessWidget {
                               message: "Spesa eliminata con successo.",
                               deletedItem: expense,
                               onDelete: (exp) =>
-                                  expenseProvider.deleteExpense(exp),
-                              onRestore: (exp) => expenseProvider.createExpense(
-                                value: exp.value,
-                                description: exp.description,
-                                date: exp.createdOn,
-                              ),
+                                  expenseProvider.deleteExpenses([exp]),
+                              onRestore: (exp) => expenseProvider.restoreExpenses([exp]),
                             );
                           },
 

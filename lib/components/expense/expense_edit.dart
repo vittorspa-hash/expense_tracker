@@ -268,8 +268,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                 message: "Spesa eliminata con successo.",
                 deletedItem: deletedExpense,
                 // Chiamate allo store tramite l'istanza ottenuta con Provider
-                onDelete: (exp) => expense.deleteExpense(exp),
-                onRestore: (exp) => expense.restoreExpense(exp),
+                onDelete: (exp) => expense.deleteExpenses([exp]),
+                onRestore: (exp) => expense.restoreExpenses([exp]),
               );
             }
           }

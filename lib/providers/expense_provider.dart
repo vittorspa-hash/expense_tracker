@@ -5,16 +5,15 @@ import 'package:expense_tracker/utils/expense_calculator.dart';
 import 'package:flutter/foundation.dart';
 
 /// FILE: expense_provider.dart
-/// DESCRIZIONE: Gestore di stato principale per le spese (State Management).
-/// Agisce da "Brain" dell'applicazione collegando:
-/// 1. UI (che ascolta i cambiamenti)
-/// 2. Service (che parla con il Database/Firebase)
-/// 3. Calculator (che esegue la matematica pura)
-/// 4. NotificationProvider (per reagire ai cambiamenti di budget)
+/// DESCRIZIONE: Layer di gestione dello stato (State Management).
+/// Agisce da "Single Source of Truth" per la UI.
+/// Responsabilità:
+/// 1. Mantenere la lista locale delle spese sincronizzata con il Service.
+/// 2. Gestire la cache dei totali (Oggi, Settimana, Mese, Anno).
+/// 3. Delegare i calcoli matematici complessi a ExpenseCalculator.
+/// 4. Notificare i listener (UI) e verificare le soglie di budget.
 
 class ExpenseProvider extends ChangeNotifier {
-  // --- DIPENDENZE ---
-  // Iniezione delle dipendenze necessarie per la logica di business e le notifiche.
   final NotificationProvider _notificationProvider;
   final ExpenseService _expenseService;
 
@@ -25,16 +24,14 @@ class ExpenseProvider extends ChangeNotifier {
        _expenseService = expenseService;
 
   // --- STATO ---
-  // La lista principale delle spese (Private) e il getter pubblico immutabile.
-  // 
+  // Lista principale delle spese caricata in memoria.
   List<ExpenseModel> _expenses = [];
+  
+  // Getter immutabile per proteggere la lista originale da modifiche esterne accidentali.
   List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
-  // --- CACHE DEI TOTALI (Performance Boost) ---
-  // Strategia di ottimizzazione: Invece di ricalcolare i totali (O(N)) ogni volta
-  // che la UI li richiede, li calcoliamo una volta sola quando i dati cambiano
-  // e li salviamo in variabili (O(1) in lettura).
-  // 
+  // --- CACHE TOTALI ---
+  // Variabili per memorizzare i totali calcolati ed evitare ricalcoli inutili nel build della UI.
   double _todayTotal = 0.0;
   double _weekTotal = 0.0;
   double _monthTotal = 0.0;
@@ -45,72 +42,58 @@ class ExpenseProvider extends ChangeNotifier {
   double get totalExpenseMonth => _monthTotal;
   double get totalExpenseYear => _yearTotal;
 
-  // Aggiorna tutti i totali in cache. Chiamato dopo ogni modifica (CRUD).
+  // --- HELPER INTERNI ---
+  // Metodi privati per aggiornare lo stato interno.
+  
+  // Ricalcola tutti i totali delegando la logica pura a ExpenseCalculator.
   void _refreshTotals() {
     _todayTotal = ExpenseCalculator.totalExpenseToday(_expenses);
     _weekTotal = ExpenseCalculator.totalExpenseWeek(_expenses);
     _monthTotal = ExpenseCalculator.totalExpenseMonth(_expenses);
     _yearTotal = ExpenseCalculator.totalExpenseYear(_expenses);
   }
+  
+  // Ordina la lista locale in place (dal più recente) per consistenza UI.
+  void _sortByDateDesc() {
+    ExpenseCalculator.sortInPlace(_expenses, "date_desc");
+  }
 
   // --- INIZIALIZZAZIONE ---
-  // Carica i dati dal servizio, calcola i totali iniziali e notifica la UI.
+  // Carica i dati iniziali dal Service (DB) all'avvio dell'app.
   Future<void> initialise() async {
     _expenses = await _expenseService.loadUserExpenses();
     _refreshTotals();
     notifyListeners();
   }
 
+  // Pulisce lo stato (utile ad esempio al logout).
   void clear() {
     _expenses = [];
     _refreshTotals();
     notifyListeners();
   }
 
-  // --- OPERAZIONI CRUD ---
-  // Metodi per Creare, Ripristinare, Modificare ed Eliminare le spese.
-  // Ogni operazione segue il pattern:
-  // 1. Chiamata al Service (Async).
-  // 2. Aggiornamento lista locale.
-  // 3. Refresh Cache Totali.
-  // 4. Notifica Listeners.
-  // 5. Controllo Budget (Interazione con NotificationProvider).
-  // 
-
+  // --- CREAZIONE & MODIFICA (Singole) ---
+  // Gestiscono il ciclo di vita di una singola spesa: DB -> Lista Locale -> Ordina -> Calcola -> Notifica.
+  
   Future<void> createExpense({
     required double value,
     required String? description,
     required DateTime date,
   }) async {
+    // 1. Persistenza remota
     final expense = await _expenseService.createExpense(
       value: value,
       description: description,
       date: date,
     );
-
+    // 2. Aggiornamento locale
     _expenses.add(expense);
     _sortByDateDesc(); 
-
     _refreshTotals();
     notifyListeners();
-
-    if (_notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal);
-    }
-  }
-
-  Future<void> restoreExpense(ExpenseModel expenseModel) async {
-    final expense = await _expenseService.restoreExpense(expenseModel);
-
-    _expenses.add(expense);
-    _sortByDateDesc();
-
-    _refreshTotals();
-    notifyListeners();
-
-    if (_notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal);
-    }
+    // 3. Side Effect (Budget Check)
+    _checkBudget();
   }
 
   Future<void> editExpense(
@@ -125,54 +108,78 @@ class ExpenseProvider extends ChangeNotifier {
       description: description,
       date: date,
     );
-
-    _sortByDateDesc(); // Mantiene l'ordine corretto se la data cambia
-
+    _sortByDateDesc();
     _refreshTotals();
     notifyListeners();
+    _checkBudget();
+  }
 
+  // --- ELIMINAZIONE UNIFICATA (Batch & Single) ---
+  // Gestisce la rimozione di una o più spese (es. selezione multipla o swipe singolo).
+  // Ottimizzato per performance: esegue chiamate parallele al DB.
+  
+  /// Elimina una o più spese.
+  // ignore: unintended_html_in_doc_comment
+  /// Accetta una List<ExpenseModel>. Per eliminare un singolo elemento: `deleteExpenses([item])`
+  Future<void> deleteExpenses(List<ExpenseModel> expensesToDelete) async {
+    if (expensesToDelete.isEmpty) return;
+
+    // 1. DB: Esecuzione parallela per ridurre i tempi di attesa
+    await Future.wait(expensesToDelete.map((e) => _expenseService.deleteExpense(e)));
+
+    // 2. Local State: Rimozione efficiente tramite Set di UUID
+    final idsToRemove = expensesToDelete.map((e) => e.uuid).toSet();
+    _expenses.removeWhere((element) => idsToRemove.contains(element.uuid));
+
+    // 3. UI Updates: Ricalcolo totali e refresh
+    _refreshTotals();
+    notifyListeners();
+  }
+
+  // --- RIPRISTINO UNIFICATO (Batch & Single) ---
+  // Gestisce l'Undo (annulla eliminazione) per una o più spese.
+  
+  /// Ripristina una o più spese (Undo).
+  Future<void> restoreExpenses(List<ExpenseModel> expensesToRestore) async {
+    if (expensesToRestore.isEmpty) return;
+
+    // 1. DB: Ripristino parallelo
+    await Future.wait(expensesToRestore.map((e) => _expenseService.restoreExpense(e)));
+
+    // 2. Local State: Reinserimento dati
+    _expenses.addAll(expensesToRestore);
+    _sortByDateDesc(); 
+
+    // 3. UI Updates: Ricalcolo totali, refresh e verifica budget (poiché la spesa aumenta)
+    _refreshTotals();
+    notifyListeners();
+    _checkBudget();
+  }
+
+  // --- HELPER BUDGET ---
+  // Verifica se il totale mensile supera la soglia impostata dall'utente.
+  Future<void> _checkBudget() async {
     if (_notificationProvider.limitAlertEnabled) {
       await _notificationProvider.checkBudgetLimit(_monthTotal);
     }
   }
 
-  Future<void> deleteExpense(ExpenseModel expenseModel) async {
-    await _expenseService.deleteExpense(expenseModel);
-
-    _expenses.remove(expenseModel);
-
-    _refreshTotals();
-    notifyListeners();
-
-    if (_notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal);
-    }
-  }
-
-  // --- ORDINAMENTO ---
-  // Helper privato e metodo pubblico per ordinare la lista in-place.
-  void _sortByDateDesc() {
-    ExpenseCalculator.sortInPlace(_expenses, "date_desc");
-  }
-
+  // --- ORDINAMENTO & FILTRI ---
+  // Metodi pubblici per l'ordinamento dinamico e il raggruppamento (utili per grafici o liste).
+  
   void sortBy(String criteria) {
     ExpenseCalculator.sortInPlace(_expenses, criteria);
     notifyListeners();
   }
 
-  // --- AGGREGAZIONE E FILTRI ---
-  // Delegano i calcoli complessi all'ExpenseCalculator.
-  // Non vengono cachati perché ritornano strutture dati complesse (Map/List)
-  // usate solo in schermate specifiche di reportistica.
-  Map<String, double> get expensesByMonth {
-    return ExpenseCalculator.expensesByMonth(_expenses);
-  }
-
-  Map<String, double> expensesByDay(int year, int month) {
-    return ExpenseCalculator.expensesByDay(_expenses, year, month);
-  }
-
-  List<ExpenseModel> expensesOfDay(int year, int month, int day) {
-    return ExpenseCalculator.expensesOfDay(_expenses, year, month, day);
-  }
+  // Raggruppamento per Mese (Graph Data)
+  Map<String, double> get expensesByMonth => ExpenseCalculator.expensesByMonth(_expenses);
+  
+  // Raggruppamento per Giorno specifico (Calendar Data)
+  Map<String, double> expensesByDay(int year, int month) => 
+      ExpenseCalculator.expensesByDay(_expenses, year, month);
+  
+  // Filtro spese per data specifica
+  List<ExpenseModel> expensesOfDay(int year, int month, int day) => 
+      ExpenseCalculator.expensesOfDay(_expenses, year, month, day);
 }

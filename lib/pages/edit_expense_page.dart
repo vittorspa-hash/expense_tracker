@@ -82,7 +82,7 @@ class _EditExpensePageState extends State<EditExpensePage>
         floatingActionButtonIcon: Icons.delete,
         onFloatingActionButtonPressed: () {
           // Elimina la spesa tramite store
-          expense.deleteExpense(widget.expenseModel);
+          expense.deleteExpenses([widget.expenseModel]);
           Navigator.pop(context);
 
           // Ritorna il modello al componente ExpenseEdit per permettere l'Undo nella snackbar

@@ -5,7 +5,7 @@ import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
-import 'package:expense_tracker/utils/snackbar_utils.dart'; 
+import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/pages/new_expense_page.dart';
@@ -31,7 +31,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with TickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- STATO E CONTROLLER ---
   // Gestione dei controller per input di ricerca, animazioni della lista
   // e criteri di ordinamento locali.
@@ -84,7 +83,7 @@ class _HomePageState extends State<HomePage>
 
   // --- LOGICA DI FILTRAGGIO ---
   // Filtra la lista delle spese in memoria basandosi sulla query di ricerca.
-  // 
+  //
   List<ExpenseModel> _getFilteredExpenses(ExpenseProvider expenseProvider) {
     final query = _searchQuery.toLowerCase();
     return expenseProvider.expenses.where((expense) {
@@ -96,7 +95,7 @@ class _HomePageState extends State<HomePage>
   // --- BUILD UI ---
   // Costruzione della struttura Scaffold. Utilizza un Consumer2 per reagire
   // ai cambiamenti sia della selezione multipla che dei dati delle spese.
-  // 
+  //
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -111,7 +110,7 @@ class _HomePageState extends State<HomePage>
           // --- APPBAR CONTESTUALE ---
           // Mostra una AppBar personalizzata solo quando è attiva la modalità selezione,
           // permettendo azioni di gruppo (es. elimina tutto, seleziona tutto).
-          // 
+          //
           appBar: isSelectionMode
               ? CustomAppBar(
                   title: "",
@@ -119,8 +118,7 @@ class _HomePageState extends State<HomePage>
                   isSelectionMode: true,
                   selectedCount: selectedCount,
                   onCancelSelection: multiSelect.cancelSelection,
-                  // 👇 Qui colleghiamo la funzione locale
-                  onDeleteSelected: _handleDeleteSelected,
+                  onDeleteSelected: () => ExpenseActionHandler.handleDeleteSelected(context),
                   onSelectAll: () => multiSelect.selectAll(filteredExpenses),
                   onDeselectAll: () => multiSelect.deselectAll(),
                   totalCount: filteredExpenses.length,
@@ -196,55 +194,8 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // --- GESTIONE ELIMINAZIONE ---
-  // Gestisce il flusso completo di cancellazione: 
-  // 1. Dialogo di conferma.
-  // 2. Chiamata al Provider per rimozione logica.
-  // 3. Feedback SnackBar con opzione "Annulla" (Undo).
-  // 
-  Future<void> _handleDeleteSelected() async {
-    final multiSelect = context.read<MultiSelectProvider>();
-    final expenseProvider = context.read<ExpenseProvider>();
-    final count = multiSelect.selectedCount;
-
-    if (count == 0) return;
-
-    // 1. Dialogo di conferma
-    final confirm = await DialogUtils.showConfirmDialog(
-      context,
-      title: "Eliminazione ${count == 1 ? 'singola' : 'multipla'}",
-      content:
-          "Vuoi eliminare $count ${count == 1 ? 'spesa selezionata' : 'spese selezionate'}?",
-      confirmText: "Elimina",
-      cancelText: "Annulla",
-    );
-
-    if (confirm != true) return;
-    if (!mounted) return;
-
-    // 2. Chiamata al Provider (che ritorna gli oggetti eliminati)
-    final deletedItems = await multiSelect.deleteSelectedExpenses(expenseProvider.expenses);
-
-    if (!mounted) return;
-
-    // 3. Feedback SnackBar con Undo
-    SnackbarUtils.show(
-      context: context,
-      title: count == 1 ? "Eliminata!" : "Eliminate!",
-      message:
-          "$count ${count == 1 ? 'spesa eliminata' : 'spese eliminate'} con successo.",
-      deletedItem: deletedItems,
-      // La cancellazione reale è già avvenuta nel provider, qui gestiamo solo UI
-      onDelete: (_) {},
-      // Ripristino
-      onRestore: (_) async {
-        await multiSelect.restoreExpenses(deletedItems);
-      },
-    );
-  }
-
   // --- UTILS ---
-  // Funzioni ausiliarie per aggiornare i dati (pull-to-refresh) 
+  // Funzioni ausiliarie per aggiornare i dati (pull-to-refresh)
   // e mostrare il modale del profilo utente.
   Future<void> _refreshExpenses() async {
     // Usiamo read per evitare rebuild inutili all'interno di funzioni asincrone
