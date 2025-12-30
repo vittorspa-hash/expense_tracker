@@ -93,7 +93,7 @@ class ExpenseProvider extends ChangeNotifier {
     _refreshTotals();
     notifyListeners();
     // 3. Side Effect (Budget Check)
-    _checkBudget();
+    _checkBudget(dateToCheck: date);
   }
 
   Future<void> editExpense(
@@ -111,7 +111,7 @@ class ExpenseProvider extends ChangeNotifier {
     _sortByDateDesc();
     _refreshTotals();
     notifyListeners();
-    _checkBudget();
+    _checkBudget(dateToCheck: date);
   }
 
   // --- ELIMINAZIONE UNIFICATA (Batch & Single) ---
@@ -153,13 +153,35 @@ class ExpenseProvider extends ChangeNotifier {
     // 3. UI Updates: Ricalcolo totali, refresh e verifica budget (poiché la spesa aumenta)
     _refreshTotals();
     notifyListeners();
-    _checkBudget();
+    _checkBudgetForList(expensesToRestore);
   }
 
   // --- HELPER BUDGET ---
   // Verifica se il totale mensile supera la soglia impostata dall'utente.
-  Future<void> _checkBudget() async {
+  // Esegue il controllo solo se la data passata corrisponde al mese/anno attuali.
+  Future<void> _checkBudget({required DateTime dateToCheck}) async {
+    final now = DateTime.now();
+    
+    // Se la spesa è vecchia (o futura di un altro mese), interrompiamo subito.
+    if (dateToCheck.month != now.month || dateToCheck.year != now.year) {
+      return;
+    }
+
     if (_notificationProvider.limitAlertEnabled) {
+      await _notificationProvider.checkBudgetLimit(_monthTotal);
+    }
+  }
+
+  // Helper specifico per le liste (usato in restoreExpenses)
+  Future<void> _checkBudgetForList(List<ExpenseModel> expenses) async {
+    final now = DateTime.now();
+    
+    // Controlla se nella lista c'è almeno una spesa del mese corrente
+    bool hasCurrentMonthExpense = expenses.any((e) => 
+      e.createdOn.month == now.month && e.createdOn.year == now.year
+    );
+
+    if (hasCurrentMonthExpense && _notificationProvider.limitAlertEnabled) {
       await _notificationProvider.checkBudgetLimit(_monthTotal);
     }
   }

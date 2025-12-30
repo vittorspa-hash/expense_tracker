@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-/// FILE: total_card_widget.dart
+/// FILE: report_card_widget.dart
 /// DESCRIZIONE: Componente UI per la visualizzazione di riepilogo (Card Totale).
 /// Mostra un importo aggregato con un'icona descrittiva e un contatore opzionale (es. numero di transazioni).
 /// Utilizzato nelle pagine di report (Mensile/Annuale).
 
-class TotalCardWidget extends StatelessWidget {
+class ReportTotalCard extends StatelessWidget {
   // --- PARAMETRI ---
   // Configurazione del contenuto: etichetta, importo, icona
   // e dati opzionali per il contatore laterale.
@@ -17,7 +17,7 @@ class TotalCardWidget extends StatelessWidget {
   final int? itemCount; 
   final String? itemLabel; 
 
-  const TotalCardWidget({
+  const ReportTotalCard({
     super.key,
     required this.label,
     required this.totalAmount,

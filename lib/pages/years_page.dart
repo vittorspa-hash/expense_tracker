@@ -1,10 +1,13 @@
-import 'package:expense_tracker/components/report/bar_chart_widget.dart';
-import 'package:expense_tracker/components/report/period_list_item_widget.dart';
-import 'package:expense_tracker/components/report/total_card_widget.dart';
+import 'package:expense_tracker/components/report/report_bar_chart.dart';
+import 'package:expense_tracker/components/report/report_empty_state.dart';
+import 'package:expense_tracker/components/report/report_period_list_item.dart';
+import 'package:expense_tracker/components/report/report_section_header.dart';
+import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/pages/months_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
+import 'package:expense_tracker/utils/report_date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
@@ -35,21 +38,6 @@ class _YearsPageState extends State<YearsPage>
   String? selectedYear;
 
   final monthListKey = GlobalKey();
-
-  final List<String> monthNames = [
-    "Gennaio",
-    "Febbraio",
-    "Marzo",
-    "Aprile",
-    "Maggio",
-    "Giugno",
-    "Luglio",
-    "Agosto",
-    "Settembre",
-    "Ottobre",
-    "Novembre",
-    "Dicembre",
-  ];
 
   @override
   TickerProvider get vsync => this;
@@ -100,30 +88,11 @@ class _YearsPageState extends State<YearsPage>
 
               // Stato Vuoto: Nessuna spesa registrata
               if (years.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.analytics_outlined,
-                        size: 80.sp,
-                        color: isDark
-                            ? AppColors.greyDark
-                            : AppColors.greyLight,
-                      ),
-                      SizedBox(height: 16.h),
-                      Text(
-                        "Nessuna spesa disponibile",
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          color: isDark
-                              ? AppColors.greyDark
-                              : AppColors.greyLight,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                return const ReportEmptyState(
+                  title: "Nessuna spesa disponibile",
+                  subtitle: "Le spese che aggiungi appariranno qui",
+                  icon: Icons.analytics_outlined,
+                  useCircleBackground: false, 
                 );
               }
 
@@ -229,34 +198,18 @@ class _YearsPageState extends State<YearsPage>
                       // --- RIEPILOGO E GRAFICO ---
                       // Card con totale annuo e grafico a barre mensile.
                       //
-                      TotalCardWidget(
+                      ReportTotalCard(
                         label: "Totale $selectedYear",
                         totalAmount: totalYear,
                         icon: Icons.bar_chart_rounded,
                       ),
 
-                      BarChartWidget(values: values, monthNames: monthNames),
+                      ReportBarChart(values: values, monthNames: ReportDateUtils.monthNames),
 
                       SizedBox(height: 12.h),
 
                       // Header Sezione Lista
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "Dettaglio mensile",
-                            style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w700,
-                              color: isDark
-                                  ? AppColors.greyDark
-                                  : AppColors.greyLight,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
-                        ),
-                      ),
+                      const ReportSectionHeader(title: "Dettaglio mensile"),
 
                       SizedBox(height: 12.h),
 
@@ -269,15 +222,18 @@ class _YearsPageState extends State<YearsPage>
                           final monthNum = index + 1;
                           final total = values[index];
 
+                          // Uso di ReportDateUtils per il nome del mese corrente
+                          final currentMonthName = ReportDateUtils.monthNames[index];
+
                           return Padding(
                             padding: EdgeInsets.only(
                               bottom: 6.h,
                               left: 20.w,
                               right: 20.w,
                             ),
-                            child: PeriodListItemWidget(
+                            child: ReportPeriodListItem(
                               badgeText: "$monthNum",
-                              title: monthNames[index],
+                              title: currentMonthName,
                               totalAmount: total,
                               percentage: totalYear > 0
                                   ? (total / totalYear) * 100

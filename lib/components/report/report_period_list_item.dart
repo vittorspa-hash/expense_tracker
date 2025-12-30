@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-/// FILE: period_list_item_widget.dart
+/// FILE: report_period_list_item.dart
 /// DESCRIZIONE: Widget riutilizzabile per visualizzare i dettagli di un periodo
 /// (giorno o mese) nelle liste di reportistica.
 /// Include un badge visivo, titoli descrittivi, il totale monetario e la percentuale
 /// di incidenza rispetto al totale generale.
 
-class PeriodListItemWidget extends StatelessWidget {
+class ReportPeriodListItem extends StatelessWidget {
   // --- PARAMETRI ---
   // Configurazione del contenuto visivo (testi), dati finanziari
   // e gestione dell'interazione (tap).
@@ -21,7 +21,7 @@ class PeriodListItemWidget extends StatelessWidget {
   final VoidCallback onTap; 
   final Color? badgeBackgroundColor; 
 
-  const PeriodListItemWidget({
+  const ReportPeriodListItem({
     super.key,
     required this.badgeText,
     this.badgeSubtext,

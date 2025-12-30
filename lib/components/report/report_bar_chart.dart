@@ -3,18 +3,18 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 
-/// FILE: bar_chart_widget.dart
+/// FILE: report_bar_chart.dart
 /// DESCRIZIONE: Widget che renderizza un grafico a barre per i report mensili.
 /// Utilizza la libreria 'fl_chart' per disegnare i dati, calcolando dinamicamente
 /// le scale (Y-Axis) e formattando i tooltip e le etichette degli assi.
 
-class BarChartWidget extends StatelessWidget {
+class ReportBarChart extends StatelessWidget {
   // --- PARAMETRI ---
   // Dati numerici da rappresentare e relative etichette (mesi).
   final List<double> values; 
   final List<String> monthNames; 
 
-  const BarChartWidget({
+  const ReportBarChart({
     super.key,
     required this.values,
     required this.monthNames,

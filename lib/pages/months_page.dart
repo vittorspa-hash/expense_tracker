@@ -1,8 +1,11 @@
-import 'package:expense_tracker/components/report/period_list_item_widget.dart';
-import 'package:expense_tracker/components/report/total_card_widget.dart';
+import 'package:expense_tracker/components/report/report_empty_state.dart';
+import 'package:expense_tracker/components/report/report_period_list_item.dart';
+import 'package:expense_tracker/components/report/report_section_header.dart';
+import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/pages/days_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
+import 'package:expense_tracker/utils/report_date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
@@ -30,12 +33,6 @@ class MonthsPage extends StatefulWidget {
 class _MonthsPageState extends State<MonthsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   
-  // --- COSTANTI ---
-  final List<String> monthNames = [
-    "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-    "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre",
-  ];
-
   @override
   TickerProvider get vsync => this;
 
@@ -51,25 +48,10 @@ class _MonthsPageState extends State<MonthsPage>
     super.dispose();
   }
 
-  // --- HELPER FORMATTAZIONE ---
-  // Funzioni di utilità per convertire oggetti DateTime in stringhe localizzate (IT).
-  String formatDateItaliano(DateTime date) {
-    final giorno = DateFormat("d", "it_IT").format(date);
-    final mese = DateFormat("MMMM", "it_IT").format(date);
-    final anno = DateFormat("y", "it_IT").format(date);
-    final meseCapitalizzato = mese[0].toUpperCase() + mese.substring(1);
-    return "$giorno $meseCapitalizzato $anno";
-  }
-
-  String getDayOfWeek(DateTime date) {
-    final giornoSettimana = DateFormat("EEEE", "it_IT").format(date);
-    return giornoSettimana[0].toUpperCase() + giornoSettimana.substring(1);
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final monthName = monthNames[widget.month - 1];
+    final monthName = ReportDateUtils.monthNames[widget.month - 1];
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -99,49 +81,11 @@ class _MonthsPageState extends State<MonthsPage>
               // 
               if (dailyExpenses.isEmpty) {
                 return buildWithFadeAnimation(
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(24.w),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? AppColors.secondaryDark
-                                : AppColors.secondaryLight,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.event_busy_rounded,
-                            size: 64.sp,
-                            color: isDark
-                                ? AppColors.greyLight
-                                : AppColors.greyDark,
-                          ),
-                        ),
-                        SizedBox(height: 24.h),
-                        Text(
-                          "Nessuna spesa in questo mese",
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            color: isDark
-                                ? AppColors.textLight
-                                : AppColors.textDark2,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          "Le spese che aggiungi appariranno qui",
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: isDark
-                                ? AppColors.greyDark
-                                : AppColors.greyLight,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const ReportEmptyState(
+                    title: "Nessuna spesa in questo mese",
+                    subtitle: "Le spese che aggiungi appariranno qui",
+                    icon: Icons.event_busy_rounded,
+                    useCircleBackground: true, // Mantiene lo stile originale col cerchio
                   ),
                 );
               }
@@ -155,7 +99,7 @@ class _MonthsPageState extends State<MonthsPage>
                 Column(
                   children: [
                     // Riepilogo Mese
-                    TotalCardWidget(
+                    ReportTotalCard(
                       label: "Totale $monthName",
                       totalAmount: totalMonth,
                       icon: Icons.calendar_month_rounded,
@@ -165,23 +109,7 @@ class _MonthsPageState extends State<MonthsPage>
                           : "giorni",
                     ),
 
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20.w),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Spese giornaliere",
-                          style: TextStyle(
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w700,
-                            color: isDark
-                                ? AppColors.greyDark
-                                : AppColors.greyLight,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                    ),
+                    const ReportSectionHeader(title: "Spese giornaliere"),
 
                     SizedBox(height: 12.h),
 
@@ -201,14 +129,14 @@ class _MonthsPageState extends State<MonthsPage>
 
                           // Navigazione al dettaglio giornaliero (DaysPage)
                           // 
-                          return PeriodListItemWidget(
+                          return ReportPeriodListItem(
                             badgeText: "${date.day}",
                             badgeSubtext: DateFormat(
                               "MMM",
                               "it_IT",
                             ).format(date).toUpperCase(),
-                            title: getDayOfWeek(date),
-                            subtitle: formatDateItaliano(date),
+                            title: ReportDateUtils.getDayOfWeek(date),
+                            subtitle: ReportDateUtils.formatDateItaliano(date),
                             totalAmount: total,
                             percentage: (total / totalMonth) * 100,
                             onTap: () {

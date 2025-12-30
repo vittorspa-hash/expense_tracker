@@ -1,14 +1,16 @@
-import 'package:expense_tracker/components/report/total_card_widget.dart';
+import 'package:expense_tracker/components/report/report_empty_state.dart';
+import 'package:expense_tracker/components/report/report_section_header.dart';
+import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
+import 'package:expense_tracker/utils/report_date_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/components/shared/expense_tile.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -64,26 +66,12 @@ class _DaysPageState extends State<DaysPage>
     super.dispose();
   }
 
-  // --- FORMATTAZIONE DATE ---
-  String formatDateItaliano(DateTime date) {
-    final giorno = DateFormat("d", "it_IT").format(date);
-    final mese = DateFormat("MMMM", "it_IT").format(date);
-    final anno = DateFormat("y", "it_IT").format(date);
-    final meseCapitalizzato = mese[0].toUpperCase() + mese.substring(1);
-    return "$giorno $meseCapitalizzato $anno";
-  }
-
-  String getDayOfWeek(DateTime date) {
-    final giornoSettimana = DateFormat("EEEE", "it_IT").format(date);
-    return giornoSettimana[0].toUpperCase() + giornoSettimana.substring(1);
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final date = DateTime(widget.year, widget.month, widget.day);
-    final dateLabel = formatDateItaliano(date);
-    final dayOfWeek = getDayOfWeek(date);
+    final dateLabel = ReportDateUtils.formatDateItaliano(date);
+    final dayOfWeek = ReportDateUtils.getDayOfWeek(date);
 
     // --- GESTIONE STATO COMBINATA ---
     // Utilizza Consumer2 per reagire sia ai cambiamenti delle spese (ExpenseProvider)
@@ -155,7 +143,14 @@ class _DaysPageState extends State<DaysPage>
   ) {
     // Stato Vuoto
     if (expensesList.isEmpty) {
-      return buildWithFadeAnimation(Center(child: _buildEmptyState(isDark)));
+      return buildWithFadeAnimation(
+        const ReportEmptyState(
+          title: "Nessuna spesa in questo giorno",
+          subtitle: "Le spese che aggiungi appariranno qui",
+          icon: Icons.receipt_long_rounded,
+          useCircleBackground: true,
+        ),
+      );
     }
 
     final totalDay = expensesList.fold<double>(
@@ -167,7 +162,7 @@ class _DaysPageState extends State<DaysPage>
       Column(
         children: [
           // Card Totale Giorno
-          TotalCardWidget(
+          ReportTotalCard(
             label: "Totale giornata",
             totalAmount: totalDay,
             icon: Icons.receipt_rounded,
@@ -175,21 +170,8 @@ class _DaysPageState extends State<DaysPage>
             itemLabel: expensesList.length == 1 ? "spesa" : "spese",
           ),
 
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20.w),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Tutte le spese",
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppColors.greyDark : AppColors.greyLight,
-                  letterSpacing: 0.3,
-                ),
-              ),
-            ),
-          ),
+          const ReportSectionHeader(title: "Tutte le spese"),
+          
           SizedBox(height: 12.h),
 
           // --- LISTA SPESE ---
@@ -266,35 +248,6 @@ class _DaysPageState extends State<DaysPage>
   }
 
   // --- HELPER UI ---
-  Widget _buildEmptyState(bool isDark) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          padding: EdgeInsets.all(24.w),
-          decoration: BoxDecoration(
-            color: isDark ? AppColors.secondaryDark : AppColors.secondaryLight,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            Icons.receipt_long_rounded,
-            size: 64.sp,
-            color: isDark ? AppColors.greyLight : AppColors.greyDark,
-          ),
-        ),
-        SizedBox(height: 24.h),
-        Text(
-          "Nessuna spesa in questo giorno",
-          style: TextStyle(
-            fontSize: 16.sp,
-            color: isDark ? AppColors.textLight : AppColors.textDark2,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDismissibleBackground() {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.h),
