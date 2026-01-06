@@ -49,6 +49,7 @@ class AuthTextField extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return TextFormField(
+      cursorColor: AppColors.primary,
       controller: controller,
       focusNode: focusNode,
       obscureText: obscure,
@@ -123,7 +124,7 @@ class AuthTextField extends StatelessWidget {
 
         filled: true,
         fillColor: enabled
-            ? (isDark ? AppColors.borderDark : AppColors.borderLight)
+            ? (isDark ? AppColors.borderDark.withValues(alpha: 0.7) : AppColors.borderLight.withValues(alpha: 0.7))
             : (isDark
                 ? AppColors.borderDark.withValues(alpha: 0.5)
                 : AppColors.borderLight.withValues(alpha: 0.5)),

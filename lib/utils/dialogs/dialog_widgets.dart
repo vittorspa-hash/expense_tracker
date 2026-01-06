@@ -82,36 +82,52 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
       padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
       child: ValueListenableBuilder<bool>(
         valueListenable: _obscureStates[index],
-        builder: (_, hide, _) => TextField(
-          controller: _controllers[index],
-          focusNode: _focusNodes[index],
-          obscureText: hide,
-          keyboardType: field["keyboardType"] ?? TextInputType.text,
-          textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
-          onSubmitted: (_) {
-            final scope = FocusScope.of(context);
-            isLast
-                ? scope.unfocus()
-                : scope.requestFocus(_focusNodes[index + 1]);
-          },
-          style: TextStyle(fontSize: 15.sp),
-          decoration: InputDecoration(
-            labelText: field["label"],
-            prefixIcon: field["prefixIcon"] != null
-                ? Icon(field["prefixIcon"], size: 20.sp)
-                : null,
-            hintText: field["hintText"],
-            hintStyle: TextStyle(fontSize: 14.sp),
-            suffixIcon: hasPassword
-                ? IconButton(
-                    icon: Icon(
-                      hide ? Icons.visibility_off : Icons.visibility,
-                      color: _textColor,
-                      size: 20.sp,
-                    ),
-                    onPressed: () => _obscureStates[index].value = !hide,
-                  )
-                : null,
+        builder: (_, hide, _) => Theme (
+          data: Theme.of(context).copyWith(
+            textSelectionTheme: TextSelectionThemeData(
+              selectionHandleColor: AppColors.primary,
+            )
+          ),
+          child: TextField(
+            controller: _controllers[index],
+            focusNode: _focusNodes[index],
+            cursorColor: AppColors.primary,
+            obscureText: hide,
+            keyboardType: field["keyboardType"] ?? TextInputType.text,
+            textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
+            onSubmitted: (_) {
+              final scope = FocusScope.of(context);
+              isLast
+                  ? scope.unfocus()
+                  : scope.requestFocus(_focusNodes[index + 1]);
+            },
+            style: TextStyle(fontSize: 15.sp),
+            decoration: InputDecoration(
+              labelText: field["label"],
+              floatingLabelStyle: TextStyle(
+                color: _textColor, 
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: AppColors.primary
+                ),
+              ),
+              prefixIcon: field["prefixIcon"] != null
+                  ? Icon(field["prefixIcon"], size: 20.sp)
+                  : null,
+              hintText: field["hintText"],
+              hintStyle: TextStyle(fontSize: 14.sp),
+              suffixIcon: hasPassword
+                  ? IconButton(
+                      icon: Icon(
+                        hide ? Icons.visibility_off : Icons.visibility,
+                        color: _textColor,
+                        size: 20.sp,
+                      ),
+                      onPressed: () => _obscureStates[index].value = !hide,
+                    )
+                  : null,
+            ),
           ),
         ),
       ),

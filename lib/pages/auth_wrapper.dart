@@ -78,8 +78,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
           builder: (context, initSnapshot) {
             // A. CARICAMENTO DATI
             if (initSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
+              return Scaffold(
+                body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
               );
             }
 

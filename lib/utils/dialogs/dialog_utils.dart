@@ -437,14 +437,29 @@ class DialogUtils {
       initialDate: initialDate,
       firstDate: minDate,
       lastDate: maxDate,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          datePickerTheme: DatePickerThemeData(
-            shape: DialogStyles.roundedRectangleBorder(),
+      builder: (context, child) {
+        // Recuperiamo il tema base per non perdere altre impostazioni
+        final theme = Theme.of(context);
+
+        return Theme(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
+              // Questo cambia lo sfondo del giorno selezionato e l'header
+              primary: AppColors.primary, 
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                // Cambia il colore del testo dei pulsanti
+                foregroundColor: isDark ? AppColors.textLight : AppColors.textDark,
+              ),
+            ),
+            datePickerTheme: DatePickerThemeData(
+              shape: DialogStyles.roundedRectangleBorder(),
+            ),
           ),
-        ),
-        child: child!,
-      ),
+          child: child!,
+        );
+      },
     );
   }
 

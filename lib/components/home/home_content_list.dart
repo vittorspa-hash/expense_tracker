@@ -105,6 +105,7 @@ class HomeContentList extends StatelessWidget {
                                   ],
                                 ),
                                 child: TextField(
+                                  cursorColor: AppColors.primary,
                                   controller: searchController,
                                   style: TextStyle(fontSize: 14.sp),
                                   decoration: InputDecoration(
