@@ -1,4 +1,3 @@
-// home_page.dart
 import 'package:expense_tracker/components/home/home_content_list.dart';
 import 'package:expense_tracker/components/home/home_header.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
@@ -16,10 +15,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: home_page.dart
-/// DESCRIZIONE: Dashboard principale dell'applicazione.
-/// Questa pagina orchestra la visualizzazione delle spese, la ricerca locale,
-/// e la gestione dello stato di selezione multipla (per eliminazioni di gruppo).
-/// Collega i Provider (Expense, Profile, MultiSelect) ai componenti UI (Header, Lista, AppBar).
+/// DESCRIZIONE: Schermata principale (Dashboard) dell'applicazione.
+/// Orchestra la visualizzazione del riepilogo (Header) e della lista spese.
+/// Funge da "Hub" per la gestione degli errori globali provenienti dal Provider
+/// e gestisce la navigazione verso la creazione di nuove spese o il profilo.
 
 class HomePage extends StatefulWidget {
   static const route = "/home/page";
@@ -31,9 +30,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with TickerProviderStateMixin, FadeAnimationMixin {
-  // --- STATO E CONTROLLER ---
-  // Gestione dei controller per input di ricerca, animazioni della lista
-  // e criteri di ordinamento locali.
+  
+  // --- STATO E ANIMAZIONI ---
+  // Controller per la barra di ricerca, per l'animazione della lista
+  // e variabili di stato locale per filtri e ordinamento.
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
   String _sortCriteria = "date_desc";
@@ -43,9 +43,9 @@ class _HomePageState extends State<HomePage>
   @override
   TickerProvider get vsync => this;
 
-  // --- CICLO DI VITA ---
-  // Inizializzazione dei listener per la ricerca, caricamento asincrono
-  // dei dati del profilo e setup delle animazioni di fade-in.
+  // --- INIZIALIZZAZIONE ---
+  // Configura i listener, avvia le animazioni e richiede i dati del profilo
+  // dopo il primo frame di rendering.
   @override
   void initState() {
     super.initState();
@@ -56,7 +56,6 @@ class _HomePageState extends State<HomePage>
       });
     });
 
-    // Caricamento profilo all'avvio
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<ProfileProvider>().loadLocalData();
@@ -81,9 +80,8 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
-  // --- LOGICA DI FILTRAGGIO ---
-  // Filtra la lista delle spese in memoria basandosi sulla query di ricerca.
-  //
+  // --- LOGICA FILTRO ---
+  // Filtra localmente la lista delle spese in base alla query di ricerca inserita.
   List<ExpenseModel> _getFilteredExpenses(ExpenseProvider expenseProvider) {
     final query = _searchQuery.toLowerCase();
     return expenseProvider.expenses.where((expense) {
@@ -92,25 +90,29 @@ class _HomePageState extends State<HomePage>
     }).toList();
   }
 
-  // --- BUILD UI ---
-  // Costruzione della struttura Scaffold. Utilizza un Consumer2 per reagire
-  // ai cambiamenti sia della selezione multipla che dei dati delle spese.
-  //
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
       builder: (context, multiSelect, expenseProvider, child) {
+        
+        // --- GESTIONE ERRORI UI ---
+        // Ascolta lo stato degli errori del Provider. Se presente, mostra una SnackBar
+        // e resetta immediatamente l'errore per evitare loop di visualizzazione.
+        // Utilizza addPostFrameCallback per non interferire con il ciclo di build corrente.
+        if (expenseProvider.errorMessage != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showErrorSnackBar(context, expenseProvider.errorMessage!);
+            expenseProvider.clearError();
+          });
+        }
+
         final isSelectionMode = multiSelect.isSelectionMode;
         final selectedCount = multiSelect.selectedCount;
         final filteredExpenses = _getFilteredExpenses(expenseProvider);
 
         return Scaffold(
-          // --- APPBAR CONTESTUALE ---
-          // Mostra una AppBar personalizzata solo quando è attiva la modalità selezione,
-          // permettendo azioni di gruppo (es. elimina tutto, seleziona tutto).
-          //
           appBar: isSelectionMode
               ? CustomAppBar(
                   title: "",
@@ -125,8 +127,6 @@ class _HomePageState extends State<HomePage>
                 )
               : null,
 
-          // --- CORPO PAGINA ---
-          // Divide la UI in due macro-sezioni: Header (Profilo) e Lista contenuti.
           body: Column(
             children: [
               HomeHeader(
@@ -152,9 +152,6 @@ class _HomePageState extends State<HomePage>
             ],
           ),
 
-          // --- FLOATING ACTION BUTTON ---
-          // Tasto per aggiungere nuove spese. Viene nascosto durante la selezione multipla
-          // per evitare conflitti visivi con le azioni di modifica.
           floatingActionButton: !isSelectionMode
               ? Container(
                   decoration: BoxDecoration(
@@ -194,21 +191,44 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  // --- UTILS ---
-  // Funzioni ausiliarie per aggiornare i dati (pull-to-refresh)
-  // e mostrare il modale del profilo utente.
+  // --- HELPER INTERNI ---
+  
+  // Mostra feedback visivo in caso di errori critici (es. fallimento eliminazione).
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message, 
+          style: TextStyle(color: AppColors.textLight,)
+        ),
+        backgroundColor: AppColors.snackBar,
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: AppColors.textLight,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
+  // Ricarica i dati dal backend e riapplica l'ordinamento selezionato.
   Future<void> _refreshExpenses() async {
-    // Usiamo read per evitare rebuild inutili all'interno di funzioni asincrone
     final multiSelect = context.read<MultiSelectProvider>();
     final expenseProvider = context.read<ExpenseProvider>();
 
     multiSelect.cancelSelection();
+    
     await expenseProvider.initialise();
+    
     if (_sortCriteria.isNotEmpty) {
       expenseProvider.sortBy(_sortCriteria);
     }
   }
 
+  // Apre il bottom sheet per la gestione del profilo utente.
   Future<void> _showProfileSheet(BuildContext context) async {
     await DialogUtils.showProfileSheet(context);
   }

@@ -6,9 +6,15 @@ import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 
 /// FILE: expense_action_handler.dart
-/// Classe helper per centralizzare le azioni complesse sulle spese
-/// che coinvolgono UI (Dialoghi/Snackbar) e Logica (Provider).
+/// DESCRIZIONE: Helper statico per centralizzare le azioni complesse sulle spese.
+/// Gestisce flussi che coinvolgono più provider e interazioni UI (Dialoghi, Snackbar),
+/// come l'eliminazione multipla, mantenendo i widget della vista più puliti.
+
 class ExpenseActionHandler {
+  
+  // --- ELIMINAZIONE BATCH ---
+  // Gestisce il flusso completo per l'eliminazione di uno o più elementi selezionati:
+  // Dialogo Conferma -> Reset Selezione -> Chiamata al Provider -> Feedback/Undo.
   static Future<void> handleDeleteSelected(BuildContext context) async {
     final multiSelect = context.read<MultiSelectProvider>();
     final expenseProvider = context.read<ExpenseProvider>();
@@ -16,7 +22,7 @@ class ExpenseActionHandler {
 
     if (count == 0) return;
 
-    // 1. Dialogo di conferma
+    // 1. Chiede conferma all'utente prima di procedere con l'azione distruttiva.
     final confirm = await DialogUtils.showConfirmDialog(
       context,
       title: "Eliminazione ${count == 1 ? 'singola' : 'multipla'}",
@@ -28,23 +34,29 @@ class ExpenseActionHandler {
 
     if (confirm != true) return;
 
-    // 2. PREPARAZIONE DATI
-    // Identifichiamo gli oggetti da eliminare filtrando la lista attuale
+    // 2. Identifica gli oggetti da eliminare basandosi sugli ID selezionati.
     final expensesToDelete = expenseProvider.expenses
         .where((e) => multiSelect.selectedIds.contains(e.uuid))
         .toList();
 
-    // 3. PULIZIA UI
-    // Chiudiamo la modalità selezione PRIMA di eliminare per un effetto visivo migliore
+    // 3. Pulisce la UI uscendo dalla modalità di selezione.
     multiSelect.deselectAll();
 
-    // 4. ESECUZIONE (DB + STATE)
+    // 4. Esegue la cancellazione effettiva (DB + Stato Locale).
+    // Se fallisce, il provider gestirà l'eccezione popolando il campo 'errorMessage'.
     await expenseProvider.deleteExpenses(expensesToDelete);
 
-    // Verifica se il contesto è ancora valido dopo l'await
     if (!context.mounted) return;
 
-    // 5. FEEDBACK E UNDO
+    // 5. CHECK ERRORI
+    // Verifica se l'operazione ha generato errori. Se sì, interrompe il flusso locale:
+    // sarà la vista principale (es. HomePage) a rilevare il cambio di stato e mostrare l'errore.
+    if (expenseProvider.errorMessage != null) {
+      return; 
+    }
+
+    // 6. FEEDBACK & UNDO
+    // Se non ci sono errori, mostra una notifica di successo con l'opzione per annullare.
     SnackbarUtils.show(
       context: context,
       title: count == 1 ? "Eliminata!" : "Eliminate!",
@@ -52,7 +64,6 @@ class ExpenseActionHandler {
           "$count ${count == 1 ? 'spesa eliminata' : 'spese eliminate'} con successo.",
       deletedItem: expensesToDelete,
       onDelete: (_) {},
-      // onRestore delegato al provider
       onRestore: (_) async {
         await expenseProvider.restoreExpenses(expensesToDelete);
       },

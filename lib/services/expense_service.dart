@@ -1,27 +1,27 @@
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
+import 'package:expense_tracker/utils/repository_failure.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 
 /// FILE: expense_service.dart
-/// DESCRIZIONE: Layer di logica di business (Business Logic Layer).
-/// Si posiziona tra il Provider (Stato) e il Repository (Dati).
-/// Responsabilità:
-/// 1. Validazione dell'utente corrente (Auth Check).
-/// 2. Validazione della proprietà del dato (Ownership Check).
-/// 3. Generazione di ID univoci (UUID).
-/// 4. Ordinamento iniziale dei dati.
+/// DESCRIZIONE: Service Layer per la gestione delle spese.
+/// Agisce come ponte tra il Provider (Stato) e il Repository (Dati/Firebase),
+/// occupandosi della logica di business come la generazione degli UUID,
+/// la verifica dell'autenticazione corrente e l'ordinamento iniziale dei dati.
 
 class ExpenseService {
+  // --- STATO E DIPENDENZE ---
+  // Iniezione del repository per l'accesso al database.
   final FirebaseRepository _firebaseRepository;
 
   ExpenseService({required FirebaseRepository firebaseRepository})
     : _firebaseRepository = firebaseRepository;
 
   // --- LETTURA DATI (READ) ---
-  // Recupera le spese dal repository e applica un ordinamento di default (Data decrescente).
-  // Se non c'è un utente loggato, restituisce una lista vuota per sicurezza.
-  // 
+  // Recupera le spese associate all'utente corrente.
+  // Gestisce il caso di utente non loggato restituendo una lista vuota 
+  // e ordina i risultati per data decrescente prima di restituirli al Provider.
   Future<List<ExpenseModel>> loadUserExpenses() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -30,26 +30,23 @@ class ExpenseService {
 
     final expenses = await _firebaseRepository.allExpensesForUser(user.uid);
     
-    // Business Logic: L'app si aspetta i dati ordinati per data (dal più recente)
-    expenses.sort(
-      (a, b) => b.createdOn.compareTo(a.createdOn),
-    ); 
-    
+    expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn)); 
     return expenses;
   }
 
   // --- CREAZIONE (CREATE) ---
-  // Genera un nuovo oggetto ExpenseModel con un UUID v4 univoco e lo salva.
+  // Genera un nuovo oggetto ExpenseModel assegnando un UUID univoco e
+  // associandolo all'utente corrente. Lancia un'eccezione se l'utente non è autenticato.
   Future<ExpenseModel> createExpense({
     required double value,
     required String? description,
     required DateTime date,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("Utente non loggato");
+    if (user == null) throw RepositoryFailure("Utente non autenticato.");
 
     final expense = ExpenseModel(
-      uuid: const Uuid().v4(), // Generazione ID univoco client-side
+      uuid: const Uuid().v4(),
       value: value,
       description: description,
       createdOn: date,
@@ -61,13 +58,12 @@ class ExpenseService {
   }
 
   // --- RIPRISTINO (UNDO) ---
-  // Simile alla creazione, ma riutilizza un modello esistente (es. dopo uno swipe-to-delete).
-  // Forza il userId all'utente corrente per sicurezza.
+  // Reinserisce una spesa precedentemente eliminata (funzionalità Undo).
+  // Assicura che l'ID utente sia corretto prima di salvare nuovamente il dato.
   Future<ExpenseModel> restoreExpense(ExpenseModel expenseModel) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw Exception("Utente non loggato");
+    if (user == null) throw RepositoryFailure("Utente non autenticato.");
 
-    // Security Check: Assicuriamoci che la spesa venga riassegnata all'utente attuale
     if (expenseModel.userId != user.uid) {
       expenseModel.userId = user.uid;
     }
@@ -76,10 +72,10 @@ class ExpenseService {
     return expenseModel;
   }
 
-  // --- MODIFICA E CANCELLAZIONE (UPDATE & DELETE) ---
-  // Eseguono controlli rigorosi sulla proprietà: solo l'autore della spesa può modificarla o eliminarla.
-  // 
-  
+  // --- MODIFICA E CANCELLAZIONE ---
+  // Gestisce l'aggiornamento e l'eliminazione delle spese.
+  // Esegue un controllo di sicurezza (ownership) per garantire che l'utente
+  // stia modificando o eliminando solo le proprie spese.
   Future<ExpenseModel> editExpense(
     ExpenseModel expenseModel, {
     required double value,
@@ -88,12 +84,10 @@ class ExpenseService {
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     
-    // Security Check
     if (user == null || expenseModel.userId != user.uid) {
-      throw Exception("Non hai permesso di modificare questa spesa");
+      throw RepositoryFailure("Non hai il permesso di modificare questa spesa.");
     }
 
-    // Aggiornamento campi
     expenseModel.value = value;
     expenseModel.description = description;
     expenseModel.createdOn = date;
@@ -105,9 +99,8 @@ class ExpenseService {
   Future<void> deleteExpense(ExpenseModel expenseModel) async {
     final user = FirebaseAuth.instance.currentUser;
     
-    // Security Check
     if (user == null || expenseModel.userId != user.uid) {
-      throw Exception("Non hai permesso di eliminare questa spesa");
+      throw RepositoryFailure("Non hai il permesso di eliminare questa spesa.");
     }
 
     await _firebaseRepository.deleteExpense(expenseModel);

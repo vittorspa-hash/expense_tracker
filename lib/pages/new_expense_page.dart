@@ -1,3 +1,4 @@
+import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
@@ -5,10 +6,10 @@ import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: new_expense_page.dart
-/// DESCRIZIONE: Schermata dedicata alla creazione di una nuova spesa.
-/// Funge da wrapper attorno al componente riutilizzabile `ExpenseEdit`, 
-/// configurandolo per la modalità di inserimento e collegando l'azione di submit
-/// al metodo `createExpense` del Provider.
+/// DESCRIZIONE: Pagina per la creazione di una nuova spesa.
+/// Funge da container per il componente riutilizzabile ExpenseEdit, iniettando
+/// la logica specifica per la creazione (createExpense) e gestendo la navigazione
+/// in base all'esito dell'operazione asincrona.
 
 class NewExpensePage extends StatefulWidget {
   static const route = "/expense/new";
@@ -22,17 +23,14 @@ class NewExpensePage extends StatefulWidget {
 class _NewExpensePageState extends State<NewExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   
-  // --- CONFIGURAZIONE ANIMAZIONE ---
-  // Setup del TickerProvider e definizione della durata per l'effetto 
-  // di comparsa (fade-in) all'apertura della pagina.
+  // --- ANIMAZIONI ---
+  // Configurazione del mixin per l'effetto di fade-in all'apertura della pagina.
   @override
   TickerProvider get vsync => this;
 
   @override
   Duration get fadeAnimationDuration => const Duration(milliseconds: 400);
 
-  // --- CICLO DI VITA ---
-  // Inizializzazione e pulizia delle risorse di animazione.
   @override
   void initState() {
     super.initState();
@@ -46,26 +44,37 @@ class _NewExpensePageState extends State<NewExpensePage>
   }
 
   // --- LOGICA DI SALVATAGGIO ---
-  // Callback passata al widget figlio `ExpenseEdit`.
-  // Intercetta i dati inseriti dall'utente, invoca l'azione di creazione 
-  // sul Provider (senza ascoltare cambiamenti, quindi context.read) e chiude la pagina.
-  // 
-  void onSubmit({
+  // Callback passata al form ExpenseEdit. Esegue la creazione della spesa tramite Provider.
+  // Se l'operazione ha successo, chiude la pagina (pop).
+  // Se fallisce (es. errore connessione), mostra una SnackBar e mantiene l'utente sulla pagina.
+  Future<void> onSubmit({
     required double value,
     required String? description,
     required DateTime date,
-  }) {
-    context.read<ExpenseProvider>().createExpense(
+  }) async {
+    final provider = context.read<ExpenseProvider>();
+
+    await provider.createExpense(
       value: value,
       description: description,
       date: date,
     );
 
+    if (!mounted) return;
+
+    if (provider.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.errorMessage!),
+          backgroundColor: AppColors.snackBar,
+        ),
+      );
+      return; 
+    }
+
     Navigator.pop(context);
   }
 
-  // --- BUILD UI ---
-  // Costruisce la UI avvolgendo il form di modifica nell'animazione di fade.
   @override
   Widget build(BuildContext context) {
     return buildWithFadeAnimation(ExpenseEdit(onSubmit: onSubmit));

@@ -12,18 +12,23 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: expense_edit.dart
-/// DESCRIZIONE: Widget riutilizzabile per la creazione e la modifica di una spesa.
-/// Gestisce l'input dell'importo, della descrizione e della data.
-/// Caratteristica peculiare: utilizza un'interazione "Long Press" (pressione prolungata)
-/// sullo sfondo per confermare e salvare i dati, invece di un classico bottone "Salva".
+/// DESCRIZIONE: Schermata riutilizzabile per la creazione e la modifica di una spesa.
+/// Gestisce l'input dell'utente (importo, descrizione, data) e utilizza un'interazione 
+/// "Long Press" sullo sfondo per confermare il salvataggio. Gestisce anche l'eliminazione
+/// se configurata (tramite FAB).
 
 class ExpenseEdit extends StatefulWidget {
+  // --- CONFIGURAZIONE ---
+  // Parametri per prepopolare i campi (in caso di modifica) e callback
+  // per gestire le azioni di salvataggio e cancellazione delegate al genitore.
   final double? initialValue;
   final String? initialDescription;
   final DateTime? initialDate;
   final IconData? floatingActionButtonIcon;
-  final ExpenseModel? Function()? onFloatingActionButtonPressed;
-  final void Function({
+  
+  final Future<ExpenseModel?> Function()? onFloatingActionButtonPressed;
+  
+  final Future<void> Function({
     required double value,
     required String? description,
     required DateTime date,
@@ -45,23 +50,21 @@ class ExpenseEdit extends StatefulWidget {
 }
 
 class _ExpenseEditState extends State<ExpenseEdit> {
-  // --- STATO E INIZIALIZZAZIONE ---
-  // Controller per i campi di testo e variabili per gestire lo stato visivo
-  // (es. cambio colore alla pressione) e i dati temporanei (data selezionata).
+  // --- STATO UI ---
   final priceController = TextEditingController();
   final descriptionController = TextEditingController();
   bool isTappedDown = false;
   late DateTime selectedDate;
 
+  // --- INIZIALIZZAZIONE ---
+  // Imposta i valori iniziali e verifica se mostrare il tutorial per la gesture di salvataggio.
   @override
   void initState() {
     super.initState();
-    // Pre-popolamento dati in caso di modifica
     priceController.text = widget.initialValue?.toString() ?? "";
     descriptionController.text = widget.initialDescription ?? "";
     selectedDate = widget.initialDate ?? DateTime.now();
 
-    // Controllo tutorial "Long Press" al primo avvio
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInstructionDialogIfNeeded();
     });
@@ -71,17 +74,13 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // --- UI PRINCIPALE ---
-    // Struttura a tutto schermo sensibile al tocco.
-    // L'InkWell gestisce il "Long Press" per il submit e cambia colore (highlight)
-    // per dare feedback visivo all'utente mentre preme.
-    // 
     return Scaffold(
       backgroundColor: isDark
           ? AppColors.editPageBackgroundDark
           : AppColors.editPageBackgroundLight,
+      // L'InkWell copre tutto il body per rilevare la "Long Press" come azione di submit.
       body: InkWell(
-        onLongPress: onSubmit,
+        onLongPress: onSubmit, 
         onHighlightChanged: (highlighted) =>
             setState(() => isTappedDown = highlighted),
         splashColor: isDark
@@ -90,7 +89,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         focusColor: Colors.transparent,
         highlightColor: AppColors.primary,
         onTap: () {
-          // Chiude la tastiera se si tocca fuori dai campi
           FocusScope.of(context).unfocus();
         },
         child: Column(
@@ -103,17 +101,16 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           ],
         ),
       ),
-      // FAB opzionale (usato principalmente per eliminare la spesa in fase di edit)
       floatingActionButton: widget.floatingActionButtonIcon == null
           ? null
           : floatingActionButton(context, isDark), 
     );
   }
 
-  // --- COMPONENTI DI INPUT ---
-  // Widget modulari per l'inserimento di Prezzo (Text), Descrizione (Text) e Data (Picker).
-  // I colori del testo cambiano dinamicamente se l'utente sta premendo lo sfondo (isTappedDown).
-  // 
+  // --- WIDGET DI INPUT ---
+  
+  // Campo per l'inserimento dell'importo. Include formattatori per gestire virgole/punti
+  // e stili che reagiscono allo stato di "Tap" (pressione prolungata).
   Widget inputPrice() => Padding(
     padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: Row(
@@ -123,9 +120,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           "€",
           style: TextStyle(
             fontSize: 50.sp,
-            color: isTappedDown
-                ? AppColors.textLight
-                : AppColors.textTappedDown,
+            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -137,36 +132,24 @@ class _ExpenseEditState extends State<ExpenseEdit> {
             child: IntrinsicWidth(
               child: TextField(
                 controller: priceController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                cursorColor: isTappedDown
-                    ? AppColors.textLight
-                    : AppColors.textTappedDown,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                cursorColor: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
                 style: TextStyle(
                   fontSize: 50.sp,
-                  color: isTappedDown
-                      ? AppColors.textLight
-                      : AppColors.textTappedDown,
+                  color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
                   fontWeight: FontWeight.w600,
                 ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
                   TextInputFormatter.withFunction((oldValue, newValue) {
                     final text = newValue.text.replaceAll(',', '.');
-                    return newValue.copyWith(
-                      text: text,
-                      selection: newValue.selection,
-                    );
+                    return newValue.copyWith(text: text, selection: newValue.selection);
                   }),
                 ],
                 decoration: InputDecoration(
                   hintText: "0.00",
                   border: InputBorder.none,
-                  hintStyle: TextStyle(
-                    color: AppColors.textEditPage,
-                    fontSize: 50.sp,
-                  ),
+                  hintStyle: TextStyle(color: AppColors.textEditPage, fontSize: 50.sp),
                 ),
               ),
             ),
@@ -182,9 +165,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       keyboardType: TextInputType.text,
       maxLines: null,
       controller: descriptionController,
-      cursorColor: isTappedDown
-          ? AppColors.textLight
-          : AppColors.textTappedDown,
+      cursorColor: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
       textAlign: TextAlign.center,
       textCapitalization: TextCapitalization.sentences,
       style: TextStyle(
@@ -204,7 +185,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     final formattedDate = DateFormat("d MMMM y", "it_IT").format(selectedDate);
     final displayDate = capitalizeMonth(formattedDate);
 
-    // 
     return GestureDetector(
       onTap: () => _pickDate(context),
       child: Row(
@@ -212,9 +192,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         children: [
           Icon(
             Icons.calendar_today,
-            color: isTappedDown
-                ? AppColors.textLight
-                : AppColors.textTappedDown,
+            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
             size: 24.sp,
           ),
           SizedBox(width: 10.w),
@@ -222,9 +200,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
             displayDate,
             style: TextStyle(
               fontSize: 18.sp,
-              color: isTappedDown
-                  ? AppColors.textLight
-                  : AppColors.textTappedDown,
+              color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -233,12 +209,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- AZIONI SUPPLEMENTARI (DELETE) ---
-  // Bottone flottante per gestire l'eliminazione della spesa (se presente).
-  // Include logica di conferma e feedback undo tramite SnackBar.
+  // --- GESTIONE CANCELLAZIONE ---
+  // Floating Action Button opzionale per l'eliminazione della spesa.
+  // Esegue la logica in passaggi: Conferma -> DB -> Check Errori -> Feedback UI.
   Widget floatingActionButton(BuildContext context, bool isDark) {
-    // Recuperiamo lo store tramite context.read (essendo un'azione non serve watch)
-    final expense = context.read<ExpenseProvider>();
+    final expenseProvider = context.read<ExpenseProvider>();
 
     return FloatingActionButton(
       heroTag: null,
@@ -253,25 +228,28 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           cancelText: "Annulla",
         );
 
-        if (confirm == true) {
-          if (widget.onFloatingActionButtonPressed != null) {
-            final deletedExpense = await Future.sync(
-              () => widget.onFloatingActionButtonPressed!(),
+        if (confirm == true && widget.onFloatingActionButtonPressed != null) {
+          
+          final deletedExpense = await widget.onFloatingActionButtonPressed!();
+
+          if (!context.mounted) return;
+
+          // Se il provider ha registrato un errore, interrompiamo il flusso UI (niente SnackBar verde).
+          if (expenseProvider.errorMessage != null) {
+             return; 
+          }
+
+          if (deletedExpense != null) {
+            SnackbarUtils.show(
+              context: context,
+              title: "Eliminata!",
+              message: "Spesa eliminata con successo.",
+              deletedItem: deletedExpense,
+              onDelete: (_) {}, 
+              onRestore: (exp) async {
+                 await expenseProvider.restoreExpenses([exp]);
+              }, 
             );
-
-            if (!context.mounted) return;
-
-            if (deletedExpense != null) {
-              SnackbarUtils.show(
-                context: context,
-                title: "Eliminata!",
-                message: "Spesa eliminata con successo.",
-                deletedItem: deletedExpense,
-                // Chiamate allo store tramite l'istanza ottenuta con Provider
-                onDelete: (exp) => expense.deleteExpenses([exp]),
-                onRestore: (exp) => expense.restoreExpenses([exp]),
-              );
-            }
           }
         }
       },
@@ -279,10 +257,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- LOGICA DI SALVATAGGIO E UTILITY ---
-  // Validazione input, esecuzione del submit tramite callback padre,
-  // apertura del date picker e gestione del tutorial iniziale.
-  void onSubmit() {
+  // --- SALVATAGGIO DATI ---
+  // Funzione chiamata dalla gesture "Long Press".
+  // Valida l'input, invoca la callback del genitore e gestisce il feedback visivo
+  // in base al successo o fallimento (controllando lo stato del Provider).
+  Future<void> onSubmit() async {
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
     final description = descriptionController.text.trim();
 
@@ -295,11 +274,19 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       return;
     }
 
-    widget.onSubmit(
+    final expenseProvider = context.read<ExpenseProvider>();
+
+    await widget.onSubmit(
       value: value,
       description: description.isEmpty ? null : description,
       date: selectedDate,
     );
+
+    if (!mounted) return;
+
+    if (expenseProvider.errorMessage != null) {
+      return;
+    }
 
     SnackbarUtils.show(
       context: context,
@@ -310,6 +297,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
+  // --- HELPER DATE & TUTORIAL ---
   Future<void> _pickDate(BuildContext context) async {
     final DateTime? pickedDate = await DialogUtils.showDatePickerAdaptive(
       context,
@@ -336,6 +324,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     return "$day $month $year";
   }
 
+  // Mostra un dialog informativo per spiegare la gesture di salvataggio.
+  // Utilizza SharedPreferences per mostrare il messaggio solo la prima volta (per utente).
   Future<void> _showInstructionDialogIfNeeded() async {
     final prefs = await SharedPreferences.getInstance();
     final uid = FirebaseAuth.instance.currentUser?.uid ?? "guest";

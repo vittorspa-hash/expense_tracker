@@ -16,11 +16,10 @@ import 'package:expense_tracker/components/shared/expense_tile.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: days_page.dart
-/// DESCRIZIONE: Schermata di dettaglio giornaliero.
-/// Mostra la lista delle spese di un giorno specifico.
-/// Supporta due modalità di interazione:
-/// 1. Navigazione/Swipe: Visualizzazione standard e swipe-to-delete.
-/// 2. Selezione Multipla: Attivata da long-press per eliminazioni di gruppo.
+/// DESCRIZIONE: Pagina di dettaglio giornaliero (View).
+/// Mostra l'elenco delle spese per un giorno specifico. Permette di selezionare
+/// elementi multipli (MultiSelect) per l'eliminazione batch o di eliminare
+/// singole spese tramite swipe (Dismissible).
 
 class DaysPage extends StatefulWidget {
   static const route = "/days";
@@ -45,9 +44,6 @@ class _DaysPageState extends State<DaysPage>
   @override
   TickerProvider get vsync => this;
 
-  // --- LIFECYCLE ---
-  // Inizializza l'animazione e resetta lo stato di selezione multipla
-  // per evitare che selezioni precedenti rimangano attive entrando in questa pagina.
   @override
   void initState() {
     super.initState();
@@ -66,6 +62,25 @@ class _DaysPageState extends State<DaysPage>
     super.dispose();
   }
 
+  // --- UTILITY UI ---
+  // Mostra una SnackBar di errore generica in caso di problemi (es. backend offline).
+  void _showErrorSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(color: AppColors.textLight)),
+        backgroundColor: AppColors.snackBar, 
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'OK',
+          textColor: AppColors.textLight,
+          onPressed: () {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -73,11 +88,19 @@ class _DaysPageState extends State<DaysPage>
     final dateLabel = ReportDateUtils.formatDateItaliano(date);
     final dayOfWeek = ReportDateUtils.getDayOfWeek(date);
 
-    // --- GESTIONE STATO COMBINATA ---
-    // Utilizza Consumer2 per reagire sia ai cambiamenti delle spese (ExpenseProvider)
-    // sia allo stato della selezione (MultiSelectProvider).
     return Consumer2<ExpenseProvider, MultiSelectProvider>(
       builder: (context, expenseProvider, multiSelect, child) {
+        
+        // --- GESTIONE ERRORI ---
+        // Ascolta cambiamenti nello stato degli errori del provider e notifica l'utente.
+        // Pulisce l'errore subito dopo per evitare loop di visualizzazione.
+        if (expenseProvider.errorMessage != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showErrorSnackBar(context, expenseProvider.errorMessage!);
+            expenseProvider.clearError();
+          });
+        }
+
         final expensesList = expenseProvider.expensesOfDay(
           widget.year,
           widget.month,
@@ -88,9 +111,6 @@ class _DaysPageState extends State<DaysPage>
         final selectedCount = multiSelect.selectedCount;
 
         return Scaffold(
-          // --- APPBAR DINAMICA ---
-          // Cambia aspetto e azioni in base alla modalità corrente (Normale vs Selezione).
-          //
           appBar: isSelectionMode
               ? CustomAppBar(
                   title: "",
@@ -112,9 +132,7 @@ class _DaysPageState extends State<DaysPage>
 
           body: Container(
             decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.backgroundDark
-                  : AppColors.backgroundLight,
+              color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
             ),
             child: SafeArea(
               child: _buildBody(
@@ -132,7 +150,9 @@ class _DaysPageState extends State<DaysPage>
     );
   }
 
-  // --- COSTRUZIONE CORPO PAGINA ---
+  // --- CORPO PAGINA ---
+  // Costruisce la lista o lo stato vuoto se non ci sono spese.
+  // Integra animazioni di fade-in per un'esperienza utente più fluida.
   Widget _buildBody(
     BuildContext context,
     List<dynamic> expensesList,
@@ -141,7 +161,6 @@ class _DaysPageState extends State<DaysPage>
     ExpenseProvider expenseprovider,
     bool isDark,
   ) {
-    // Stato Vuoto
     if (expensesList.isEmpty) {
       return buildWithFadeAnimation(
         const ReportEmptyState(
@@ -161,7 +180,6 @@ class _DaysPageState extends State<DaysPage>
     return buildWithFadeAnimation(
       Column(
         children: [
-          // Card Totale Giorno
           ReportTotalCard(
             label: "Totale giornata",
             totalAmount: totalDay,
@@ -174,8 +192,6 @@ class _DaysPageState extends State<DaysPage>
           
           SizedBox(height: 12.h),
 
-          // --- LISTA SPESE ---
-          // Supporta RefreshIndicator e Swipe-to-delete.
           Expanded(
             child: RefreshIndicator(
               color: AppColors.primary,
@@ -189,22 +205,22 @@ class _DaysPageState extends State<DaysPage>
                 separatorBuilder: (_, _) => SizedBox(height: 4.h),
                 itemBuilder: (context, index) {
                   final expense = expensesList[index];
-                  final isSelected = multiSelect.selectedIds.contains(
-                    expense.uuid,
-                  );
+                  final isSelected = multiSelect.selectedIds.contains(expense.uuid);
 
-                  // --- DISMISSIBLE (SWIPE) ---
-                  // Abilitato solo se NON siamo in modalità selezione.
-                  //
                   return Dismissible(
                     key: Key(expense.uuid),
                     direction: isSelectionMode
                         ? DismissDirection.none
                         : DismissDirection.endToStart,
 
-                    // Conferma eliminazione singola
+                    // --- LOGICA DISMISS ---
+                    // Gestisce l'eliminazione via swipe. Richiede conferma, esegue l'azione
+                    // sul Provider e mostra una Snackbar con opzione Undo.
+                    // Se l'eliminazione fallisce, l'elemento torna al suo posto.
                     confirmDismiss: (_) async {
                       if (isSelectionMode) return false;
+                      
+                      // 1. Dialogo conferma
                       final confirm = await DialogUtils.showConfirmDialog(
                         context,
                         title: "Conferma eliminazione",
@@ -212,24 +228,36 @@ class _DaysPageState extends State<DaysPage>
                         confirmText: "Elimina",
                         cancelText: "Annulla",
                       );
-                      return confirm ?? false;
+                      
+                      if (confirm != true) return false;
+
+                      // 2. Esecuzione DB
+                      await expenseprovider.deleteExpenses([expense]);
+
+                      // 3. Controllo Esito
+                      if (expenseprovider.errorMessage != null) {
+                        return false; 
+                      }
+
+                      // 4. Feedback Utente
+                      if (context.mounted) {
+                        SnackbarUtils.show(
+                          context: context,
+                          title: "Eliminata!",
+                          message: "Spesa eliminata con successo.",
+                          deletedItem: expense,
+                          onDelete: (_) {}, 
+                          onRestore: (exp) => expenseprovider.restoreExpenses([exp]),
+                        );
+                      }
+
+                      return true; 
                     },
 
                     background: _buildDismissibleBackground(),
 
-                    // Esecuzione eliminazione e SnackBar Undo
-                    onDismissed: (_) {
-                      SnackbarUtils.show(
-                        context: context,
-                        title: "Eliminata!",
-                        message: "Spesa eliminata con successo.",
-                        deletedItem: expense,
-                        onDelete: (exp) => expenseprovider.deleteExpenses([exp]),
-                        onRestore: (exp) => expenseprovider.restoreExpenses([exp]),
-                      );
-                    },
+                    onDismissed: (_) {},
 
-                    // Tile Spesa (Gestisce LongPress e Tap)
                     child: ExpenseTile(
                       expense,
                       isSelectionMode: isSelectionMode,
@@ -247,7 +275,6 @@ class _DaysPageState extends State<DaysPage>
     );
   }
 
-  // --- HELPER UI ---
   Widget _buildDismissibleBackground() {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4.h),

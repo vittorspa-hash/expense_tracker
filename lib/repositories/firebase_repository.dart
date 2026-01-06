@@ -1,27 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:expense_tracker/models/expense_model.dart';
+import 'package:expense_tracker/utils/repository_failure.dart';
 
 /// FILE: firebase_repository.dart
-/// DESCRIZIONE: Data Access Layer (DAL) per Cloud Firestore.
-/// Isola l'applicazione dai dettagli di implementazione del database.
-/// Gestisce la collezione "expenses" e mappa i documenti Firestore
-/// negli oggetti di dominio (ExpenseModel).
+/// DESCRIZIONE: Repository per l'interazione diretta con Cloud Firestore.
+/// Gestisce le operazioni CRUD (Create, Read, Update, Delete) verso il database remoto,
+/// mappando i dati tra documenti Firestore e oggetti ExpenseModel e incapsulando 
+/// le eccezioni di rete in errori di dominio gestibili.
 
 class FirebaseRepository {
-  // --- CONFIGURAZIONE COLLEZIONE ---
-  // Riferimento alla root collection dove vengono salvati tutti i documenti.
-  // Struttura DB: Collection "expenses" -> Document (UUID) -> Fields (value, date, userId...)
-  // 
-  final CollectionReference _collection = FirebaseFirestore.instance.collection(
-    "expenses",
-  );
+  // --- CONFIGURAZIONE ---
+  // Riferimento alla collezione principale "expenses" su Firestore.
+  final CollectionReference _collection = FirebaseFirestore.instance.collection("expenses");
 
   // --- LETTURA DATI (READ) ---
-  // Esegue una query composta:
-  // 1. Filtra per 'userId' (sicurezza/isolamento dati).
-  // 2. Ordina per 'createdOn' decrescente (dal più recente).
-  // Nota: Questa query richiede un indice composito su Firestore (userId + createdOn).
-  // 
+  // Recupera tutte le spese associate a un determinato ID utente.
+  // Esegue una query filtrata e ordinata lato server, convertendo i documenti risultanti
+  // in oggetti di dominio. Gestisce errori specifici di Firestore o di parsing.
   Future<List<ExpenseModel>> allExpensesForUser(String userId) async {
     try {
       final snapshot = await _collection
@@ -29,50 +24,55 @@ class FirebaseRepository {
           .orderBy("createdOn", descending: true)
           .get();
 
-      // Mapping: QuerySnapshot -> List<DocumentSnapshot> -> List<ExpenseModel>
       return snapshot.docs
-          .map(
-            (doc) => ExpenseModel.fromMap(doc.data() as Map<String, dynamic>),
-          )
+          .map((doc) => ExpenseModel.fromMap(doc.data() as Map<String, dynamic>))
           .toList();
-    } catch (_) {
-      // In produzione, loggare l'errore (es. Crashlytics) sarebbe preferibile
-      return [];
+
+    } on FirebaseException catch (e) {
+      throw RepositoryFailure(
+        "Errore Firestore durante il recupero: ${e.message}", 
+        code: e.code
+      );
+    } catch (e) {
+      throw RepositoryFailure("Errore generico nel recupero delle spese: $e");
     }
   }
 
   // --- SCRITTURA DATI (C.U.D.) ---
-  // Operazioni di mutazione del database.
-  // Utilizzano l'UUID della spesa come chiave primaria del documento.
-  // 
+  // Metodi per la persistenza delle modifiche sul database remoto.
+  // Utilizzano l'UUID della spesa come chiave del documento per garantire l'idempotenza.
 
-  // CREATE: Usa .set() per creare o sovrascrivere un documento con ID specifico
-  Future<bool> createExpense(ExpenseModel expenseModel) async {
+  // Salva una nuova spesa nel database.
+  // In caso di successo completa il Future, altrimenti lancia un'eccezione RepositoryFailure.
+  Future<void> createExpense(ExpenseModel expenseModel) async {
     try {
       await _collection.doc(expenseModel.uuid).set(expenseModel.toMap());
-      return true;
-    } catch (_) {
-      return false;
+    } on FirebaseException catch (e) {
+      throw RepositoryFailure("Impossibile salvare la spesa", code: e.code);
+    } catch (e) {
+      throw RepositoryFailure("Errore imprevisto nel salvataggio");
     }
   }
 
-  // UPDATE: Usa .update() per modificare i campi esistenti
-  Future<bool> updateExpense(ExpenseModel expenseModel) async {
+  // Aggiorna i dati di una spesa esistente sovrascrivendo i campi nel documento corrispondente.
+  Future<void> updateExpense(ExpenseModel expenseModel) async {
     try {
       await _collection.doc(expenseModel.uuid).update(expenseModel.toMap());
-      return true;
-    } catch (_) {
-      return false;
+    } on FirebaseException catch (e) {
+      throw RepositoryFailure("Impossibile aggiornare la spesa", code: e.code);
+    } catch (e) {
+      throw RepositoryFailure("Errore imprevisto nell'aggiornamento");
     }
   }
 
-  // DELETE: Rimuove fisicamente il documento dalla collezione
-  Future<bool> deleteExpense(ExpenseModel expenseModel) async {
+  // Rimuove permanentemente il documento della spesa dal database.
+  Future<void> deleteExpense(ExpenseModel expenseModel) async {
     try {
       await _collection.doc(expenseModel.uuid).delete();
-      return true;
-    } catch (_) {
-      return false;
+    } on FirebaseException catch (e) {
+      throw RepositoryFailure("Impossibile eliminare la spesa", code: e.code);
+    } catch (e) {
+      throw RepositoryFailure("Errore imprevisto nell'eliminazione");
     }
   }
 }

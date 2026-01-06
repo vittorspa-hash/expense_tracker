@@ -9,18 +9,18 @@ import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/components/shared/expense_tile.dart';
 
 /// FILE: home_content_list.dart
-/// DESCRIZIONE: Widget principale per il contenuto della Home Page.
-/// Gestisce la visualizzazione della lista delle spese utilizzando un approccio a "Slivers"
-/// per supportare header flottanti. Include la logica di ricerca locale,
-/// l'ordinamento, il pull-to-refresh e le interazioni sulle singole tile (swipe, selezione).
+/// DESCRIZIONE: Componente principale per la visualizzazione della lista spese.
+/// Gestisce il layout scrollabile (Slivers) includendo una barra di ricerca "sticky",
+/// il filtraggio locale dei dati, la logica di swipe-to-delete e l'interazione
+/// con il MultiSelectProvider per la selezione multipla.
 
 class HomeContentList extends StatelessWidget {
-  final bool isDark; 
-  final TextEditingController searchController; 
-  final String searchQuery; 
-  final String sortCriteria; 
-  final ValueChanged<String> onSortChanged; 
-  final Future<void> Function() onRefreshExpenses; 
+  final bool isDark;
+  final TextEditingController searchController;
+  final String searchQuery;
+  final String sortCriteria;
+  final ValueChanged<String> onSortChanged;
+  final Future<void> Function() onRefreshExpenses;
 
   const HomeContentList({
     super.key,
@@ -34,13 +34,11 @@ class HomeContentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // --- GESTIONE STATO E FILTRAGGIO ---
-    // Utilizza Consumer2 per accedere sia alle spese che allo stato della selezione multipla.
-    // Esegue un filtro locale sulla lista in base alla query di ricerca inserita.
-    // 
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
       builder: (context, multiSelect, expenseProvider, child) {
         
+        // --- FILTRO DATI LOCALE ---
+        // Filtra la lista proveniente dal provider in base alla query di ricerca corrente.
         final filteredExpenses = expenseProvider.expenses.where((expense) {
           final desc = expense.description?.toLowerCase() ?? "";
           return desc.contains(searchQuery.toLowerCase());
@@ -55,8 +53,8 @@ class HomeContentList extends StatelessWidget {
                 : AppColors.backgroundLight,
           ),
 
-          // --- PULL TO REFRESH ---
-          // Widget che avvolge la scroll view per permettere l'aggiornamento manuale dei dati.
+          // --- GESTIONE SCROLL & REFRESH ---
+          // Struttura a Sliver per gestire header persistenti e liste performanti.
           child: RefreshIndicator(
             color: AppColors.primary,
             onRefresh: onRefreshExpenses,
@@ -65,10 +63,8 @@ class HomeContentList extends StatelessWidget {
               top: false,
               child: CustomScrollView(
                 slivers: [
-                  // --- HEADER PERSISTENTE (RICERCA & ORDINAMENTO) ---
-                  // Un header che rimane visibile o si nasconde parzialmente durante lo scroll.
-                  // Contiene la barra di ricerca e il pulsante per il sorting.
-                  // 
+                  // --- HEADER DI RICERCA (STICKY) ---
+                  // Mantiene la barra di ricerca visibile durante lo scroll.
                   SliverPersistentHeader(
                     floating: true,
                     delegate: SearchHeaderDelegate(
@@ -89,7 +85,7 @@ class HomeContentList extends StatelessWidget {
 
                         child: Row(
                           children: [
-                            // Input Ricerca
+                            // Campo di input per la ricerca testuale
                             Expanded(
                               child: Container(
                                 height: 50.h,
@@ -139,7 +135,7 @@ class HomeContentList extends StatelessWidget {
 
                             SizedBox(width: 12.w),
 
-                            // Pulsante Ordinamento (Apre BottomSheet)
+                            // Pulsante per aprire il menu di ordinamento
                             GestureDetector(
                               onTap: () async {
                                 final selected =
@@ -204,9 +200,9 @@ class HomeContentList extends StatelessWidget {
                     ),
                   ),
 
-                  // --- LISTA SPESE (SLIVER) ---
-                  // Renderizza dinamicamente le card delle spese.
-                  // Utilizza SliverList per performance ottimizzate su lunghe liste.
+                  // --- LISTA SPESE ---
+                  // Genera la lista degli elementi filtrati. Ogni elemento è avvolto
+                  // in un Dismissible per permettere l'eliminazione rapida.
                   SliverPadding(
                     padding: EdgeInsets.symmetric(
                       horizontal: 16.w,
@@ -220,21 +216,19 @@ class HomeContentList extends StatelessWidget {
                         final expense = filteredExpenses[index];
                         final isSelected = multiSelect.isSelected(expense.uuid);
 
-                        // --- INTERAZIONE SWIPE-TO-DELETE ---
-                        // Gestisce l'eliminazione tramite trascinamento laterale.
-                        // Disabilitato se è attiva la modalità selezione multipla.
-                        // 
                         return Dismissible(
                           key: Key(expense.uuid),
-
                           direction: isSelectionMode
                               ? DismissDirection.none
                               : DismissDirection.endToStart,
 
-                          // Dialogo di conferma pre-eliminazione
+                          // --- LOGICA DISMISS ---
+                          // Gestisce il flusso di eliminazione: Conferma UI -> Chiamata Provider ->
+                          // Check Errori -> Feedback Visivo. Blocca l'animazione se c'è errore.
                           confirmDismiss: (_) async {
                             if (isSelectionMode) return false;
 
+                            // 1. Dialogo di conferma
                             final confirm = await DialogUtils.showConfirmDialog(
                               context,
                               title: "Conferma eliminazione",
@@ -243,10 +237,32 @@ class HomeContentList extends StatelessWidget {
                               cancelText: "Annulla",
                             );
 
-                            return confirm ?? false;
+                            if (confirm != true) return false;
+
+                            // 2. Operazione asincrona
+                            await expenseProvider.deleteExpenses([expense]);
+
+                            // 3. Verifica errori
+                            if (expenseProvider.errorMessage != null) {
+                              return false; 
+                            }
+
+                            // 4. Feedback successo (Snackbar)
+                            if (context.mounted) {
+                              SnackbarUtils.show(
+                                context: context,
+                                title: "Eliminata!",
+                                message: "Spesa eliminata con successo.",
+                                deletedItem: expense,
+                                onDelete: (_) {},
+                                onRestore: (exp) =>
+                                    expenseProvider.restoreExpenses([exp]),
+                              );
+                            }
+
+                            return true;
                           },
 
-                          // Background visivo durante lo swipe (Rosso + Icona)
                           background: Container(
                             margin: EdgeInsets.symmetric(vertical: 4.h),
                             decoration: BoxDecoration(
@@ -267,20 +283,8 @@ class HomeContentList extends StatelessWidget {
                             ),
                           ),
 
-                          // Esecuzione eliminazione e SnackBar per Undo
-                          onDismissed: (_) {
-                            SnackbarUtils.show(
-                              context: context,
-                              title: "Eliminata!",
-                              message: "Spesa eliminata con successo.",
-                              deletedItem: expense,
-                              onDelete: (exp) =>
-                                  expenseProvider.deleteExpenses([exp]),
-                              onRestore: (exp) => expenseProvider.restoreExpenses([exp]),
-                            );
-                          },
+                          onDismissed: (_) {},
 
-                          // Componente visuale della singola spesa
                           child: ExpenseTile(
                             expense,
                             isSelectionMode: isSelectionMode,
@@ -303,28 +307,23 @@ class HomeContentList extends StatelessWidget {
   }
 }
 
-// --- DELEGATE PER HEADER ---
-// Classe di utilità necessaria per SliverPersistentHeader.
-// Definisce le dimensioni minime e massime del componente flottante.
+// --- DELEGATE HEADER ---
+// Classe di utilità per gestire il rendering dell'header persistente all'interno della CustomScrollView.
 class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   const SearchHeaderDelegate({required this.child});
 
   @override
-  double get minExtent => 86.h; 
-
+  double get minExtent => 86.h;
   @override
-  double get maxExtent => 86.h; 
-
+  double get maxExtent => 86.h;
   @override
   Widget build(
     BuildContext context,
     double shrinkOffset,
     bool overlapsContent,
   ) => child;
-
   @override
-  bool shouldRebuild(covariant SearchHeaderDelegate oldDelegate) {
-    return oldDelegate.child != child; 
-  }
+  bool shouldRebuild(covariant SearchHeaderDelegate oldDelegate) =>
+      oldDelegate.child != child;
 }

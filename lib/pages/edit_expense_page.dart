@@ -1,18 +1,20 @@
+import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:expense_tracker/utils/snackbar_utils.dart'; // Importante per Undo
 import 'package:provider/provider.dart';
 
 /// FILE: edit_expense_page.dart
-/// DESCRIZIONE: Schermata per la modifica di una spesa esistente.
-/// Riceve il modello della spesa come parametro, pre-compila i campi del form `ExpenseEdit`
-/// e gestisce le operazioni di aggiornamento (Update) ed eliminazione (Delete) tramite il Provider.
+/// DESCRIZIONE: Pagina per la modifica di una spesa esistente.
+/// Riceve un modello di spesa tramite costruttore e popola il form `ExpenseEdit`.
+/// Gestisce la logica specifica di aggiornamento (Update) ed eliminazione (Delete),
+/// inclusa la gestione della UX per il feedback (SnackBar) durante la chiusura della pagina.
 
 class EditExpensePage extends StatefulWidget {
   static const route = "/expense/edit";
-
   final ExpenseModel expenseModel;
 
   const EditExpensePage(this.expenseModel, {super.key});
@@ -24,8 +26,8 @@ class EditExpensePage extends StatefulWidget {
 class _EditExpensePageState extends State<EditExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   
-  // --- CONFIGURAZIONE ANIMAZIONE ---
-  // Setup del mixin per l'effetto fade-in all'ingresso della pagina.
+  // --- ANIMAZIONI ---
+  // Configurazione del mixin per l'effetto di fade-in.
   @override
   TickerProvider get vsync => this;
 
@@ -44,35 +46,77 @@ class _EditExpensePageState extends State<EditExpensePage>
     super.dispose();
   }
 
-  // --- LOGICA DI AGGIORNAMENTO ---
-  // Callback invocata al salvataggio (Long Press).
-  // Chiama il metodo `editExpense` del Provider per aggiornare lo stato persistente
-  // e chiude la schermata corrente.
-  // 
-  void onSubmit({
+  // --- UPDATE (SALVATAGGIO) ---
+  // Esegue l'aggiornamento dei dati tramite Provider.
+  // In caso di errore mostra un avviso e mantiene l'utente nella pagina per correggere.
+  // In caso di successo, chiude la pagina.
+  Future<void> onSubmit({
     required double value,
     required String? description,
     required DateTime date,
-  }) {
-    context.read<ExpenseProvider>().editExpense(
+  }) async {
+    final provider = context.read<ExpenseProvider>();
+
+    await provider.editExpense(
       widget.expenseModel,
       value: value,
       description: description,
       date: date,
     );
 
+    if (!mounted) return;
+
+    // Check Errore
+    if (provider.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.errorMessage!), backgroundColor: AppColors.snackBar),
+      );
+      provider.clearError();
+      return;
+    }
+
     Navigator.pop(context);
   }
 
-  // --- BUILD UI & ELIMINAZIONE ---
-  // Costruisce l'interfaccia riutilizzando `ExpenseEdit`.
-  // 1. Popola i campi con i dati iniziali (`initialValue`, etc.).
-  // 2. Configura il FAB per l'eliminazione della spesa.
-  // 
+  // --- DELETE (ELIMINAZIONE) ---
+  // Gestisce l'eliminazione della spesa corrente.
+  // Poiché la pagina viene chiusa immediatamente dopo il successo, la SnackBar di conferma/undo
+  // viene invocata manualmente qui (nel contesto parent) invece che delegata al widget figlio.
+  Future<ExpenseModel?> onDelete() async {
+    final provider = context.read<ExpenseProvider>();
+    final modelToDelete = widget.expenseModel;
+
+    await provider.deleteExpenses([modelToDelete]);
+
+    if (!mounted) return null;
+
+    // Check Errore
+    if (provider.errorMessage != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.errorMessage!), backgroundColor: Colors.red),
+      );
+      return null; // Ritorna null per fermare ExpenseEdit
+    }
+
+    // SUCCESSO E UNDO
+    // Poiché stiamo per chiudere la pagina (pop), ExpenseEdit verrà smontato 
+    // e non potrà mostrare la sua SnackBar interna.
+    // La mostriamo noi manualmente qui prima di uscire.
+    SnackbarUtils.show(
+      context: context,
+      title: "Eliminata!",
+      message: "Spesa eliminata con successo.",
+      deletedItem: modelToDelete,
+      onDelete: (_) {}, // Già eliminata
+      onRestore: (exp) => provider.restoreExpenses([exp]),
+    );
+
+    Navigator.pop(context);
+    return null; // Ritorniamo null perché abbiamo già gestito tutto noi
+  }
+
   @override
   Widget build(BuildContext context) {
-    final expense = context.read<ExpenseProvider>();
-
     return buildWithFadeAnimation(
       ExpenseEdit(
         initialValue: widget.expenseModel.value,
@@ -80,14 +124,9 @@ class _EditExpensePageState extends State<EditExpensePage>
         initialDate: widget.expenseModel.createdOn,
 
         floatingActionButtonIcon: Icons.delete,
-        onFloatingActionButtonPressed: () {
-          // Elimina la spesa tramite store
-          expense.deleteExpenses([widget.expenseModel]);
-          Navigator.pop(context);
-
-          // Ritorna il modello al componente ExpenseEdit per permettere l'Undo nella snackbar
-          return widget.expenseModel;
-        },
+        
+        // Colleghiamo la nostra logica custom di delete
+        onFloatingActionButtonPressed: onDelete,
 
         onSubmit: onSubmit,
       ),
