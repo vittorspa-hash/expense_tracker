@@ -68,7 +68,7 @@ class _DaysPageState extends State<DaysPage>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: TextStyle(color: AppColors.textLight)),
-        backgroundColor: AppColors.snackBar, 
+        backgroundColor: AppColors.snackBar,
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
           label: 'OK',
@@ -90,7 +90,6 @@ class _DaysPageState extends State<DaysPage>
 
     return Consumer2<ExpenseProvider, MultiSelectProvider>(
       builder: (context, expenseProvider, multiSelect, child) {
-        
         // --- GESTIONE ERRORI ---
         // Ascolta cambiamenti nello stato degli errori del provider e notifica l'utente.
         // Pulisce l'errore subito dopo per evitare loop di visualizzazione.
@@ -119,7 +118,8 @@ class _DaysPageState extends State<DaysPage>
                   selectedCount: selectedCount,
                   totalCount: expensesList.length,
                   onCancelSelection: multiSelect.cancelSelection,
-                  onDeleteSelected: () => ExpenseActionHandler.handleDeleteSelected(context),
+                  onDeleteSelected: () =>
+                      ExpenseActionHandler.handleDeleteSelected(context),
                   onSelectAll: () => multiSelect.selectAll(expensesList),
                   onDeselectAll: multiSelect.deselectAll,
                 )
@@ -132,7 +132,9 @@ class _DaysPageState extends State<DaysPage>
 
           body: Container(
             decoration: BoxDecoration(
-              color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+              color: isDark
+                  ? AppColors.backgroundDark
+                  : AppColors.backgroundLight,
             ),
             child: SafeArea(
               child: _buildBody(
@@ -189,11 +191,14 @@ class _DaysPageState extends State<DaysPage>
           ),
 
           const ReportSectionHeader(title: "Tutte le spese"),
-          
+
           SizedBox(height: 12.h),
 
           Expanded(
             child: RefreshIndicator(
+              backgroundColor: isDark
+                  ? AppColors.backgroundDark
+                  : AppColors.backgroundLight,
               color: AppColors.primary,
               onRefresh: () async {
                 multiSelect.cancelSelection();
@@ -205,7 +210,9 @@ class _DaysPageState extends State<DaysPage>
                 separatorBuilder: (_, _) => SizedBox(height: 4.h),
                 itemBuilder: (context, index) {
                   final expense = expensesList[index];
-                  final isSelected = multiSelect.selectedIds.contains(expense.uuid);
+                  final isSelected = multiSelect.selectedIds.contains(
+                    expense.uuid,
+                  );
 
                   return Dismissible(
                     key: Key(expense.uuid),
@@ -219,7 +226,7 @@ class _DaysPageState extends State<DaysPage>
                     // Se l'eliminazione fallisce, l'elemento torna al suo posto.
                     confirmDismiss: (_) async {
                       if (isSelectionMode) return false;
-                      
+
                       // 1. Dialogo conferma
                       final confirm = await DialogUtils.showConfirmDialog(
                         context,
@@ -228,7 +235,7 @@ class _DaysPageState extends State<DaysPage>
                         confirmText: "Elimina",
                         cancelText: "Annulla",
                       );
-                      
+
                       if (confirm != true) return false;
 
                       // 2. Esecuzione DB
@@ -236,7 +243,7 @@ class _DaysPageState extends State<DaysPage>
 
                       // 3. Controllo Esito
                       if (expenseprovider.errorMessage != null) {
-                        return false; 
+                        return false;
                       }
 
                       // 4. Feedback Utente
@@ -246,12 +253,13 @@ class _DaysPageState extends State<DaysPage>
                           title: "Eliminata!",
                           message: "Spesa eliminata con successo.",
                           deletedItem: expense,
-                          onDelete: (_) {}, 
-                          onRestore: (exp) => expenseprovider.restoreExpenses([exp]),
+                          onDelete: (_) {},
+                          onRestore: (exp) =>
+                              expenseprovider.restoreExpenses([exp]),
                         );
                       }
 
-                      return true; 
+                      return true;
                     },
 
                     background: _buildDismissibleBackground(),

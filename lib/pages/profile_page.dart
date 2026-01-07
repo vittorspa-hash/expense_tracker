@@ -75,6 +75,9 @@ class _ProfilePageState extends State<ProfilePage>
       ),
 
       body: RefreshIndicator(
+        backgroundColor: isDark
+            ? AppColors.backgroundDark
+            : AppColors.backgroundLight,
         color: AppColors.primary,
         onRefresh: () async {
           try {

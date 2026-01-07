@@ -36,7 +36,6 @@ class HomeContentList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
       builder: (context, multiSelect, expenseProvider, child) {
-        
         // --- FILTRO DATI LOCALE ---
         // Filtra la lista proveniente dal provider in base alla query di ricerca corrente.
         final filteredExpenses = expenseProvider.expenses.where((expense) {
@@ -56,6 +55,9 @@ class HomeContentList extends StatelessWidget {
           // --- GESTIONE SCROLL & REFRESH ---
           // Struttura a Sliver per gestire header persistenti e liste performanti.
           child: RefreshIndicator(
+            backgroundColor: isDark
+                ? AppColors.backgroundDark
+                : AppColors.backgroundLight,
             color: AppColors.primary,
             onRefresh: onRefreshExpenses,
 
@@ -245,7 +247,7 @@ class HomeContentList extends StatelessWidget {
 
                             // 3. Verifica errori
                             if (expenseProvider.errorMessage != null) {
-                              return false; 
+                              return false;
                             }
 
                             // 4. Feedback successo (Snackbar)

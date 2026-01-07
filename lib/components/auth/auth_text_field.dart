@@ -124,10 +124,10 @@ class AuthTextField extends StatelessWidget {
 
         filled: true,
         fillColor: enabled
-            ? (isDark ? AppColors.borderDark.withValues(alpha: 0.7) : AppColors.borderLight.withValues(alpha: 0.7))
+            ? (isDark ? AppColors.borderDark.withValues(alpha: 0.5) : AppColors.borderLight.withValues(alpha: 0.5))
             : (isDark
-                ? AppColors.borderDark.withValues(alpha: 0.5)
-                : AppColors.borderLight.withValues(alpha: 0.5)),
+                ? AppColors.borderDark.withValues(alpha: 0.3)
+                : AppColors.borderLight.withValues(alpha: 0.3)),
 
         // Configurazione Bordi
         border: OutlineInputBorder(
