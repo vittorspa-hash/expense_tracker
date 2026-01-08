@@ -44,6 +44,7 @@ dependencies:
   # Notifiche
   flutter_local_notifications: ^19.5.0
   timezone: ^0.10.1
+  flutter_timezone: ^5.0.1
 
   # Lint
   flutter_lints: ^6.0.0

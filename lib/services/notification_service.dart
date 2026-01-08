@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'dart:io' show Platform;
@@ -31,7 +32,22 @@ class NotificationService {
   Future<void> initialize() async {
     // Setup Timezone (essenziale per zonedSchedule)
     tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Europe/Rome'));
+    
+    try {
+      // Usa flutter_timezone per ottenere il timezone IANA corretto dalle API native
+      // Questo restituisce sempre una stringa valida come "Europe/Rome" o "America/New_York"
+      final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+      final String timeZoneName = timezoneInfo.identifier;
+      
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+      debugPrint('✅ Fuso orario rilevato e impostato: $timeZoneName');
+      
+    } catch (e) {
+      // Questo catch scatta solo se il database timezone locale è corrotto 
+      // o se il device restituisce qualcosa di assurdo
+      debugPrint('⚠️ Errore rilevamento timezone: $e. Uso fallback.');
+      _setLocationByOffset();
+    }
 
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -73,6 +89,29 @@ class NotificationService {
     }
 
     await _createAndroidChannels();
+  }
+
+  // Metodo di fallback per impostare il timezone basandosi sull'offset UTC
+  // Usato solo come ultima risorsa in caso di errori critici
+  void _setLocationByOffset() {
+    final now = DateTime.now();
+    final offset = now.timeZoneOffset;
+    
+    // Trova un timezone che corrisponde all'offset corrente
+    final locations = tz.timeZoneDatabase.locations;
+    
+    for (final location in locations.values) {
+      final tzDateTime = tz.TZDateTime.now(location);
+      if (tzDateTime.timeZoneOffset == offset) {
+        tz.setLocalLocation(location);
+        debugPrint('✅ Fuso orario impostato tramite offset: ${location.name}');
+        return;
+      }
+    }
+    
+    // Ultimo fallback: usa UTC
+    tz.setLocalLocation(tz.getLocation('UTC'));
+    debugPrint('⚠️ Uso UTC come fallback finale');
   }
 
   // --- CANALI ANDROID ---
