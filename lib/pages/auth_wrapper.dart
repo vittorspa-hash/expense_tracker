@@ -41,8 +41,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
       stream: FirebaseAuth.instance.idTokenChanges(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
           );
         }
 

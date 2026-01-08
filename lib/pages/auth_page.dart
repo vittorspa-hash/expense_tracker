@@ -98,7 +98,7 @@ class _AuthPageState extends State<AuthPage>
                           ),
                         ),
                         child: Image.asset(
-                          "assets/icons/money.png",
+                          "assets/icons/money2.png",
                           width: 68.w,
                           height: 68.w,
                           fit: BoxFit.contain,
