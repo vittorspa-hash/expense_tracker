@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart'; 
+import 'package:expense_tracker/providers/currency_provider.dart'; 
 
 /// FILE: report_card_widget.dart
-/// DESCRIZIONE: Componente UI per la visualizzazione di riepilogo (Card Totale).
-/// Mostra un importo aggregato con un'icona descrittiva e un contatore opzionale (es. numero di transazioni).
-/// Utilizzato nelle pagine di report (Mensile/Annuale).
+/// DESCRIZIONE: Componente UI utilizzato nei report per mostrare un riepilogo.
+/// Visualizza un'icona, un'etichetta descrittiva e l'importo totale formattato
+/// dinamicamente in base alla valuta selezionata.
+/// Supporta opzionalmente un contatore di elementi sulla destra.
 
 class ReportTotalCard extends StatelessWidget {
   // --- PARAMETRI ---
-  // Configurazione del contenuto: etichetta, importo, icona
-  // e dati opzionali per il contatore laterale.
+  // Dati essenziali (label, importo, icona) e dati opzionali per il badge contatore.
   final String label; 
   final double totalAmount; 
   final IconData icon; 
@@ -30,10 +32,8 @@ class ReportTotalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // --- LAYOUT PRINCIPALE ---
-    // Container con ombra ed effetto elevazione.
-    // Organizza il contenuto in una riga orizzontale: Icona - Dati - Contatore.
-    // 
+    // --- STILE CARD ---
+    // Contenitore con ombreggiatura e bordi arrotondati, sensibile al tema.
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       padding: EdgeInsets.all(16.w),
@@ -51,7 +51,7 @@ class ReportTotalCard extends StatelessWidget {
       child: Row(
         children: [
           // --- ICONA ---
-          // Box quadrato con angoli arrotondati e colore secondario.
+          // Box quadrato con l'icona della categoria o del report.
           Container(
             padding: EdgeInsets.all(14.w),
             decoration: BoxDecoration(
@@ -69,8 +69,7 @@ class ReportTotalCard extends StatelessWidget {
 
           SizedBox(width: 16.w),
 
-          // --- DETTAGLI ---
-          // Colonna centrale espandibile per Etichetta e Valore Monetario.
+          // --- DETTAGLI & IMPORTO ---
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,18 +84,26 @@ class ReportTotalCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4.h),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Text(
-                    "€ ${totalAmount.toStringAsFixed(2)}",
-                    style: TextStyle(
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
+                
+                // --- FORMATTAZIONE VALUTA ---
+                // Utilizza il CurrencyProvider per formattare correttamente l'importo
+                // (simbolo e posizione) in base alle impostazioni globali.
+                Consumer<CurrencyProvider>(
+                  builder: (context, currencyProvider, child) {
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Text(
+                        currencyProvider.formatAmount(totalAmount),
+                        style: TextStyle(
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -105,7 +112,7 @@ class ReportTotalCard extends StatelessWidget {
           SizedBox(width: 16.w),
 
           // --- CONTATORE OPZIONALE ---
-          // Widget condizionale a destra per mostrare statistiche numeriche extra.
+          // Visualizza un badge con il numero di elementi solo se i dati sono forniti.
           if (itemCount != null && itemLabel != null)
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),

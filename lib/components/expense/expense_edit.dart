@@ -2,6 +2,7 @@ import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -12,22 +13,21 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: expense_edit.dart
-/// DESCRIZIONE: Schermata riutilizzabile per la creazione e la modifica di una spesa.
-/// Gestisce l'input dell'utente (importo, descrizione, data) e utilizza un'interazione 
-/// "Long Press" sullo sfondo per confermare il salvataggio. Gestisce anche l'eliminazione
-/// se configurata (tramite FAB).
+/// DESCRIZIONE: Schermata per la creazione e la modifica di una spesa.
+/// Gestisce l'input dell'importo (con formattazione valuta), descrizione e data.
+/// Implementa un meccanismo di salvataggio basato su "Long Press" sullo sfondo
+/// e la logica di eliminazione con undo tramite Snackbar.
 
 class ExpenseEdit extends StatefulWidget {
-  // --- CONFIGURAZIONE ---
-  // Parametri per prepopolare i campi (in caso di modifica) e callback
-  // per gestire le azioni di salvataggio e cancellazione delegate al genitore.
+  // --- PARAMETRI ---
+  // Valori iniziali (null in fase di creazione), icone e callback per le operazioni CRUD.
   final double? initialValue;
   final String? initialDescription;
   final DateTime? initialDate;
   final IconData? floatingActionButtonIcon;
-  
+
   final Future<ExpenseModel?> Function()? onFloatingActionButtonPressed;
-  
+
   final Future<void> Function({
     required double value,
     required String? description,
@@ -50,21 +50,21 @@ class ExpenseEdit extends StatefulWidget {
 }
 
 class _ExpenseEditState extends State<ExpenseEdit> {
-  // --- STATO UI ---
+  // Controller per i campi di testo e stato per feedback visivo al tocco (Long Press).
   final priceController = TextEditingController();
   final descriptionController = TextEditingController();
   bool isTappedDown = false;
   late DateTime selectedDate;
 
-  // --- INIZIALIZZAZIONE ---
-  // Imposta i valori iniziali e verifica se mostrare il tutorial per la gesture di salvataggio.
   @override
   void initState() {
     super.initState();
+    // Inizializzazione dei campi con valori esistenti o default.
     priceController.text = widget.initialValue?.toString() ?? "";
     descriptionController.text = widget.initialDescription ?? "";
     selectedDate = widget.initialDate ?? DateTime.now();
 
+    // Mostra il dialog di istruzioni per il salvataggio se necessario.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInstructionDialogIfNeeded();
     });
@@ -78,9 +78,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       backgroundColor: isDark
           ? AppColors.editPageBackgroundDark
           : AppColors.editPageBackgroundLight,
-      // L'InkWell copre tutto il body per rilevare la "Long Press" come azione di submit.
+      // --- GESTORE INTERAZIONE GLOBALE ---
+      // InkWell avvolge il corpo per rilevare il Long Press necessario al salvataggio.
+      // Gestisce il focus e il feedback visivo (cambio colore).
       body: InkWell(
-        onLongPress: onSubmit, 
+        onLongPress: onSubmit,
         onHighlightChanged: (highlighted) =>
             setState(() => isTappedDown = highlighted),
         splashColor: isDark
@@ -103,69 +105,98 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       ),
       floatingActionButton: widget.floatingActionButtonIcon == null
           ? null
-          : floatingActionButton(context, isDark), 
+          : floatingActionButton(context, isDark),
     );
   }
 
-  // --- WIDGET DI INPUT ---
-  
-  // Campo per l'inserimento dell'importo. Include formattatori per gestire virgole/punti
-  // e stili che reagiscono allo stato di "Tap" (pressione prolungata).
-  Widget inputPrice() => Padding(
-    padding: EdgeInsets.symmetric(horizontal: 24.w),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          "€",
-          style: TextStyle(
-            fontSize: 50.sp,
-            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(width: 20.w),
-        Flexible(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            child: IntrinsicWidth(
-              child: TextField(
-                controller: priceController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                cursorColor: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+  // --- INPUT PREZZO ---
+  // Widget che si adatta alla valuta selezionata (CurrencyProvider).
+  // Gestisce il simbolo valuta, i decimali e la formattazione del testo.
+  Widget inputPrice() {
+    return Consumer<CurrencyProvider>(
+      builder: (context, currencyProvider, child) {
+        final currency = currencyProvider.currentCurrency;
+
+        final String hintText = currency == Currency.jpy ? "0" : "0.00";
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                currencyProvider.currencySymbol,
                 style: TextStyle(
                   fontSize: 50.sp,
-                  color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+                  color: isTappedDown
+                      ? AppColors.textLight
+                      : AppColors.textTappedDown,
                   fontWeight: FontWeight.w600,
                 ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
-                  TextInputFormatter.withFunction((oldValue, newValue) {
-                    final text = newValue.text.replaceAll(',', '.');
-                    return newValue.copyWith(text: text, selection: newValue.selection);
-                  }),
-                ],
-                decoration: InputDecoration(
-                  hintText: "0.00",
-                  border: InputBorder.none,
-                  hintStyle: TextStyle(color: AppColors.textEditPage, fontSize: 50.sp),
+              ),
+          
+              SizedBox(width: 10.w),
+          
+              Flexible(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: IntrinsicWidth(
+                    child: TextField(
+                      controller: priceController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      cursorColor: isTappedDown
+                          ? AppColors.textLight
+                          : AppColors.textTappedDown,
+                      style: TextStyle(
+                        fontSize: 50.sp,
+                        color: isTappedDown
+                            ? AppColors.textLight
+                            : AppColors.textTappedDown,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          final text = newValue.text.replaceAll(',', '.');
+                          return newValue.copyWith(
+                            text: text,
+                            selection: newValue.selection,
+                          );
+                        }),
+                      ],
+                      decoration: InputDecoration(
+                        hintText: hintText,
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(
+                          color: AppColors.textEditPage,
+                          fontSize: 50.sp,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ),
-      ],
-    ),
-  );
+        );
+      },
+    );
+  }
 
+  // --- INPUT DESCRIZIONE ---
+  // Campo di testo semplice per aggiungere dettagli opzionali alla spesa.
   Widget inputDescription() => Padding(
     padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: TextField(
       keyboardType: TextInputType.text,
       maxLines: null,
       controller: descriptionController,
-      cursorColor: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+      cursorColor: isTappedDown
+          ? AppColors.textLight
+          : AppColors.textTappedDown,
       textAlign: TextAlign.center,
       textCapitalization: TextCapitalization.sentences,
       style: TextStyle(
@@ -181,6 +212,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     ),
   );
 
+  // --- INPUT DATA ---
+  // Visualizza la data selezionata e apre il DatePicker al tocco.
   Widget inputDate() {
     final formattedDate = DateFormat("d MMMM y", "it_IT").format(selectedDate);
     final displayDate = capitalizeMonth(formattedDate);
@@ -192,7 +225,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         children: [
           Icon(
             Icons.calendar_today,
-            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+            color: isTappedDown
+                ? AppColors.textLight
+                : AppColors.textTappedDown,
             size: 24.sp,
           ),
           SizedBox(width: 10.w),
@@ -200,7 +235,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
             displayDate,
             style: TextStyle(
               fontSize: 18.sp,
-              color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+              color: isTappedDown
+                  ? AppColors.textLight
+                  : AppColors.textTappedDown,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -209,9 +246,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- GESTIONE CANCELLAZIONE ---
-  // Floating Action Button opzionale per l'eliminazione della spesa.
-  // Esegue la logica in passaggi: Conferma -> DB -> Check Errori -> Feedback UI.
+  // --- AZIONE FLOTTANTE (ELIMINAZIONE) ---
+  // Pulsante per eliminare la spesa corrente.
+  // Include conferma via dialog e possibilità di ripristino via Snackbar.
   Widget floatingActionButton(BuildContext context, bool isDark) {
     final expenseProvider = context.read<ExpenseProvider>();
 
@@ -229,14 +266,12 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         );
 
         if (confirm == true && widget.onFloatingActionButtonPressed != null) {
-          
           final deletedExpense = await widget.onFloatingActionButtonPressed!();
 
           if (!context.mounted) return;
 
-          // Se il provider ha registrato un errore, interrompiamo il flusso UI (niente SnackBar verde).
           if (expenseProvider.errorMessage != null) {
-             return; 
+            return;
           }
 
           if (deletedExpense != null) {
@@ -245,10 +280,10 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               title: "Eliminata!",
               message: "Spesa eliminata con successo.",
               deletedItem: deletedExpense,
-              onDelete: (_) {}, 
+              onDelete: (_) {},
               onRestore: (exp) async {
-                 await expenseProvider.restoreExpenses([exp]);
-              }, 
+                await expenseProvider.restoreExpenses([exp]);
+              },
             );
           }
         }
@@ -257,10 +292,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- SALVATAGGIO DATI ---
-  // Funzione chiamata dalla gesture "Long Press".
-  // Valida l'input, invoca la callback del genitore e gestisce il feedback visivo
-  // in base al successo o fallimento (controllando lo stato del Provider).
+  // --- LOGICA DI SALVATAGGIO ---
+  // Valida l'input (importo > 0), invoca il callback di salvataggio
+  // e mostra feedback all'utente.
   Future<void> onSubmit() async {
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
     final description = descriptionController.text.trim();
@@ -297,7 +331,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- HELPER DATE & TUTORIAL ---
+  // --- UTILS & TUTORIAL ---
+  // Funzioni ausiliarie per la selezione della data, formattazione stringhe
+  // e visualizzazione del dialog istruzioni "Long Press".
   Future<void> _pickDate(BuildContext context) async {
     final DateTime? pickedDate = await DialogUtils.showDatePickerAdaptive(
       context,
@@ -324,8 +360,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     return "$day $month $year";
   }
 
-  // Mostra un dialog informativo per spiegare la gesture di salvataggio.
-  // Utilizza SharedPreferences per mostrare il messaggio solo la prima volta (per utente).
   Future<void> _showInstructionDialogIfNeeded() async {
     final prefs = await SharedPreferences.getInstance();
     final uid = FirebaseAuth.instance.currentUser?.uid ?? "guest";

@@ -1,10 +1,12 @@
 import 'package:expense_tracker/app.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
 import 'package:expense_tracker/services/auth_service.dart';
+import 'package:expense_tracker/services/currency_service.dart';
 import 'package:expense_tracker/services/expense_service.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:expense_tracker/services/profile_service.dart';
@@ -49,9 +51,10 @@ void main() async {
   );
   getIt.registerSingleton<NotificationService>(NotificationService());
   getIt.registerSingleton<ThemeService>(ThemeService());
+  getIt.registerSingleton<CurrencyService>(CurrencyService());
 
   // --- INIZIALIZZAZIONE SERVIZI ASINCRONI ---
-  // Setup di Notification e Theme che devono completarsi prima del rendering UI.
+  // Setup di Notification Theme e Currency che devono completarsi prima del rendering UI.
   final notificationProvider = NotificationProvider(
     notificationService: getIt<NotificationService>(),
   );
@@ -61,6 +64,11 @@ void main() async {
     themeService: getIt<ThemeService>(),
   );
   await themeProvider.initialize();
+
+  final currencyProvider = CurrencyProvider(
+    currencyService: getIt<CurrencyService>(),
+  );
+  await currencyProvider.loadCurrency();
 
   // --- AVVIO APPLICAZIONE ---
   // Configurazione responsive (ScreenUtil) e iniezione dei Provider globali.
@@ -75,6 +83,7 @@ void main() async {
             // Provider pre-inizializzati
             ChangeNotifierProvider.value(value: notificationProvider),
             ChangeNotifierProvider.value(value: themeProvider),
+            ChangeNotifierProvider.value(value: currencyProvider),
 
             // Provider dipendenti dai servizi GetIt
             ChangeNotifierProvider(

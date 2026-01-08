@@ -1,5 +1,6 @@
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/providers/profile_provider.dart'; 
+import 'package:expense_tracker/providers/profile_provider.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -9,8 +10,8 @@ import 'package:provider/provider.dart';
 /// FILE: home_header.dart
 /// DESCRIZIONE: Componente superiore della Home Page (Dashboard).
 /// Visualizza i totali delle spese (Oggi, Settimana, Mese, Anno) e l'avatar utente.
-/// Utilizza un [Consumer2] per aggiornarsi reattivamente sia ai cambiamenti
-/// delle spese (ExpenseProvider) che del profilo utente (ProfileProvider).
+/// Utilizza un [Consumer3] per aggiornarsi reattivamente ai cambiamenti
+/// delle spese (ExpenseProvider), del profilo utente (ProfileProvider) e della valuta (CurrencyProvider).
 
 class HomeHeader extends StatelessWidget {
   final Animation<double> fadeAnimation;
@@ -27,11 +28,12 @@ class HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // --- GESTIONE DATI MULTIPLA (CONSUMER) ---
-    // Ascolta simultaneamente ExpenseProvider (per i totali) e ProfileProvider (per l'avatar).
+    // Ascolta simultaneamente ExpenseProvider (per i totali), ProfileProvider (per l'avatar)
+    // e CurrencyProvider (per la formattazione degli importi).
     // Questo evita rebuild inutili dell'intera pagina se cambiano solo questi dati.
     // 
-    return Consumer2<ExpenseProvider, ProfileProvider>(
-      builder: (context, expenseProvider, profileProvider, child) {
+    return Consumer3<ExpenseProvider, ProfileProvider, CurrencyProvider>(
+      builder: (context, expenseProvider, profileProvider, currencyProvider, child) {
         // Recupero dati profilo per visualizzazione avatar
         final user = profileProvider.user;
         final localAvatar = profileProvider.localImage;
@@ -155,7 +157,7 @@ class HomeHeader extends StatelessWidget {
                     SizedBox(height: 20.h),
 
                     // --- INDICATORE TOTALE MENSILE ---
-                    // Focus principale della dashboard.
+                    // Focus principale della dashboard con formattazione dinamica della valuta.
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -175,7 +177,9 @@ class HomeHeader extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           child: Text(
-                            "€ ${expenseProvider.totalExpenseMonth.toStringAsFixed(2)}",
+                            currencyProvider.formatAmount(
+                              expenseProvider.totalExpenseMonth,
+                            ),
                             style: TextStyle(
                               fontSize: 35.sp,
                               color: isDark
@@ -199,6 +203,7 @@ class HomeHeader extends StatelessWidget {
                           child: HeaderExpenseState(
                             value: expenseProvider.totalExpenseToday,
                             label: "Oggi",
+                            currencyProvider: currencyProvider,
                           ),
                         ),
                         SizedBox(width: 10.w),
@@ -206,6 +211,7 @@ class HomeHeader extends StatelessWidget {
                           child: HeaderExpenseState(
                             value: expenseProvider.totalExpenseWeek,
                             label: "Settimana",
+                            currencyProvider: currencyProvider,
                           ),
                         ),
                         SizedBox(width: 10.w),
@@ -213,6 +219,7 @@ class HomeHeader extends StatelessWidget {
                           child: HeaderExpenseState(
                             value: expenseProvider.totalExpenseYear,
                             label: "Anno",
+                            currencyProvider: currencyProvider,
                           ),
                         ),
                       ],
@@ -230,14 +237,17 @@ class HomeHeader extends StatelessWidget {
 
 // --- WIDGET HELPER STATISTICHE ---
 // Card riutilizzabile per visualizzare una singola statistica (Valore + Etichetta).
+// Ora include il CurrencyProvider per formattare correttamente gli importi.
 class HeaderExpenseState extends StatelessWidget {
   final double value;
   final String label;
+  final CurrencyProvider currencyProvider;
 
   const HeaderExpenseState({
     super.key,
     required this.value,
     required this.label,
+    required this.currencyProvider,
   });
 
   @override
@@ -269,7 +279,7 @@ class HeaderExpenseState extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             child: Text(
-              "€ ${value.toStringAsFixed(2)}",
+              currencyProvider.formatAmount(value),
               style: TextStyle(
                 fontSize: 14.sp,
                 color: isDark ? AppColors.textDark : AppColors.textLight,

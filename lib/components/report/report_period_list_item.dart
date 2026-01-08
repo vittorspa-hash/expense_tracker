@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:provider/provider.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 
 /// FILE: report_period_list_item.dart
-/// DESCRIZIONE: Widget riutilizzabile per visualizzare i dettagli di un periodo
-/// (giorno o mese) nelle liste di reportistica.
-/// Include un badge visivo, titoli descrittivi, il totale monetario e la percentuale
-/// di incidenza rispetto al totale generale.
+/// DESCRIZIONE: Componente UI riutilizzabile per le liste dei report.
+/// Visualizza una riga contenente un badge (es. Mese/Giorno), titolo, sottotitolo,
+/// importo totale formattato secondo la valuta corrente e percentuale di incidenza.
 
 class ReportPeriodListItem extends StatelessWidget {
   // --- PARAMETRI ---
-  // Configurazione del contenuto visivo (testi), dati finanziari
-  // e gestione dell'interazione (tap).
+  // Dati da visualizzare nel badge, testi descrittivi, valori finanziari
+  // e callback per la navigazione al dettaglio.
   final String badgeText; 
   final String? badgeSubtext; 
   final String title; 
@@ -37,9 +38,9 @@ class ReportPeriodListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // --- CONTENITORE INTERATTIVO ---
-    // Gestisce l'effetto "InkWell" al tocco e definisce lo stile della card
-    // (Bordi, Ombre, Colore di sfondo).
+    // --- CARD INTERATTIVA ---
+    // InkWell fornisce l'effetto ripple al tocco.
+    // Il contenitore gestisce bordi, ombre e sfondo in base al tema.
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16.r),
@@ -60,13 +61,10 @@ class ReportPeriodListItem extends StatelessWidget {
             ),
           ],
         ),
-        // --- LAYOUT A RIGA ---
-        // Organizza gli elementi orizzontalmente: Badge -> Testi -> Totali -> Freccia.
-        // 
         child: Row(
           children: [
             // --- BADGE (SINISTRA) ---
-            // Box quadrato colorato che mostra il numero del giorno o mese.
+            // Visualizza l'indicatore principale (es. giorno o mese abbreviato).
             Container(
               width: 50.w,
               height: 50.h,
@@ -107,7 +105,7 @@ class ReportPeriodListItem extends StatelessWidget {
             SizedBox(width: 16.w),
 
             // --- INFO TESTUALI (CENTRO) ---
-            // Titolo e sottotitolo opzionale.
+            // Titolo del periodo e sottotitolo opzionale (es. range date).
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,8 +137,7 @@ class ReportPeriodListItem extends StatelessWidget {
             ),
 
             // --- DATI FINANZIARI (DESTRA) ---
-            // Importo totale e percentuale. Usa SingleChildScrollView per evitare
-            // overflow su importi molto grandi.
+            // Mostra l'importo formattato tramite CurrencyProvider e la percentuale.
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -150,14 +147,18 @@ class ReportPeriodListItem extends StatelessWidget {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    child: Text(
-                      "€ ${totalAmount.toStringAsFixed(2)}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14.sp,
-                        color: AppColors.primary,
-                        letterSpacing: -0.3,
-                      ),
+                    child: Consumer<CurrencyProvider>(
+                      builder: (context, currencyProvider, child) {
+                        return Text(
+                          currencyProvider.formatAmount(totalAmount),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14.sp,
+                            color: AppColors.primary,
+                            letterSpacing: -0.3,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -177,8 +178,7 @@ class ReportPeriodListItem extends StatelessWidget {
 
             SizedBox(width: 8.w),
 
-            // --- NAVIGAZIONE ---
-            // Icona Chevron indicativa.
+            // --- INDICATORE NAVIGAZIONE ---
             Icon(
               Icons.chevron_right_rounded,
               color: isDark ? AppColors.greyDark : AppColors.greyLight,

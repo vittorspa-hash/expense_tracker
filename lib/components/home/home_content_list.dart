@@ -145,6 +145,7 @@ class HomeContentList extends StatelessWidget {
                                     await DialogUtils.showSortSheet(
                                       context,
                                       isDark: isDark,
+                                      title: "Ordina spese",
                                       options: [
                                         {
                                           "title": "Data: più recente prima",

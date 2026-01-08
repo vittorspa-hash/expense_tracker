@@ -175,6 +175,7 @@ class DialogUtils {
     BuildContext context, {
     required bool isDark,
     required List<Map<String, String>> options,
+    required String title,
   }) async {
     if (!context.mounted) return null;
     const cancelLabel = 'Annulla';
@@ -183,7 +184,7 @@ class DialogUtils {
       return await showCupertinoModalPopup<String>(
         context: context,
         builder: (_) => CupertinoActionSheet(
-          title: DialogStyles.buildSheetTitle('Ordina spese'),
+          title: DialogStyles.buildSheetTitle(title),
           actions: options.map((opt) {
             return DialogStyles.buildSheetAction(
               context,
@@ -211,7 +212,7 @@ class DialogUtils {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(height: 22.h),
-            DialogStyles.buildSheetTitle('Ordina spese'),
+            DialogStyles.buildSheetTitle(title),
             const Divider(),
             ...options.map(
               (opt) => ListTile(

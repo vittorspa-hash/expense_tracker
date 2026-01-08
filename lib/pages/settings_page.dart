@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/providers/notification_provider.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/components/settings/settings_tile.dart';
@@ -12,10 +13,9 @@ import 'package:expense_tracker/components/settings/settings_section_header.dart
 
 /// FILE: settings_page.dart
 /// DESCRIZIONE: Schermata principale delle impostazioni.
-/// Permette all'utente di configurare:
-/// 1. L'aspetto dell'app (Tema Chiaro/Scuro).
-/// 2. Le notifiche locali (Promemoria giornaliero e Avviso limite budget).
-/// Utilizza Switch e Dialoghi adattivi per modificare lo stato dei Provider.
+/// Permette all'utente di configurare il tema (Chiaro/Scuro), la valuta principale
+/// e le notifiche (Promemoria giornalieri e avvisi di limite budget).
+/// Utilizza i provider per persistere le modifiche.
 
 class SettingsPage extends StatefulWidget {
   static const route = "/settings/page";
@@ -28,8 +28,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   
-  // --- INIZIALIZZAZIONE ---
-  // Setup delle animazioni di ingresso (Fade-in).
   @override
   TickerProvider get vsync => this;
 
@@ -45,13 +43,29 @@ class _SettingsPageState extends State<SettingsPage>
     super.dispose();
   }
 
-  // --- BUILD UI ---
-  // Costruzione della lista di opzioni divisa per sezioni (Aspetto, Notifiche).
-  // 
+  // --- HELPER UTILITY ---
+  // Restituisce l'icona Material appropriata in base all'enum della valuta.
+  IconData _getCurrencyIcon(Currency currency) {
+    switch (currency) {
+      case Currency.euro:
+        return Icons.euro_rounded;
+      case Currency.usd:
+        return Icons.attach_money_rounded;
+      case Currency.gbp:
+        return Icons.currency_pound_rounded;
+      case Currency.jpy:
+        return Icons.currency_yen_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final notificationProvider = Provider.of<NotificationProvider>(context);
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
+
+    // Determina l'icona della valuta corrente per visualizzarla nei tile o dialoghi.
+    final currentCurrencyIcon = _getCurrencyIcon(currencyProvider.currentCurrency);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -64,12 +78,13 @@ class _SettingsPageState extends State<SettingsPage>
         decoration: BoxDecoration(
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
+        // Applica l'animazione di fade-in alla lista delle opzioni.
         child: buildWithFadeAnimation(
           ListView(
             padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
             children: [
               // --- SEZIONE ASPETTO ---
-              // Gestione del cambio tema tramite ThemeProvider.
+              // Gestione del cambio tema (Light/Dark mode).
               const SettingsSectionHeader(
                 icon: Icons.palette_outlined,
                 title: "Aspetto",
@@ -98,9 +113,7 @@ class _SettingsPageState extends State<SettingsPage>
                       ? Icons.dark_mode_rounded
                       : Icons.light_mode_rounded,
                   title: "Tema scuro",
-                  subtitle: isDark
-                      ? "Attivato"
-                      : "Disattivato",
+                  subtitle: isDark ? "Attivato" : "Disattivato",
                   trailingWidget: Consumer<ThemeProvider>(
                     builder: (context, themeProvider, _) {
                       return Transform.scale(
@@ -119,11 +132,46 @@ class _SettingsPageState extends State<SettingsPage>
 
               SizedBox(height: 32.h),
 
+              // --- SEZIONE VALUTA ---
+              // Permette di selezionare la valuta globale dell'app.
+              const SettingsSectionHeader(
+                icon: Icons.currency_exchange_rounded,
+                title: "Valuta",
+              ),
+
+              SizedBox(height: 12.h),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.cardDark.withValues(alpha: 0.5)
+                      : AppColors.cardLight.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(20.r),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.shadow.withValues(
+                        alpha: isDark ? 0.3 : 0.08,
+                      ),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: SettingsTile(
+                  icon: Icons.payments_rounded,
+                  title: "Valuta predefinita",
+                  subtitle: "${currencyProvider.currencyName} (${currencyProvider.currencySymbol})",
+                  trailingIcon: Icons.chevron_right_rounded,
+                  onPressed: () {
+                    _selectCurrency(context, isDark, currencyProvider);
+                  },
+                ),
+              ),
+
+              SizedBox(height: 32.h),
+
               // --- SEZIONE NOTIFICHE ---
-              // Configurazione dei promemoria locali.
-              // Include logica condizionale per mostrare/nascondere le opzioni secondarie
-              // (es. orario o importo limite) solo se il toggle principale è attivo.
-              // 
+              // Gestisce i promemoria orari e gli avvisi di superamento budget.
               const SettingsSectionHeader(
                 icon: Icons.notifications_outlined,
                 title: "Notifiche",
@@ -149,7 +197,7 @@ class _SettingsPageState extends State<SettingsPage>
                 ),
                 child: Column(
                   children: [
-                    // Promemoria Giornaliero (Toggle)
+                    // Opzione 1: Promemoria giornaliero (Switch)
                     SettingsTile(
                       icon: Icons.alarm_rounded,
                       title: "Promemoria giornaliero",
@@ -168,26 +216,29 @@ class _SettingsPageState extends State<SettingsPage>
                       ),
                     ),
 
-                    // Selettore Orario (Visibile solo se attivo)
+                    // Opzione 1.1: Selettore orario (visibile solo se attivo)
                     if (notificationProvider.dailyReminderEnabled) ...[
                       _buildDivider(isDark),
                       SettingsTile(
                         icon: Icons.schedule_rounded,
                         title: "Orario promemoria",
-                        subtitle: notificationProvider.reminderTime.format(context),
+                        subtitle: notificationProvider.reminderTime.format(
+                          context,
+                        ),
                         trailingIcon: Icons.chevron_right_rounded,
-                        onPressed: () => _selectTime(context, notificationProvider),
+                        onPressed: () =>
+                            _selectTime(context, notificationProvider),
                       ),
                     ],
 
                     _buildDivider(isDark),
 
-                    // Avviso Limite Spesa (Toggle)
+                    // Opzione 2: Avviso limite spesa (Switch)
                     SettingsTile(
                       icon: Icons.warning_amber_rounded,
                       title: "Avviso limite spesa",
                       subtitle: notificationProvider.limitAlertEnabled
-                          ? "Attivo (€${notificationProvider.monthlyLimit.toStringAsFixed(0)}/mese)"
+                          ? "Attivo (${currencyProvider.formatAmount(notificationProvider.monthlyLimit)}/mese)"
                           : "Disattivato",
                       trailingWidget: Transform.scale(
                         scale: 0.9,
@@ -201,26 +252,28 @@ class _SettingsPageState extends State<SettingsPage>
                       ),
                     ),
 
-                    // Selettore Importo Limite (Visibile solo se attivo)
+                    // Opzione 2.1: Input limite mensile (visibile solo se attivo)
                     if (notificationProvider.limitAlertEnabled) ...[
                       _buildDivider(isDark),
                       SettingsTile(
-                        icon: Icons.euro_rounded,
+                        icon: currentCurrencyIcon, 
                         title: "Limite mensile",
-                        subtitle:
-                            "€${notificationProvider.monthlyLimit.toStringAsFixed(0)}",
+                        subtitle: currencyProvider.formatAmount(
+                          notificationProvider.monthlyLimit,
+                        ),
                         trailingIcon: Icons.chevron_right_rounded,
                         onPressed: () =>
-                            _selectLimit(context, notificationProvider),
+                            _selectLimit(context, notificationProvider, currentCurrencyIcon), 
                       ),
                     ],
                   ],
                 ),
               ),
+              
+               SizedBox(height: 24.h),
 
-              SizedBox(height: 24.h),
-
-              // Box Informativo
+              // --- BOX INFORMATIVO ---
+              // Messaggio statico per spiegare l'utilità delle notifiche all'utente.
               Container(
                 padding: EdgeInsets.all(16.w),
                 decoration: BoxDecoration(
@@ -261,8 +314,9 @@ class _SettingsPageState extends State<SettingsPage>
     );
   }
 
-  // --- HELPER SELETTORI ---
-  // Funzioni per aprire i dialoghi di scelta orario (TimePicker) e importo (InputDialog).
+  // --- DIALOGHI & INTERAZIONI ---
+  
+  // Apre il TimePicker nativo per scegliere l'orario del promemoria.
   Future<void> _selectTime(
     BuildContext context,
     NotificationProvider provider,
@@ -277,9 +331,12 @@ class _SettingsPageState extends State<SettingsPage>
     }
   }
 
+  // Apre un dialog di input per impostare il budget mensile.
+  // Utilizza l'icona della valuta corrente nel campo di testo.
   Future<void> _selectLimit(
     BuildContext context,
     NotificationProvider provider,
+    IconData currencyIcon, 
   ) async {
     final result = await DialogUtils.showInputDialogAdaptive(
       context,
@@ -288,7 +345,7 @@ class _SettingsPageState extends State<SettingsPage>
         {
           "label": "Limite mensile",
           "hintText": "Inserisci importo",
-          "prefixIcon": Icons.euro_rounded,
+          "prefixIcon": currencyIcon, 
           "keyboardType": TextInputType.number,
           "initialValue": provider.monthlyLimit.toStringAsFixed(0),
           "obscureText": false,
@@ -304,7 +361,31 @@ class _SettingsPageState extends State<SettingsPage>
     }
   }
 
-  // --- UTILS UI ---
+  // Apre un BottomSheet per selezionare la valuta tra quelle disponibili.
+  Future<void> _selectCurrency(
+    BuildContext context,
+    bool isDark,
+    CurrencyProvider currencyProvider,
+  ) async {
+    final result = await DialogUtils.showSortSheet(
+      context,
+      isDark: isDark,
+      title: "Seleziona valuta",
+      options: Currency.values.map((currency) {
+        return {
+          "title": "${currency.name} (${currency.symbol})",
+          "criteria": currency.code,
+        };
+      }).toList(),
+    );
+
+    if (result != null) {
+      final selectedCurrency = Currency.fromCode(result);
+      await currencyProvider.setCurrency(selectedCurrency);
+    }
+  }
+
+  // Widget helper per separare visivamente le voci della lista.
   Widget _buildDivider(bool isDark) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
