@@ -37,14 +37,14 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 ---
 
 ## ⚡ Screenshot
-**Login Page**  
-![Login Page](assets/screenshots/auth_page.png)
+**Auth Page**  
+![Auth Page](assets/screenshots/auth_page2.png)
 
 **Home Page**  
-![Home Page](assets/screenshots/home_page.png)
+![Home Page](assets/screenshots/home_page2.png)
 
 **Years Page**  
-![Years Page Graph](assets/screenshots/years_page.png)
+![Years Page Graph](assets/screenshots/years_page2.png)
 
 ---
 
