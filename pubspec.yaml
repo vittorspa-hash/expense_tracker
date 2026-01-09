@@ -61,6 +61,7 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter:
+  generate: true
   uses-material-design: true
 
   assets:

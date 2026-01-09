@@ -106,3 +106,6 @@ linux/flutter/ephemeral/
 .buildlog/
 .swiftpm/
 migrate_working_dir/
+
+# Ignora i file di traduzione generati
+lib/l10n/*.dart
