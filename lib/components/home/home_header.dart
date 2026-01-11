@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
@@ -37,6 +38,7 @@ class HomeHeader extends StatelessWidget {
         // Recupero dati profilo per visualizzazione avatar
         final user = profileProvider.user;
         final localAvatar = profileProvider.localImage;
+        final loc = AppLocalizations.of(context)!;
 
         return FadeTransition(
           opacity: fadeAnimation,
@@ -97,7 +99,7 @@ class HomeHeader extends StatelessWidget {
                                 ),
                                 SizedBox(width: 8.w),
                                 Text(
-                                  "RESOCONTO ANNUALE",
+                                  loc.annualReport,
                                   style: TextStyle(
                                     fontSize: 10.sp,
                                     color: isDark
@@ -162,7 +164,7 @@ class HomeHeader extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "QUESTO MESE",
+                          loc.thisMonth,
                           style: TextStyle(
                             fontSize: 12.sp,
                             color: isDark
@@ -202,7 +204,7 @@ class HomeHeader extends StatelessWidget {
                         Expanded(
                           child: HeaderExpenseState(
                             value: expenseProvider.totalExpenseToday,
-                            label: "Oggi",
+                            label: loc.today,
                             currencyProvider: currencyProvider,
                           ),
                         ),
@@ -210,7 +212,7 @@ class HomeHeader extends StatelessWidget {
                         Expanded(
                           child: HeaderExpenseState(
                             value: expenseProvider.totalExpenseWeek,
-                            label: "Settimana",
+                            label: loc.week,
                             currencyProvider: currencyProvider,
                           ),
                         ),
@@ -218,7 +220,7 @@ class HomeHeader extends StatelessWidget {
                         Expanded(
                           child: HeaderExpenseState(
                             value: expenseProvider.totalExpenseYear,
-                            label: "Anno",
+                            label: loc.year,
                             currencyProvider: currencyProvider,
                           ),
                         ),

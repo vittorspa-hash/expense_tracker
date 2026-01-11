@@ -1,5 +1,6 @@
 import 'package:expense_tracker/components/auth/login_form.dart';
 import 'package:expense_tracker/components/auth/register_form.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -51,6 +52,7 @@ class _AuthPageState extends State<AuthPage>
     // Configurazione dello scaffold con background dinamico (Light/Dark)
     // e struttura principale della pagina.
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       body: Container(
@@ -108,7 +110,7 @@ class _AuthPageState extends State<AuthPage>
                       SizedBox(height: 16.h),
 
                       Text(
-                        "Expense Tracker",
+                        loc.authAppTitle,
                         style: TextStyle(
                           color: AppColors.textLight,
                           fontSize: 26.sp,
@@ -120,7 +122,7 @@ class _AuthPageState extends State<AuthPage>
                       SizedBox(height: 8.h),
 
                       Text(
-                        "Gestisci le tue spese in modo semplice",
+                        loc.authAppSubtitle,
                         style: TextStyle(
                           color: AppColors.textLight.withValues(alpha: 0.9),
                           fontSize: 14.sp,
@@ -188,7 +190,7 @@ class _AuthPageState extends State<AuthPage>
                           children: [
                             Icon(FontAwesomeIcons.rightToBracket, size: 15.sp),
                             SizedBox(width: 8.w),
-                            const Text("Accedi"),
+                            Text(loc.loginTab),
                           ],
                         ),
                       ),
@@ -198,7 +200,7 @@ class _AuthPageState extends State<AuthPage>
                           children: [
                             Icon(FontAwesomeIcons.userPlus, size: 15.sp),
                             SizedBox(width: 8.w),
-                            const Text("Registrati"),
+                            Text(loc.registerTab),
                           ],
                         ),
                       ),

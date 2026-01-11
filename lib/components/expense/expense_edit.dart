@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/models/expense_model.dart';
@@ -205,7 +206,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
-        hintText: "Descrizione (opzionale)",
+        hintText: AppLocalizations.of(context)!.descriptionHint,
         border: InputBorder.none,
         hintStyle: TextStyle(color: AppColors.textEditPage, fontSize: 18.sp),
       ),
@@ -215,7 +216,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   // --- INPUT DATA ---
   // Visualizza la data selezionata e apre il DatePicker al tocco.
   Widget inputDate() {
-    final formattedDate = DateFormat("d MMMM y", "it_IT").format(selectedDate);
+    final locale = Localizations.localeOf(context).toString();
+    final formattedDate = DateFormat("d MMMM y", locale).format(selectedDate);
     final displayDate = capitalizeMonth(formattedDate);
 
     return GestureDetector(
@@ -251,6 +253,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   // Include conferma via dialog e possibilità di ripristino via Snackbar.
   Widget floatingActionButton(BuildContext context, bool isDark) {
     final expenseProvider = context.read<ExpenseProvider>();
+    final loc = AppLocalizations.of(context)!;
 
     return FloatingActionButton(
       heroTag: null,
@@ -259,10 +262,10 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       onPressed: () async {
         final confirm = await DialogUtils.showConfirmDialog(
           context,
-          title: "Conferma eliminazione",
-          content: "Vuoi eliminare la spesa selezionata?",
-          confirmText: "Elimina",
-          cancelText: "Annulla",
+          title: loc.deleteConfirmTitle,
+          content: loc.deleteConfirmMessageSwipe,
+          confirmText: loc.delete,
+          cancelText: loc.cancel,
         );
 
         if (confirm == true && widget.onFloatingActionButtonPressed != null) {
@@ -277,8 +280,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           if (deletedExpense != null) {
             SnackbarUtils.show(
               context: context,
-              title: "Eliminata!",
-              message: "Spesa eliminata con successo.",
+              title: loc.deletedTitleSingle,
+              message: loc.deleteSuccessMessageSwipe,
               deletedItem: deletedExpense,
               onDelete: (_) {},
               onRestore: (exp) async {
@@ -296,14 +299,15 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   // Valida l'input (importo > 0), invoca il callback di salvataggio
   // e mostra feedback all'utente.
   Future<void> onSubmit() async {
+    final loc = AppLocalizations.of(context)!;
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
     final description = descriptionController.text.trim();
 
     if (value == 0) {
       SnackbarUtils.show(
         context: context,
-        title: "Nope!",
-        message: "Non puoi creare una spesa con un valore uguale a 0.",
+        title: loc.errorTitle,
+        message: loc.zeroValueError,
       );
       return;
     }
@@ -324,10 +328,10 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
     SnackbarUtils.show(
       context: context,
-      title: widget.initialValue == null ? "Creata!" : "Modificata!",
+      title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
       message: widget.initialValue == null
-          ? "Spesa creata con successo."
-          : "Spesa modificata con successo.",
+          ? loc.expenseCreated
+          : loc.expenseEdited,
     );
   }
 
@@ -366,11 +370,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     final shouldShow = prefs.getBool('showExpenseEditHint_$uid') ?? true;
 
     if (shouldShow && mounted) {
+      final loc = AppLocalizations.of(context)!;
       final dontShowAgain = await DialogUtils.showInstructionDialog(
         context,
-        title: "Creazione o modifica di una spesa",
-        message:
-            "Per confermare la creazione o la modifica di una spesa, tieni premuto sullo schermo.",
+        title: loc.expenseInstructionTitle,
+        message: loc.expenseInstructionMessage,
       );
 
       if (dontShowAgain) {

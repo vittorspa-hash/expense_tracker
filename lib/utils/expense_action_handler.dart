@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
@@ -19,17 +20,17 @@ class ExpenseActionHandler {
     final multiSelect = context.read<MultiSelectProvider>();
     final expenseProvider = context.read<ExpenseProvider>();
     final count = multiSelect.selectedCount;
+    final loc = AppLocalizations.of(context)!;
 
     if (count == 0) return;
 
     // 1. Chiede conferma all'utente prima di procedere con l'azione distruttiva.
     final confirm = await DialogUtils.showConfirmDialog(
       context,
-      title: "Eliminazione ${count == 1 ? 'singola' : 'multipla'}",
-      content:
-          "Vuoi eliminare $count ${count == 1 ? 'spesa selezionata' : 'spese selezionate'}?",
-      confirmText: "Elimina",
-      cancelText: "Annulla",
+      title: count == 1 ? loc.deleteDialogTitleSingle : loc.deleteDialogTitleMultiple,
+      content: loc.deleteConfirmMessage(count),
+      confirmText: loc.delete,
+      cancelText: loc.cancel,
     );
 
     if (confirm != true) return;
@@ -59,9 +60,8 @@ class ExpenseActionHandler {
     // Se non ci sono errori, mostra una notifica di successo con l'opzione per annullare.
     SnackbarUtils.show(
       context: context,
-      title: count == 1 ? "Eliminata!" : "Eliminate!",
-      message:
-          "$count ${count == 1 ? 'spesa eliminata' : 'spese eliminate'} con successo.",
+      title: count == 1 ? loc.deletedTitleSingle : loc.deletedTitleMultiple,
+      message: loc.deleteSuccessMessage(count),
       deletedItem: expensesToDelete,
       onDelete: (_) {},
       onRestore: (_) async {

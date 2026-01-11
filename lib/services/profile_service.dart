@@ -21,7 +21,7 @@ class ProfileService {
     final user = _auth.currentUser;
     if (user == null) {
       throw ProfileException(
-        "Nessun utente loggato: impossibile gestire l'immagine.",
+        "No user logged in: cannot handle image.",
       );
     }
 
@@ -49,7 +49,7 @@ class ProfileService {
 
       return savedImage;
     } catch (e) {
-      throw ProfileException("Errore durante il salvataggio immagine: $e");
+      throw ProfileException("Error saving image: $e");
     }
   }
 
@@ -60,7 +60,7 @@ class ProfileService {
         await file.delete();
       }
     } catch (e) {
-      throw ProfileException("Errore rimozione immagine: $e");
+      throw ProfileException("Error removing image: $e");
     }
   }
 
@@ -80,7 +80,7 @@ class ProfileService {
       await _auth.currentUser?.updateDisplayName(newName);
       await reloadUser();
     } catch (e) {
-      throw ProfileException("Errore aggiornamento nome: $e");
+      throw ProfileException("Error updating name: $e");
     }
   }
 
@@ -92,7 +92,7 @@ class ProfileService {
     required String password,
   }) async {
     final user = _auth.currentUser;
-    if (user == null) throw ProfileException("Utente non trovato");
+    if (user == null) throw ProfileException("User not found");
 
     try {
       // 1. Re-autenticazione
@@ -106,7 +106,7 @@ class ProfileService {
       await user.verifyBeforeUpdateEmail(newEmail);
       await _auth.signOut();
     } on fb_auth.FirebaseAuthException catch (e) {
-      throw ProfileException("Errore cambio email: ${e.message}");
+      throw ProfileException("Error changing email: ${e.message}");
     }
   }
 
@@ -115,7 +115,7 @@ class ProfileService {
     required String newPassword,
   }) async {
     final user = _auth.currentUser;
-    if (user == null) throw ProfileException("Utente non trovato");
+    if (user == null) throw ProfileException("User not found");
 
     try {
       final cred = fb_auth.EmailAuthProvider.credential(
@@ -126,7 +126,7 @@ class ProfileService {
       await user.reauthenticateWithCredential(cred);
       await user.updatePassword(newPassword);
     } on fb_auth.FirebaseAuthException catch (e) {
-      throw ProfileException("Errore cambio password: ${e.message}");
+      throw ProfileException("Error changing password: ${e.message}");
     }
   }
 
@@ -136,7 +136,7 @@ class ProfileService {
     try {
       await _auth.currentUser?.delete();
     } catch (e) {
-      throw ProfileException("Errore eliminazione account: $e");
+      throw ProfileException("Error deleting account: $e");
     }
   }
 }

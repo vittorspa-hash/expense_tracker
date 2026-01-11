@@ -1,0 +1,231 @@
+{
+    "@@locale": "it",
+    "settingsTitle": "Impostazioni",
+    "appearance": "Aspetto",
+    "darkMode": "Tema scuro",
+    "activated": "Attivato",
+    "deactivated": "Disattivato",
+    "notifications": "Notifiche",
+    "dailyReminder": "Promemoria giornaliero",
+    "activeAt": "Attivo alle {time}",
+    "@activeAt": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "reminderTime": "Orario promemoria",
+    "spendingLimitAlert": "Avviso limite spesa",
+    "activeMonthlyLimit": "Attivo ({amount}/mese)",
+    "@activeMonthlyLimit": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyLimit": "Limite mensile",
+    "notificationsInfo": "Le notifiche ti aiuteranno a tenere traccia delle tue spese quotidiane e a rispettare il budget mensile",
+    "currency": "Valuta",
+    "defaultCurrency": "Valuta predefinita",
+    "language": "Lingua",
+    "defaultLanguage": "Lingua predefinita",
+    "setMonthlyLimitTitle": "Imposta limite mensile",
+    "insertAmountHint": "Inserisci importo",
+    "selectCurrencyTitle": "Seleziona valuta",
+    "selectLanguageTitle": "Seleziona lingua",
+    "languageNameIt": "Italiano (Italia)",
+    "languageNameEn": "English (US)",
+    "newExpense": "Nuova spesa",
+    "ok": "OK",
+    "deleteDialogTitleSingle": "Eliminazione singola",
+    "deleteDialogTitleMultiple": "Eliminazione multipla",
+    "deleteConfirmMessage": "{count, plural, =1{Vuoi eliminare 1 spesa selezionata?} other{Vuoi eliminare {count} spese selezionate?}}",
+    "@deleteConfirmMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "delete": "Elimina",
+    "cancel": "Annulla",
+    "deletedTitleSingle": "Eliminata!",
+    "deletedTitleMultiple": "Eliminate!",
+    "deleteSuccessMessage": "{count, plural, =1{1 spesa eliminata con successo.} other{{count} spese eliminate con successo.}}",
+    "@deleteSuccessMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "annualReport": "RESOCONTO ANNUALE",
+    "thisMonth": "QUESTO MESE",
+    "today": "Oggi",
+    "week": "Settimana",
+    "year": "Anno",
+    "searchHint": "Cerca per descrizione...",
+    "sortTitle": "Ordina spese",
+    "sortDateNewest": "Data: più recente prima",
+    "sortDateOldest": "Data: più vecchia prima",
+    "sortAmountHighest": "Importo: più alto prima",
+    "sortAmountLowest": "Importo: più basso prima",
+    "deleteConfirmMessageSwipe": "Vuoi eliminare la spesa selezionata?",
+    "deleteSuccessMessageSwipe": "Spesa eliminata con successo.",
+    "noDescription": "Nessuna descrizione",
+    "selectedCountLabel": "{count, plural, =1{1 selezionata} other{{count} selezionate}}",
+    "@selectedCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "deselectAll": "Deseleziona tutto",
+    "selectAll": "Seleziona tutto",
+    "deleteSelectedTooltip": "Elimina selezionate",
+    "descriptionHint": "Descrizione (opzionale)",
+    "deleteConfirmTitle": "Conferma eliminazione",
+    "errorTitle": "Nope!",
+    "zeroValueError": "Non puoi creare una spesa con un valore uguale a 0.",
+    "createdTitle": "Creata!",
+    "editedTitle": "Modificata!",
+    "expenseCreated": "Spesa creata con successo.",
+    "expenseEdited": "Spesa modificata con successo.",
+    "expenseInstructionTitle": "Creazione o modifica di una spesa",
+    "expenseInstructionMessage": "Per confermare la creazione o la modifica di una spesa, tieni premuto sullo schermo.",
+    "profileTitle": "Profilo",
+    "dataUpdated": "Dati aggiornati",
+    "refreshError": "Errore refresh: {error}",
+    "@refreshError": {
+        "placeholders": {
+            "error": { "type": "String" }
+        }
+    },
+    "profilePictureUpdated": "Immagine profilo aggiornata!",
+    "removePictureTitle": "Rimuovi immagine",
+    "removePictureMessage": "Sei sicuro di voler eliminare la foto profilo?",
+    "pictureRemoved": "Immagine profilo rimossa",
+    "nameLabel": "Nome",
+    "editNameTooltip": "Modifica nome",
+    "emailLabel": "Email",
+    "editEmailTooltip": "Modifica email",
+    "passwordLabel": "Password",
+    "editPasswordTooltip": "Modifica password",
+    "userIdLabel": "ID utente",
+    "copyIdTooltip": "Copia ID",
+    "idCopied": "ID copiato negli appunti",
+    "deleteAccountButton": "Elimina account",
+    "deleteAccountTitle": "Elimina account",
+    "deleteAccountMessage": "Sei sicuro di voler eliminare definitivamente il tuo account?",
+    "accountDeleted": "Account eliminato con successo",
+    "save": "Salva",
+    "newNameHint": "Nuovo nome",
+    "nameUpdated": "Nome aggiornato con successo",
+    "newEmailHint": "Nuova email",
+    "currentPasswordHint": "Password attuale",
+    "invalidData": "Inserisci dati validi",
+    "emailUpdateSent": "Conferma la nuova email inviata. Effettua l'accesso.",
+    "newPasswordHint": "Nuova password",
+    "confirmPasswordHint": "Conferma password",
+    "recoveryEmailSent": "Email di recupero inviata a {email}",
+    "@recoveryEmailSent": {
+        "placeholders": {
+            "email": { "type": "String" }
+        }
+    },
+    "passwordsDoNotMatch": "Le nuove password non coincidono",
+    "passwordUpdated": "Password aggiornata con successo",
+    "notAvailable": "Non disponibile",
+    "yearsPageTitle": "Resoconto Annuale",
+    "noExpensesTitle": "Nessuna spesa disponibile",
+    "noExpensesSubtitle": "Le spese che aggiungi appariranno qui",
+    "totalYearLabel": "Totale {year}",
+    "@totalYearLabel": {
+        "placeholders": {
+            "year": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyDetail": "Dettaglio mensile",
+    "noExpensesMonthTitle": "Nessuna spesa in questo mese",
+    "totalMonthLabel": "Totale {month}",
+    "@totalMonthLabel": {
+        "placeholders": {
+            "month": { "type": "String" }
+        }
+    },
+    "dayCountLabel": "{count, plural, =1{giorno} other{giorni}}",
+    "@dayCountLabel": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "dailyExpenses": "Spese giornaliere",
+    "noExpensesDayTitle": "Nessuna spesa in questo giorno",
+    "totalDayLabel": "Totale giornata",
+    "allExpenses": "Tutte le spese",
+    "expenseCountLabel": "{count, plural, =1{spesa} other{spese}}",
+    "@expenseCountLabel": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "confirm": "Conferma",
+    "dontShowAgain": "Non mostrare più",
+    "selectYear": "Seleziona anno",
+    "logout": "Logout",
+    "logoutConfirmTitle": "Conferma logout",
+    "logoutConfirmMessage": "Sei sicuro di voler uscire dall'account?",
+    "logoutError": "Errore logout: {error}",
+    "@logoutError": {
+        "placeholders": {
+            "error": { "type": "String" }
+        }
+    },
+    "close": "Chiudi",
+    "forgotPassword": "Password dimenticata?",
+    "accountFallback": "Account",
+    "appInitErrorTitle": "Ops! Impossibile avviare l'app.",
+    "appInitErrorMessage": "Controlla la tua connessione e riprova.",
+    "retry": "Riprova",
+    "authAppTitle": "Expense Tracker",
+    "authAppSubtitle": "Gestisci le tue spese in modo semplice",
+    "loginTab": "Accedi",
+    "registerTab": "Registrati",
+    "welcomeBack": "Bentornato!",
+    "signInToContinue": "Accedi al tuo account per continuare",
+    "emailHint": "Email",
+    "emailRequired": "Inserisci l'email",
+    "emailInvalid": "Email non valida",
+    "passwordHint": "Password",
+    "passwordRequired": "Inserisci la password",
+    "loginButton": "Accedi",
+    "emailNotVerifiedTitle": "Email non verificata",
+    "emailNotVerifiedMessage": "Devi confermare la tua email prima di accedere.",
+    "resendEmail": "Rinvia Email",
+    "verificationEmailSent": "Email di verifica inviata!",
+    "insertEmailForRecovery": "Inserisci la tua email per il recupero",
+    "createAccount": "Crea un account",
+    "registerToStart": "Registrati per iniziare a tracciare le spese",
+    "fullNameHint": "Nome completo",
+    "nameRequired": "Inserisci il tuo nome",
+    "passwordMinLength": "Minimo 6 caratteri",
+    "confirmPasswordRequired": "Conferma la password",
+    "registerButton": "Registrati",
+    "verifyEmailTitle": "Verifica Email",
+    "verifyEmailContent": "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
+    "notificationDailyTitle": "💰 Promemoria spese",
+    "notificationDailyBody": "Non dimenticare di inserire le tue spese di oggi!",
+    "notificationBudgetTitle": "⚠️ Limite budget superato!",
+    "notificationBudgetBody": "Hai speso {spent} su {limit} questo mese",
+    "@notificationBudgetBody": {
+        "placeholders": {
+            "spent": { "type": "String" },
+            "limit": { "type": "String" }
+        }
+    }
+}

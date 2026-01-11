@@ -30,11 +30,11 @@ class FirebaseRepository {
 
     } on FirebaseException catch (e) {
       throw RepositoryFailure(
-        "Errore Firestore durante il recupero: ${e.message}", 
+        "Firestore error during retrieval: ${e.message}", 
         code: e.code
       );
     } catch (e) {
-      throw RepositoryFailure("Errore generico nel recupero delle spese: $e");
+      throw RepositoryFailure("Generic error retrieving expenses: $e");
     }
   }
 
@@ -48,9 +48,9 @@ class FirebaseRepository {
     try {
       await _collection.doc(expenseModel.uuid).set(expenseModel.toMap());
     } on FirebaseException catch (e) {
-      throw RepositoryFailure("Impossibile salvare la spesa", code: e.code);
+      throw RepositoryFailure("Unable to save expense", code: e.code);
     } catch (e) {
-      throw RepositoryFailure("Errore imprevisto nel salvataggio");
+      throw RepositoryFailure("Unexpected error saving expense");
     }
   }
 
@@ -59,9 +59,9 @@ class FirebaseRepository {
     try {
       await _collection.doc(expenseModel.uuid).update(expenseModel.toMap());
     } on FirebaseException catch (e) {
-      throw RepositoryFailure("Impossibile aggiornare la spesa", code: e.code);
+      throw RepositoryFailure("Unable to update expense", code: e.code);
     } catch (e) {
-      throw RepositoryFailure("Errore imprevisto nell'aggiornamento");
+      throw RepositoryFailure("Unexpected error updating expense");
     }
   }
 
@@ -70,9 +70,9 @@ class FirebaseRepository {
     try {
       await _collection.doc(expenseModel.uuid).delete();
     } on FirebaseException catch (e) {
-      throw RepositoryFailure("Impossibile eliminare la spesa", code: e.code);
+      throw RepositoryFailure("Unable to delete expense", code: e.code);
     } catch (e) {
-      throw RepositoryFailure("Errore imprevisto nell'eliminazione");
+      throw RepositoryFailure("Unexpected error deleting expense");
     }
   }
 }

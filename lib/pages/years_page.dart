@@ -4,6 +4,7 @@ import 'package:expense_tracker/components/report/report_period_list_item.dart';
 import 'package:expense_tracker/components/report/report_section_header.dart';
 import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/pages/months_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -57,10 +58,11 @@ class _YearsPageState extends State<YearsPage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Resoconto Annuale",
+        title: loc.yearsPageTitle,
         isDark: isDark,
         icon: Icons.bar_chart_rounded,
       ),
@@ -88,9 +90,9 @@ class _YearsPageState extends State<YearsPage>
 
               // Stato Vuoto: Nessuna spesa registrata
               if (years.isEmpty) {
-                return const ReportEmptyState(
-                  title: "Nessuna spesa disponibile",
-                  subtitle: "Le spese che aggiungi appariranno qui",
+                return ReportEmptyState(
+                  title: loc.noExpensesTitle,
+                  subtitle: loc.noExpensesSubtitle,
                   icon: Icons.analytics_outlined,
                   useCircleBackground: false, 
                 );
@@ -199,17 +201,17 @@ class _YearsPageState extends State<YearsPage>
                       // Card con totale annuo e grafico a barre mensile.
                       //
                       ReportTotalCard(
-                        label: "Totale $selectedYear",
+                        label: loc.totalYearLabel(selectedYear!),
                         totalAmount: totalYear,
                         icon: Icons.bar_chart_rounded,
                       ),
 
-                      ReportBarChart(values: values, monthNames: ReportDateUtils.monthNames),
+                      ReportBarChart(values: values, monthNames: ReportDateUtils.getMonthNames(context)),
 
                       SizedBox(height: 12.h),
 
                       // Header Sezione Lista
-                      const ReportSectionHeader(title: "Dettaglio mensile"),
+                      ReportSectionHeader(title: loc.monthlyDetail),
 
                       SizedBox(height: 12.h),
 
@@ -223,7 +225,7 @@ class _YearsPageState extends State<YearsPage>
                           final total = values[index];
 
                           // Uso di ReportDateUtils per il nome del mese corrente
-                          final currentMonthName = ReportDateUtils.monthNames[index];
+                          final currentMonthName = ReportDateUtils.getMonthNames(context)[index];
 
                           return Padding(
                             padding: EdgeInsets.only(

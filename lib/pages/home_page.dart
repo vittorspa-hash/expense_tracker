@@ -1,6 +1,7 @@
 import 'package:expense_tracker/components/home/home_content_list.dart';
 import 'package:expense_tracker/components/home/home_header.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
@@ -93,6 +94,7 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
 
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
       builder: (context, multiSelect, expenseProvider, child) {
@@ -172,7 +174,7 @@ class _HomePageState extends State<HomePage>
                     onPressed: () =>
                         Navigator.pushNamed(context, NewExpensePage.route),
                     label: Text(
-                      "Nuova spesa",
+                      loc.newExpense,
                       style: TextStyle(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w600,
@@ -204,7 +206,7 @@ class _HomePageState extends State<HomePage>
         backgroundColor: AppColors.snackBar,
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
-          label: 'OK',
+          label: AppLocalizations.of(context)!.ok,
           textColor: AppColors.textLight,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();

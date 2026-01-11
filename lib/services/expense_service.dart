@@ -43,7 +43,7 @@ class ExpenseService {
     required DateTime date,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw RepositoryFailure("Utente non autenticato.");
+    if (user == null) throw RepositoryFailure("User not authenticated.");
 
     final expense = ExpenseModel(
       uuid: const Uuid().v4(),
@@ -62,7 +62,7 @@ class ExpenseService {
   // Assicura che l'ID utente sia corretto prima di salvare nuovamente il dato.
   Future<ExpenseModel> restoreExpense(ExpenseModel expenseModel) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) throw RepositoryFailure("Utente non autenticato.");
+    if (user == null) throw RepositoryFailure("User not authenticated.");
 
     if (expenseModel.userId != user.uid) {
       expenseModel.userId = user.uid;
@@ -85,7 +85,7 @@ class ExpenseService {
     final user = FirebaseAuth.instance.currentUser;
     
     if (user == null || expenseModel.userId != user.uid) {
-      throw RepositoryFailure("Non hai il permesso di modificare questa spesa.");
+      throw RepositoryFailure("You do not have permission to edit this expense.");
     }
 
     expenseModel.value = value;
@@ -100,7 +100,7 @@ class ExpenseService {
     final user = FirebaseAuth.instance.currentUser;
     
     if (user == null || expenseModel.userId != user.uid) {
-      throw RepositoryFailure("Non hai il permesso di eliminare questa spesa.");
+      throw RepositoryFailure("You do not have permission to delete this expense.");
     }
 
     await _firebaseRepository.deleteExpense(expenseModel);

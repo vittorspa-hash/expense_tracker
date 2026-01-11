@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/auth_page.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/repository_failure.dart';
@@ -87,6 +88,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             // Se il caricamento iniziale fallisce (es. server down), mostriamo una schermata
             // di errore bloccante con un pulsante per riprovare.
             if (initSnapshot.hasError) {
+              final loc = AppLocalizations.of(context)!;
               return Scaffold(
                 body: Center(
                   child: Padding(
@@ -101,7 +103,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                         ),
                         SizedBox(height: 16.h),
                         Text(
-                          "Ops! Impossibile avviare l'app.",
+                          loc.appInitErrorTitle,
                           style: TextStyle(
                             fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
@@ -112,7 +114,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                           (initSnapshot.error is RepositoryFailure)
                               ? (initSnapshot.error as RepositoryFailure)
                                     .message
-                              : "Controlla la tua connessione e riprova.",
+                              : loc.appInitErrorMessage,
                           textAlign: TextAlign.center,
                           style: TextStyle(color: AppColors.textDark2),
                         ),
@@ -126,7 +128,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                             });
                           },
                           icon: const Icon(Icons.refresh),
-                          label: const Text("Riprova"),
+                          label: Text(loc.retry),
                         ),
                       ],
                     ),

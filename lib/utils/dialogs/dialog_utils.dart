@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/profile_page.dart';
 import 'package:expense_tracker/pages/settings_page.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
@@ -33,12 +34,14 @@ class DialogUtils {
     required String content,
   }) async {
     if (!context.mounted) return;
+    final loc = AppLocalizations.of(context)!;
+    
     await _showGenericDialog(
       context: context,
       title: title,
       content: content,
       actions: (ctx, color) => [
-        DialogStyles.buildActionButton(ctx, "OK", color),
+        DialogStyles.buildActionButton(ctx, loc.ok, color),
       ],
     );
   }
@@ -47,11 +50,17 @@ class DialogUtils {
     BuildContext context, {
     required String title,
     required String content,
-    String confirmText = "Conferma",
-    String cancelText = "Annulla",
+    String? confirmText, // Reso nullable per gestire la localizzazione interna
+    String? cancelText,
   }) async {
     if (!context.mounted) return false;
-    final isDestructive = DialogStyles.isDestructiveAction(confirmText);
+    final loc = AppLocalizations.of(context)!;
+    
+    // Default localizzati
+    final effectiveConfirmText = confirmText ?? loc.confirm;
+    final effectiveCancelText = cancelText ?? loc.cancel;
+
+    final isDestructive = DialogStyles.isDestructiveAction(effectiveConfirmText);
     final textColor = DialogStyles.textColor(context);
     final confirmColor = isDestructive ? AppColors.delete : textColor;
 
@@ -60,8 +69,8 @@ class DialogUtils {
       title: title,
       content: content,
       actions: (ctx, _) => [
-        DialogStyles.buildActionButton(ctx, cancelText, textColor, false),
-        DialogStyles.buildActionButton(ctx, confirmText, confirmColor, true),
+        DialogStyles.buildActionButton(ctx, effectiveCancelText, textColor, false),
+        DialogStyles.buildActionButton(ctx, effectiveConfirmText, confirmColor, true),
       ],
     );
   }
@@ -72,12 +81,17 @@ class DialogUtils {
     BuildContext context, {
     required String title,
     required String message,
-    String confirmText = "OK",
-    String checkboxLabel = "Non mostrare più",
+    String? confirmText,
+    String? checkboxLabel,
   }) async {
     if (!context.mounted) return false;
+    final loc = AppLocalizations.of(context)!;
     final textColor = DialogStyles.textColor(context);
     bool dontShowAgain = false;
+
+    // Default localizzati
+    final effectiveConfirmText = confirmText ?? loc.ok;
+    final effectiveCheckboxLabel = checkboxLabel ?? loc.dontShowAgain;
 
     Widget buildContent(StateSetter setState) => Column(
       mainAxisSize: MainAxisSize.min,
@@ -90,7 +104,7 @@ class DialogUtils {
         SizedBox(height: 16.h),
         DialogCheckboxRow(
           value: dontShowAgain,
-          label: checkboxLabel,
+          label: effectiveCheckboxLabel,
           onChanged: (val) => setState(() => dontShowAgain = val),
         ),
       ],
@@ -110,7 +124,7 @@ class DialogUtils {
               ),
             ),
             actions: [
-              DialogStyles.buildActionButton(ctx, confirmText, textColor),
+              DialogStyles.buildActionButton(ctx, effectiveConfirmText, textColor),
             ],
           ),
         ),
@@ -127,7 +141,7 @@ class DialogUtils {
             ),
             content: buildContent(setState),
             actions: [
-              DialogStyles.buildActionButton(ctx, confirmText, textColor),
+              DialogStyles.buildActionButton(ctx, effectiveConfirmText, textColor),
             ],
           ),
         ),
@@ -142,16 +156,18 @@ class DialogUtils {
     BuildContext context, {
     required String title,
     required List<Map<String, dynamic>> fields,
-    String confirmText = "Salva",
-    String cancelText = "Annulla",
+    String? confirmText,
+    String? cancelText,
     VoidCallback? onForgotPassword,
   }) async {
     if (!context.mounted) return null;
+    final loc = AppLocalizations.of(context)!;
+
     final widget = InputDialogWidget(
       title: title,
       fields: fields,
-      confirmText: confirmText,
-      cancelText: cancelText,
+      confirmText: confirmText ?? loc.save,
+      cancelText: cancelText ?? loc.cancel,
       onForgotPassword: onForgotPassword,
     );
 
@@ -178,7 +194,8 @@ class DialogUtils {
     required String title,
   }) async {
     if (!context.mounted) return null;
-    const cancelLabel = 'Annulla';
+    final loc = AppLocalizations.of(context)!;
+    final cancelLabel = loc.cancel;
 
     if (DialogStyles.isIOS) {
       return await showCupertinoModalPopup<String>(
@@ -246,6 +263,7 @@ class DialogUtils {
   static Future<void> showProfileSheet(BuildContext context) async {
     if (!context.mounted) return;
     final isDark = DialogStyles.isDark(context);
+    final loc = AppLocalizations.of(context)!;
 
     // -- Logica di Navigazione e Logout interna --
     Future<void> handleNav(
@@ -271,9 +289,9 @@ class DialogUtils {
 
       final confirm = await showConfirmDialog(
         context,
-        title: "Conferma logout",
-        content: "Sei sicuro di voler uscire dall'account?",
-        confirmText: "Logout",
+        title: loc.logoutConfirmTitle,
+        content: loc.logoutConfirmMessage,
+        confirmText: loc.logout,
       );
 
       if (confirm == true && context.mounted) {
@@ -283,7 +301,7 @@ class DialogUtils {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text("Errore logout: $e"),
+                content: Text(loc.logoutError(e.toString())),
                 backgroundColor: AppColors.snackBar,
               ),
             );
@@ -306,19 +324,19 @@ class DialogUtils {
             actions: [
               DialogStyles.buildSheetAction(
                 context,
-                text: "Profilo",
+                text: loc.profileTitle,
                 isDark: isDark,
                 onPressed: () => handleNav(ProfilePage.route, reload),
               ),
               DialogStyles.buildSheetAction(
                 context,
-                text: "Impostazioni",
+                text: loc.settingsTitle,
                 isDark: isDark,
                 onPressed: () => handleNav(SettingsPage.route, null),
               ),
               DialogStyles.buildSheetAction(
                 context,
-                text: "Logout",
+                text: loc.logout,
                 isDark: isDark,
                 isDestructive: true,
                 onPressed: handleLogout,
@@ -326,7 +344,7 @@ class DialogUtils {
             ],
             cancelButton: DialogStyles.buildSheetAction(
               context,
-              text: "Chiudi",
+              text: loc.close,
               isDark: isDark,
               isCancel: true,
               onPressed: () => Navigator.pop(context),
@@ -345,17 +363,17 @@ class DialogUtils {
                   SizedBox(height: 20.h),
                   MaterialProfileTile(
                     icon: Icons.person,
-                    text: "Profilo",
+                    text: loc.profileTitle,
                     onTap: () => handleNav(ProfilePage.route, reload),
                   ),
                   MaterialProfileTile(
                     icon: Icons.settings,
-                    text: "Impostazioni",
+                    text: loc.settingsTitle,
                     onTap: () => handleNav(SettingsPage.route, null),
                   ),
                   MaterialProfileTile(
                     icon: Icons.logout,
-                    text: "Logout",
+                    text: loc.logout,
                     color: AppColors.delete,
                     onTap: handleLogout,
                   ),
@@ -554,6 +572,7 @@ class DialogUtils {
     if (!context.mounted) return null;
     final isDark = DialogStyles.isDark(context);
     final txtColor = DialogStyles.textColor(context);
+    final loc = AppLocalizations.of(context)!;
 
     Widget buildItem(String year) => Text(
       year,
@@ -568,7 +587,7 @@ class DialogUtils {
       return await showCupertinoModalPopup<String>(
         context: context,
         builder: (_) => CupertinoActionSheet(
-          title: DialogStyles.buildSheetTitle("Seleziona anno"),
+          title: DialogStyles.buildSheetTitle(loc.selectYear),
           actions: years
               .map(
                 (year) => CupertinoActionSheetAction(
@@ -579,7 +598,7 @@ class DialogUtils {
               .toList(),
           cancelButton: DialogStyles.buildSheetAction(
             context,
-            text: "Annulla",
+            text: loc.cancel,
             isDark: isDark,
             isCancel: true,
             onPressed: () => Navigator.pop(context),
@@ -602,7 +621,7 @@ class DialogUtils {
             children: [
               Padding(
                 padding: EdgeInsets.all(16.w),
-                child: DialogStyles.buildSheetTitle("Seleziona anno"),
+                child: DialogStyles.buildSheetTitle(loc.selectYear),
               ),
               Flexible(
                 child: ListView.builder(
@@ -618,7 +637,7 @@ class DialogUtils {
               ListTile(
                 title: Center(
                   child: Text(
-                    "Annulla",
+                    loc.cancel,
                     style: TextStyle(color: txtColor, fontSize: 15.sp),
                   ),
                 ),

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -135,6 +136,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
   }
 
   Widget _buildForgotPassword() {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.only(top: 8.h),
       child: Align(
@@ -146,7 +148,7 @@ class _InputDialogWidgetState extends State<InputDialogWidget> {
             minimumSize: Size(0, 30.h),
           ),
           child: Text(
-            "Password dimenticata?",
+            loc.forgotPassword,
             style: TextStyle(
               color: _textColor,
               fontSize: 13.sp,
@@ -272,6 +274,7 @@ class PickerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
       child: Row(
@@ -281,7 +284,7 @@ class PickerHeader extends StatelessWidget {
             padding: EdgeInsets.zero,
             onPressed: onCancel ?? () => Navigator.pop(context, null),
             child: Text(
-              "Annulla",
+              loc.cancel,
               style: TextStyle(color: textColor, fontSize: 14.sp),
             ),
           ),
@@ -289,7 +292,7 @@ class PickerHeader extends StatelessWidget {
             padding: EdgeInsets.zero,
             onPressed: onConfirm,
             child: Text(
-              "OK",
+              loc.ok,
               style: TextStyle(
                 color: textColor,
                 fontSize: 14.sp,
@@ -320,6 +323,8 @@ class ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final txtColor = DialogStyles.textColor(context);
+    final loc = AppLocalizations.of(context)!;
+
     return Column(
       children: [
         CircleAvatar(
@@ -334,7 +339,7 @@ class ProfileHeader extends StatelessWidget {
         ),
         SizedBox(height: DialogStyles.isIOS ? 10.h : 12.h),
         Text(
-          user?.displayName ?? "Account",
+          user?.displayName ?? loc.accountFallback,
           style: TextStyle(
             color: txtColor,
             fontWeight: FontWeight.bold,

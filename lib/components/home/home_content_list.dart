@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +35,8 @@ class HomeContentList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
       builder: (context, multiSelect, expenseProvider, child) {
         // --- FILTRO DATI LOCALE ---
@@ -111,7 +114,7 @@ class HomeContentList extends StatelessWidget {
                                   controller: searchController,
                                   style: TextStyle(fontSize: 14.sp),
                                   decoration: InputDecoration(
-                                    hintText: "Cerca per descrizione...",
+                                    hintText: loc.searchHint,
                                     hintStyle: TextStyle(
                                       fontSize: 14.sp,
                                       color: isDark
@@ -145,22 +148,22 @@ class HomeContentList extends StatelessWidget {
                                     await DialogUtils.showSortSheet(
                                       context,
                                       isDark: isDark,
-                                      title: "Ordina spese",
+                                      title: loc.sortTitle,
                                       options: [
                                         {
-                                          "title": "Data: più recente prima",
+                                          "title": loc.sortDateNewest,
                                           "criteria": "date_desc",
                                         },
                                         {
-                                          "title": "Data: più vecchia prima",
+                                          "title": loc.sortDateOldest,
                                           "criteria": "date_asc",
                                         },
                                         {
-                                          "title": "Importo: più alto prima",
+                                          "title": loc.sortAmountHighest,
                                           "criteria": "amount_desc",
                                         },
                                         {
-                                          "title": "Importo: più basso prima",
+                                          "title": loc.sortAmountLowest,
                                           "criteria": "amount_asc",
                                         },
                                       ],
@@ -235,10 +238,10 @@ class HomeContentList extends StatelessWidget {
                             // 1. Dialogo di conferma
                             final confirm = await DialogUtils.showConfirmDialog(
                               context,
-                              title: "Conferma eliminazione",
-                              content: "Vuoi eliminare la spesa selezionata?",
-                              confirmText: "Elimina",
-                              cancelText: "Annulla",
+                              title: loc.deleteDialogTitleSingle,
+                              content: loc.deleteConfirmMessageSwipe,
+                              confirmText: loc.delete,
+                              cancelText: loc.cancel,
                             );
 
                             if (confirm != true) return false;
@@ -255,8 +258,8 @@ class HomeContentList extends StatelessWidget {
                             if (context.mounted) {
                               SnackbarUtils.show(
                                 context: context,
-                                title: "Eliminata!",
-                                message: "Spesa eliminata con successo.",
+                                title: loc.deletedTitleSingle,
+                                message: loc.deleteSuccessMessageSwipe,
                                 deletedItem: expense,
                                 onDelete: (_) {},
                                 onRestore: (exp) =>

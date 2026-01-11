@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
@@ -35,6 +36,7 @@ class ProfileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
 
     // --- STRUTTURA LAYOUT ---
     // Riga orizzontale composta da:
@@ -89,7 +91,7 @@ class ProfileTile extends StatelessWidget {
                 ),
                 SizedBox(height: 4.h),
                 Text(
-                  value ?? "Non disponibile",
+                  value ?? loc.notAvailable,
                   style: TextStyle(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w500,

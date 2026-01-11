@@ -1,4 +1,5 @@
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/language_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -60,14 +61,14 @@ class _SettingsPageState extends State<SettingsPage>
   }
 
   // Helper per ottenere il nome leggibile della lingua dal codice.
-  String _getLanguageName(String code) {
+  String _getLanguageName(BuildContext context, String code) {
     switch (code) {
       case 'it':
-        return "Italiano (Italia)";
+        return AppLocalizations.of(context)!.languageNameIt;
       case 'en':
-        return "English (US)";
+        return AppLocalizations.of(context)!.languageNameEn;
       default:
-        return "Italiano (Italia)";
+        return AppLocalizations.of(context)!.languageNameIt;
     }
   }
 
@@ -77,6 +78,7 @@ class _SettingsPageState extends State<SettingsPage>
     final notificationProvider = Provider.of<NotificationProvider>(context);
     final currencyProvider = Provider.of<CurrencyProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
+    final loc = AppLocalizations.of(context)!;
 
     // Determina l'icona della valuta corrente per visualizzarla nei tile o dialoghi.
     final currentCurrencyIcon = _getCurrencyIcon(
@@ -85,7 +87,7 @@ class _SettingsPageState extends State<SettingsPage>
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Impostazioni",
+        title: loc.settingsTitle,
         icon: Icons.settings_rounded,
         isDark: isDark,
       ),
@@ -104,9 +106,9 @@ class _SettingsPageState extends State<SettingsPage>
               children: [
                 // --- SEZIONE ASPETTO ---
                 // Gestione del cambio tema (Light/Dark mode).
-                const SettingsSectionHeader(
+                SettingsSectionHeader(
                   icon: Icons.palette_outlined,
-                  title: "Aspetto",
+                  title: loc.appearance,
                 ),
 
                 SizedBox(height: 12.h),
@@ -116,8 +118,8 @@ class _SettingsPageState extends State<SettingsPage>
                     icon: isDark
                         ? Icons.dark_mode_rounded
                         : Icons.light_mode_rounded,
-                    title: "Tema scuro",
-                    subtitle: isDark ? "Attivato" : "Disattivato",
+                    title: loc.darkMode,
+                    subtitle: isDark ? loc.activated : loc.deactivated,
                     trailingWidget: Consumer<ThemeProvider>(
                       builder: (context, themeProvider, _) {
                         return Transform.scale(
@@ -138,9 +140,9 @@ class _SettingsPageState extends State<SettingsPage>
 
                 // --- SEZIONE NOTIFICHE ---
                 // Gestisce i promemoria orari e gli avvisi di superamento budget.
-                const SettingsSectionHeader(
+                SettingsSectionHeader(
                   icon: Icons.notifications_outlined,
-                  title: "Notifiche",
+                  title: loc.notifications,
                 ),
 
                 SizedBox(height: 12.h),
@@ -151,10 +153,11 @@ class _SettingsPageState extends State<SettingsPage>
                       // Opzione 1: Promemoria giornaliero (Switch)
                       SettingsTile(
                         icon: Icons.alarm_rounded,
-                        title: "Promemoria giornaliero",
+                        title: loc.dailyReminder,
                         subtitle: notificationProvider.dailyReminderEnabled
-                            ? "Attivo alle ${notificationProvider.reminderTime.format(context)}"
-                            : "Disattivato",
+                            ? loc.activeAt(
+                                notificationProvider.reminderTime.format(context))
+                            : loc.deactivated,
                         trailingWidget: Transform.scale(
                           scale: 0.9,
                           child: Switch(
@@ -172,7 +175,7 @@ class _SettingsPageState extends State<SettingsPage>
                         _buildDivider(isDark),
                         SettingsTile(
                           icon: Icons.schedule_rounded,
-                          title: "Orario promemoria",
+                          title: loc.reminderTime,
                           subtitle: notificationProvider.reminderTime.format(
                             context,
                           ),
@@ -187,10 +190,11 @@ class _SettingsPageState extends State<SettingsPage>
                       // Opzione 2: Avviso limite spesa (Switch)
                       SettingsTile(
                         icon: Icons.warning_amber_rounded,
-                        title: "Avviso limite spesa",
+                        title: loc.spendingLimitAlert,
                         subtitle: notificationProvider.limitAlertEnabled
-                            ? "Attivo (${currencyProvider.formatAmount(notificationProvider.monthlyLimit)}/mese)"
-                            : "Disattivato",
+                            ? loc.activeMonthlyLimit(currencyProvider
+                                .formatAmount(notificationProvider.monthlyLimit))
+                            : loc.deactivated,
                         trailingWidget: Transform.scale(
                           scale: 0.9,
                           child: Switch(
@@ -208,7 +212,7 @@ class _SettingsPageState extends State<SettingsPage>
                         _buildDivider(isDark),
                         SettingsTile(
                           icon: currentCurrencyIcon,
-                          title: "Limite mensile",
+                          title: loc.monthlyLimit,
                           subtitle: currencyProvider.formatAmount(
                             notificationProvider.monthlyLimit,
                           ),
@@ -249,7 +253,7 @@ class _SettingsPageState extends State<SettingsPage>
                       SizedBox(width: 12.w),
                       Expanded(
                         child: Text(
-                          "Le notifiche ti aiuteranno a tenere traccia delle tue spese quotidiane e a rispettare il budget mensile",
+                          loc.notificationsInfo,
                           style: TextStyle(
                             fontSize: 13.sp,
                             color: isDark
@@ -267,9 +271,9 @@ class _SettingsPageState extends State<SettingsPage>
 
                 // --- SEZIONE VALUTA ---
                 // Permette di selezionare la valuta globale dell'app.
-                const SettingsSectionHeader(
+                SettingsSectionHeader(
                   icon: Icons.currency_exchange_rounded,
-                  title: "Valuta",
+                  title: loc.currency,
                 ),
 
                 SizedBox(height: 12.h),
@@ -277,7 +281,7 @@ class _SettingsPageState extends State<SettingsPage>
                 SettingsContainer(
                   child: SettingsTile(
                     icon: Icons.payments_rounded,
-                    title: "Valuta predefinita",
+                    title: loc.defaultCurrency,
                     subtitle:
                         "${currencyProvider.currencyName} (${currencyProvider.currencySymbol})",
                     trailingIcon: Icons.chevron_right_rounded,
@@ -291,9 +295,9 @@ class _SettingsPageState extends State<SettingsPage>
 
                 // --- SEZIONE LINGUA ---
                 // Permette di selezionare la lingua globale dell'app.
-                const SettingsSectionHeader(
+                SettingsSectionHeader(
                   icon: Icons.language_rounded,
-                  title: "Lingua",
+                  title: loc.language,
                 ),
 
                 SizedBox(height: 12.h),
@@ -301,8 +305,9 @@ class _SettingsPageState extends State<SettingsPage>
                 SettingsContainer(
                   child: SettingsTile(
                     icon: Icons.translate_rounded,
-                    title: "Lingua predefinita",
+                    title: loc.defaultLanguage,
                     subtitle: _getLanguageName(
+                      context,
                       languageProvider.currentLocale.languageCode,
                     ),
                     trailingIcon: Icons.chevron_right_rounded,
@@ -343,13 +348,14 @@ class _SettingsPageState extends State<SettingsPage>
     NotificationProvider provider,
     IconData currencyIcon,
   ) async {
+    final loc = AppLocalizations.of(context)!;
     final result = await DialogUtils.showInputDialogAdaptive(
       context,
-      title: "Imposta limite mensile",
+      title: loc.setMonthlyLimitTitle,
       fields: [
         {
-          "label": "Limite mensile",
-          "hintText": "Inserisci importo",
+          "label": loc.monthlyLimit,
+          "hintText": loc.insertAmountHint,
           "prefixIcon": currencyIcon,
           "keyboardType": TextInputType.number,
           "initialValue": provider.monthlyLimit.toStringAsFixed(0),
@@ -372,10 +378,11 @@ class _SettingsPageState extends State<SettingsPage>
     bool isDark,
     CurrencyProvider currencyProvider,
   ) async {
+    final loc = AppLocalizations.of(context)!;
     final result = await DialogUtils.showSortSheet(
       context,
       isDark: isDark,
-      title: "Seleziona valuta",
+      title: loc.selectCurrencyTitle,
       options: Currency.values.map((currency) {
         return {
           "title": "${currency.name} (${currency.symbol})",
@@ -396,13 +403,14 @@ class _SettingsPageState extends State<SettingsPage>
     bool isDark,
     LanguageProvider languageProvider,
   ) async {
+    final loc = AppLocalizations.of(context)!;
     final result = await DialogUtils.showSortSheet(
       context,
       isDark: isDark,
-      title: "Seleziona lingua",
+      title: loc.selectLanguageTitle,
       options: [
-        {"title": "Italiano (Italia)", "criteria": "it"},
-        {"title": "English (US)", "criteria": "en"},
+        {"title": loc.languageNameIt, "criteria": "it"},
+        {"title": loc.languageNameEn, "criteria": "en"},
       ],
     );
 

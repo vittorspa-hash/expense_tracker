@@ -30,8 +30,8 @@ class AuthService {
       );
 
       var user = userCredential.user;
-      if (user == null){
-        throw AuthException("Errore sconosciuto nella creazione utente.");
+      if (user == null) {
+        throw AuthException("Unknown error creating user.");
       }
 
       // Aggiornamento profilo e ricarica stato utente
@@ -42,7 +42,8 @@ class AuthService {
       // Invio email di verifica gestito internamente
       await sendVerificationEmail(user!);
     } on FirebaseAuthException catch (e) {
-      throw AuthException(_errorMessageSignup(e));
+      // Utilizza il messaggio diretto di Firebase o un fallback generico in inglese
+      throw AuthException(e.message ?? "An error occurred during registration.");
     }
   }
 
@@ -57,12 +58,12 @@ class AuthService {
       );
 
       var user = userCredential.user;
-      if (user == null) throw AuthException("Utente non trovato.");
+      if (user == null) throw AuthException("User not found.");
 
       await user.reload();
       return _auth.currentUser!;
     } on FirebaseAuthException catch (e) {
-      throw AuthException(_errorMessageLogin(e));
+      throw AuthException(e.message ?? "An error occurred during login.");
     }
   }
 
@@ -72,7 +73,7 @@ class AuthService {
     try {
       await _auth.signOut();
     } on FirebaseAuthException catch (e) {
-      throw AuthException('Errore durante il logout: ${e.message ?? e.code}');
+      throw AuthException(e.message ?? 'Error during logout.');
     }
   }
 
@@ -83,18 +84,18 @@ class AuthService {
     final targetEmail = email?.trim() ?? _auth.currentUser?.email;
 
     if (targetEmail == null || targetEmail.isEmpty) {
-      throw AuthException("Inserisci l'email.");
+      throw AuthException("Please enter an email.");
     }
 
     _checkRateLimit(
-      "Attendi almeno 1 minuto prima di richiedere un'altra email di reset.",
+      "Please wait at least 1 minute before requesting another reset email.",
     );
 
     try {
       await _auth.sendPasswordResetEmail(email: targetEmail);
       _lastEmailSent = DateTime.now();
     } on FirebaseAuthException catch (e) {
-      throw AuthException(_errorMessageReset(e));
+      throw AuthException(e.message ?? "An error occurred during password reset.");
     }
   }
 
@@ -103,17 +104,17 @@ class AuthService {
   // Soggetto a rate-limit (60 secondi).
   Future<void> sendVerificationEmail([User? user]) async {
     final u = user ?? _auth.currentUser;
-    if (u == null) throw AuthException("Nessun utente loggato.");
+    if (u == null) throw AuthException("No user logged in.");
 
     _checkRateLimit(
-      "Attendi almeno 1 minuto prima di rinviare l'email di conferma.",
+      "Please wait at least 1 minute before resending the confirmation email.",
     );
 
     try {
       await u.sendEmailVerification();
       _lastEmailSent = DateTime.now();
-    } on FirebaseAuthException {
-      throw AuthException("Errore invio email di verifica.");
+    } on FirebaseAuthException catch (e) {
+      throw AuthException(e.message ?? "Error sending verification email.");
     }
   }
 
@@ -124,52 +125,6 @@ class AuthService {
         DateTime.now().difference(_lastEmailSent!) <
             const Duration(seconds: 60)) {
       throw AuthException(errorMessage);
-    }
-  }
-
-  // --- MAPPATURA ERRORI ---
-  // Metodi helper per tradurre i codici di errore Firebase in messaggi
-  // leggibili in italiano per l'utente finale.
-  String _errorMessageSignup(FirebaseAuthException e) {
-    switch (e.code) {
-      case "email-already-in-use":
-        return "Questa email è già registrata.";
-      case "invalid-email":
-        return "Email non valida.";
-      case "weak-password":
-        return "La password è troppo debole (almeno 6 caratteri).";
-      case "too-many-requests":
-        return "Hai fatto troppe richieste. Riprova più tardi.";
-      default:
-        return "Errore durante la registrazione.";
-    }
-  }
-
-  String _errorMessageLogin(FirebaseAuthException e) {
-    switch (e.code) {
-      case "user-not-found":
-        return "Utente non trovato.";
-      case "wrong-password":
-        return "Password errata.";
-      case "invalid-email":
-        return "Email non valida.";
-      case "too-many-requests":
-        return "Hai fatto troppe richieste. Riprova più tardi.";
-      default:
-        return "Errore durante il login.";
-    }
-  }
-
-  String _errorMessageReset(FirebaseAuthException e) {
-    switch (e.code) {
-      case "user-not-found":
-        return "Utente non trovato.";
-      case "invalid-email":
-        return "Email non valida.";
-      case "too-many-requests":
-        return "Hai fatto troppe richieste. Riprova più tardi.";
-      default:
-        return "Errore durante il reset della password.";
     }
   }
 }

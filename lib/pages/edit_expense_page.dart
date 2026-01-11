@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
@@ -85,6 +86,7 @@ class _EditExpensePageState extends State<EditExpensePage>
   Future<ExpenseModel?> onDelete() async {
     final provider = context.read<ExpenseProvider>();
     final modelToDelete = widget.expenseModel;
+    final loc = AppLocalizations.of(context)!;
 
     await provider.deleteExpenses([modelToDelete]);
 
@@ -93,7 +95,7 @@ class _EditExpensePageState extends State<EditExpensePage>
     // Check Errore
     if (provider.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.errorMessage!), backgroundColor: Colors.red),
+        SnackBar(content: Text(provider.errorMessage!), backgroundColor: AppColors.snackBar),
       );
       return null; // Ritorna null per fermare ExpenseEdit
     }
@@ -104,8 +106,8 @@ class _EditExpensePageState extends State<EditExpensePage>
     // La mostriamo noi manualmente qui prima di uscire.
     SnackbarUtils.show(
       context: context,
-      title: "Eliminata!",
-      message: "Spesa eliminata con successo.",
+      title: loc.deletedTitleSingle,
+      message: loc.deleteSuccessMessageSwipe,
       deletedItem: modelToDelete,
       onDelete: (_) {}, // Già eliminata
       onRestore: (exp) => provider.restoreExpenses([exp]),

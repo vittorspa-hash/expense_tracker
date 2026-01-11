@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
 import 'package:flutter/material.dart';
@@ -63,13 +64,13 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final provider = context.watch<ProfileProvider>();
     final user = provider.user;
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Profilo",
+        title: loc.profileTitle,
         icon: Icons.person_rounded,
         isDark: isDark,
       ),
@@ -82,9 +83,9 @@ class _ProfilePageState extends State<ProfilePage>
         onRefresh: () async {
           try {
             await provider.refreshUser();
-            if (mounted) _showSnack("Dati aggiornati");
+            if (mounted) _showSnack(loc.dataUpdated);
           } catch (e) {
-            if (mounted) _showSnack("Errore refresh: $e", isError: true);
+            if (mounted) _showSnack(loc.refreshError(e.toString()), isError: true);
           }
         },
 
@@ -147,9 +148,9 @@ class _ProfilePageState extends State<ProfilePage>
                       // Nome
                       ProfileTile(
                         icon: Icons.person_outline_rounded,
-                        title: "Nome",
+                        title: loc.nameLabel,
                         value: user?.displayName,
-                        tooltip: "Modifica nome",
+                        tooltip: loc.editNameTooltip,
                         onPressed: _handleChangeDisplayName,
                         isLoading: provider.isLoading,
                       ),
@@ -159,9 +160,9 @@ class _ProfilePageState extends State<ProfilePage>
                       // Email
                       ProfileTile(
                         icon: Icons.email_outlined,
-                        title: "Email",
+                        title: loc.emailLabel,
                         value: user?.email,
-                        tooltip: "Modifica email",
+                        tooltip: loc.editEmailTooltip,
                         onPressed: _handleChangeEmail,
                         isLoading: provider.isLoading,
                       ),
@@ -171,9 +172,9 @@ class _ProfilePageState extends State<ProfilePage>
                       // Password
                       ProfileTile(
                         icon: Icons.lock_outline_rounded,
-                        title: "Password",
+                        title: loc.passwordLabel,
                         value: "••••••••••",
-                        tooltip: "Modifica password",
+                        tooltip: loc.editPasswordTooltip,
                         onPressed: _handleChangePassword,
                         isLoading: provider.isLoading,
                       ),
@@ -183,13 +184,14 @@ class _ProfilePageState extends State<ProfilePage>
                       // ID Utente (Copiabile)
                       ProfileTile(
                         icon: Icons.badge_outlined,
-                        title: "ID utente",
+                        title: loc.userIdLabel,
                         value: user?.uid,
                         trailingIcon: Icons.content_copy_rounded,
-                        tooltip: "Copia ID",
+                        tooltip: loc.copyIdTooltip,
                         onPressed: () async {
+                          final loc = AppLocalizations.of(context)!;
                           await provider.copyToClipboard(user?.uid);
-                          _showSnack("ID copiato negli appunti");
+                          _showSnack(loc.idCopied);
                         },
                         isLoading: provider.isLoading,
                       ),
@@ -240,7 +242,7 @@ class _ProfilePageState extends State<ProfilePage>
                         SizedBox(width: 12.w),
                       ],
                       Text(
-                        "Elimina account",
+                        loc.deleteAccountButton,
                         style: TextStyle(
                           fontSize: 16.sp,
                           fontWeight: FontWeight.w600,
@@ -291,6 +293,7 @@ class _ProfilePageState extends State<ProfilePage>
   // 
   Future<void> _handleChangePicture() async {
     final provider = context.read<ProfileProvider>();
+    final loc = AppLocalizations.of(context)!;
 
     try {
       final pickedFile = await _picker.pickImage(
@@ -302,7 +305,7 @@ class _ProfilePageState extends State<ProfilePage>
       if (pickedFile == null) return;
 
       await provider.setProfileImage(File(pickedFile.path));
-      _showSnack("Immagine profilo aggiornata!");
+      _showSnack(loc.profilePictureUpdated);
     } catch (e) {
       _showSnack(e.toString(), isError: true);
     }
@@ -310,20 +313,21 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _handleRemovePicture() async {
     final provider = context.read<ProfileProvider>();
+    final loc = AppLocalizations.of(context)!;
 
     final confirm = await DialogUtils.showConfirmDialog(
       context,
-      title: "Rimuovi immagine",
-      content: "Sei sicuro di voler eliminare la foto profilo?",
-      confirmText: "Elimina",
-      cancelText: "Annulla",
+      title: loc.removePictureTitle,
+      content: loc.removePictureMessage,
+      confirmText: loc.delete,
+      cancelText: loc.cancel,
     );
 
     if (confirm != true) return;
 
     try {
       await provider.deleteProfileImage();
-      _showSnack("Immagine profilo rimossa");
+      _showSnack(loc.pictureRemoved);
     } catch (e) {
       _showSnack(e.toString(), isError: true);
     }
@@ -335,25 +339,26 @@ class _ProfilePageState extends State<ProfilePage>
   // 
   Future<void> _handleChangeDisplayName() async {
     final provider = context.read<ProfileProvider>();
+    final loc = AppLocalizations.of(context)!;
 
     final result = await DialogUtils.showInputDialogAdaptive(
       context,
-      title: "Modifica nome",
+      title: loc.editNameTooltip,
       fields: [
         {
-          "hintText": "Nuovo nome",
+          "hintText": loc.newNameHint,
           "initialValue": provider.user?.displayName ?? "",
           "obscureText": false,
         },
       ],
-      confirmText: "Salva",
-      cancelText: "Annulla",
+      confirmText: loc.save,
+      cancelText: loc.cancel,
     );
 
     if (result != null && result.isNotEmpty && result.first.isNotEmpty) {
       try {
         await provider.updateDisplayName(result.first);
-        _showSnack("Nome aggiornato con successo");
+        _showSnack(loc.nameUpdated);
       } catch (e) {
         _showSnack(e.toString(), isError: true);
       }
@@ -362,21 +367,22 @@ class _ProfilePageState extends State<ProfilePage>
 
   Future<void> _handleChangeEmail() async {
     final provider = context.read<ProfileProvider>();
+    final loc = AppLocalizations.of(context)!;
 
     final result = await DialogUtils.showInputDialogAdaptive(
       context,
-      title: "Modifica email",
+      title: loc.editEmailTooltip,
       fields: [
         {
-          "hintText": "Nuova email",
+          "hintText": loc.newEmailHint,
           "initialValue": provider.user?.email ?? "",
           "keyboardType": TextInputType.emailAddress,
           "obscureText": false,
         },
-        {"hintText": "Password attuale", "obscureText": true},
+        {"hintText": loc.currentPasswordHint, "obscureText": true},
       ],
-      confirmText: "Salva",
-      cancelText: "Annulla",
+      confirmText: loc.save,
+      cancelText: loc.cancel,
     );
 
     if (result == null || result.length < 2) return;
@@ -385,7 +391,7 @@ class _ProfilePageState extends State<ProfilePage>
     final password = result[1];
 
     if (newEmail.isEmpty || password.isEmpty) {
-      _showSnack("Inserisci dati validi", isError: true);
+      _showSnack(loc.invalidData, isError: true);
       return;
     }
 
@@ -393,7 +399,7 @@ class _ProfilePageState extends State<ProfilePage>
       await provider.updateEmail(newEmail: newEmail, password: password);
       if (!mounted) return;
 
-      _showSnack("Conferma la nuova email inviata. Effettua l'accesso.");
+      _showSnack(loc.emailUpdateSent);
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       _showSnack(e.toString(), isError: true);
@@ -403,23 +409,24 @@ class _ProfilePageState extends State<ProfilePage>
   Future<void> _handleChangePassword() async {
     final provider = context.read<ProfileProvider>();
     final userEmail = provider.user?.email;
+    final loc = AppLocalizations.of(context)!;
 
     final result = await DialogUtils.showInputDialogAdaptive(
       context,
-      title: "Modifica password",
+      title: loc.editPasswordTooltip,
       fields: [
-        {"hintText": "Password attuale", "obscureText": true},
-        {"hintText": "Nuova password", "obscureText": true},
-        {"hintText": "Conferma password", "obscureText": true},
+        {"hintText": loc.currentPasswordHint, "obscureText": true},
+        {"hintText": loc.newPasswordHint, "obscureText": true},
+        {"hintText": loc.confirmPasswordHint, "obscureText": true},
       ],
-      confirmText: "Salva",
-      cancelText: "Annulla",
+      confirmText: loc.save,
+      cancelText: loc.cancel,
       // Callback per AuthProvider
       onForgotPassword: () async {
         try {
           await context.read<AuthProvider>().resetPassword(email: userEmail);
           if (mounted) {
-            _showSnack("Email di recupero inviata a $userEmail");
+            _showSnack(loc.recoveryEmailSent(userEmail.toString()));
           }
         } catch (e) {
           if (mounted) {
@@ -436,7 +443,7 @@ class _ProfilePageState extends State<ProfilePage>
     final confirmPass = result[2].trim();
 
     if (newPass != confirmPass) {
-      _showSnack("Le nuove password non coincidono", isError: true);
+      _showSnack(loc.passwordsDoNotMatch, isError: true);
       return;
     }
 
@@ -445,7 +452,7 @@ class _ProfilePageState extends State<ProfilePage>
         currentPassword: currentPass,
         newPassword: newPass,
       );
-      _showSnack("Password aggiornata con successo");
+      _showSnack(loc.passwordUpdated);
     } catch (e) {
       _showSnack(e.toString(), isError: true);
     }
@@ -455,20 +462,21 @@ class _ProfilePageState extends State<ProfilePage>
   // Flusso critico per l'eliminazione definitiva dell'utente.
   Future<void> _handleDeleteAccount() async {
     final provider = context.read<ProfileProvider>();
+    final loc = AppLocalizations.of(context)!;
 
     final confirm = await DialogUtils.showConfirmDialog(
       context,
-      title: "Elimina account",
-      content: "Sei sicuro di voler eliminare definitivamente il tuo account?",
-      confirmText: "Elimina",
-      cancelText: "Annulla",
+      title: loc.deleteAccountTitle,
+      content: loc.deleteAccountMessage,
+      confirmText: loc.delete,
+      cancelText: loc.cancel,
     );
 
     if (confirm == true) {
       try {
         await provider.deleteAccount();
         if (!mounted) return;
-        _showSnack("Account eliminato con successo");
+        _showSnack(loc.accountDeleted);
         Navigator.of(context).popUntil((route) => route.isFirst);
       } catch (e) {
         _showSnack(e.toString(), isError: true);

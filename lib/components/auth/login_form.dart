@@ -1,5 +1,6 @@
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
@@ -51,9 +52,9 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final provider = context.watch<AuthProvider>();
     final isLoading = provider.isLoading;
+    final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -80,7 +81,7 @@ class _LoginFormState extends State<LoginForm> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Bentornato!",
+                    loc.welcomeBack,
                     style: TextStyle(
                       fontSize: 22.sp,
                       fontWeight: FontWeight.w800,
@@ -90,7 +91,7 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    "Accedi al tuo account per continuare",
+                    loc.signInToContinue,
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: isDark ? AppColors.greyDark : AppColors.greyLight,
@@ -105,16 +106,16 @@ class _LoginFormState extends State<LoginForm> {
                     controller: _emailController,
                     focusNode: _emailFocus,
                     nextFocus: _passwordFocus,
-                    hint: "Email",
+                    hint: loc.emailHint,
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
                     enabled: !isLoading,
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return "Inserisci l'email";
+                        return loc.emailRequired;
                       }
                       if (!value.contains("@")) {
-                        return "Email non valida";
+                        return loc.emailInvalid;
                       }
                       return null;
                     },
@@ -125,7 +126,7 @@ class _LoginFormState extends State<LoginForm> {
                   AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
-                    hint: "Password",
+                    hint: loc.passwordHint,
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure,
                     isLast: true,
@@ -133,7 +134,7 @@ class _LoginFormState extends State<LoginForm> {
                     onToggleObscure: () => setState(() => _obscure = !_obscure),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return "Inserisci la password";
+                        return loc.passwordRequired;
                       }
                       return null;
                     },
@@ -154,7 +155,7 @@ class _LoginFormState extends State<LoginForm> {
                         ),
                       ),
                       child: Text(
-                        "Password dimenticata?",
+                        loc.forgotPassword,
                         style: TextStyle(
                           color: isLoading
                               ? (isDark
@@ -188,7 +189,7 @@ class _LoginFormState extends State<LoginForm> {
             AuthButton(
               onPressed: isLoading ? null : _handleLogin,
               icon: isLoading ? null : FontAwesomeIcons.rightToBracket,
-              text: isLoading ? "" : "Accedi",
+              text: isLoading ? "" : loc.loginButton,
               child: isLoading
                   ? SizedBox(
                       height: 20.h,
@@ -229,6 +230,7 @@ class _LoginFormState extends State<LoginForm> {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<AuthProvider>();
+    final loc = AppLocalizations.of(context)!;
 
     try {
       // 1. Chiamata al Provider (Logica Pura)
@@ -244,10 +246,10 @@ class _LoginFormState extends State<LoginForm> {
         // 2a. Mostra Dialogo
         final confirm = await DialogUtils.showConfirmDialog(
           context,
-          title: "Email non verificata",
-          content: "Devi confermare la tua email prima di accedere.",
-          confirmText: "Rinvia Email",
-          cancelText: "Chiudi",
+          title: loc.emailNotVerifiedTitle,
+          content: loc.emailNotVerifiedMessage,
+          confirmText: loc.resendEmail,
+          cancelText: loc.close,
         );
 
         if (!mounted) return;
@@ -256,7 +258,7 @@ class _LoginFormState extends State<LoginForm> {
           // 2b. Invia Email Verifica (se richiesto)
           try {
             await provider.sendVerificationEmail(user);
-            _showSnack("Email di verifica inviata!");
+            _showSnack(loc.verificationEmailSent);
           } catch (e) {
             _showSnack(e.toString(), isError: true);
           }
@@ -279,15 +281,16 @@ class _LoginFormState extends State<LoginForm> {
   // --- RECUPERO PASSWORD ---
   // Gestisce l'invio dell'email di reset password tramite il Provider.
   Future<void> _handleResetPassword() async {
+    final loc = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      _showSnack("Inserisci la tua email per il recupero", isError: true);
+      _showSnack(loc.insertEmailForRecovery, isError: true);
       return;
     }
 
     try {
       await context.read<AuthProvider>().resetPassword(email: email);
-      _showSnack("Email di recupero inviata a $email");
+      _showSnack(loc.recoveryEmailSent(email));
     } catch (e) {
       _showSnack(e.toString(), isError: true);
     }

@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -44,6 +45,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+
     // --- COSTRUZIONE UI ---
     // Gestisce il cambio di stato visivo tra modalità normale e selezione.
     // 
@@ -74,7 +77,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       // Alterna tra il contatore degli elementi selezionati e il titolo/sottotitolo standard.
       title: isSelectionMode
           ? Text(
-              "$selectedCount ${selectedCount == 1 ? "selezionata" : "selezionate"}",
+              loc.selectedCountLabel(selectedCount),
               style: TextStyle(
                 color: isDark ? AppColors.textDark : AppColors.textLight,
                 fontWeight: FontWeight.w700,
@@ -101,8 +104,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: isDark ? AppColors.textDark : AppColors.textLight,
                 ),
                 tooltip: (totalCount != null && selectedCount == totalCount)
-                    ? "Deseleziona tutto"
-                    : "Seleziona tutto",
+                    ? loc.deselectAll
+                    : loc.selectAll,
                 onPressed: (totalCount != null && selectedCount == totalCount)
                     ? onDeselectAll
                     : onSelectAll,
@@ -120,7 +123,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 child: IconButton(
                   icon: Icon(Icons.delete_rounded, size: 24.sp),
                   color: AppColors.delete,
-                  tooltip: "Elimina selezionate",
+                  tooltip: loc.deleteSelectedTooltip,
                   onPressed: onDeleteSelected,
                 ),
               ),

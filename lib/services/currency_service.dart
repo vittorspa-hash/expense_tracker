@@ -14,7 +14,7 @@ class CurrencyService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_currencyKey, currency.code);
     } catch (e) {
-      throw Exception('Errore nel salvataggio della valuta: $e');
+      throw Exception('Error saving currency: $e');
     }
   }
 
@@ -41,7 +41,7 @@ class CurrencyService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_currencyKey);
     } catch (e) {
-      throw Exception('Errore nella rimozione della valuta: $e');
+      throw Exception('Error clearing currency: $e');
     }
   }
 }

@@ -74,10 +74,10 @@ class ExpenseProvider extends ChangeNotifier {
       _expenses = await _expenseService.loadUserExpenses();
       _refreshTotals();
     } on RepositoryFailure catch (e) {
-      _errorMessage = "Errore caricamento: ${e.message}";
+      _errorMessage = "Error loading data: ${e.message}";
       rethrow; 
     } catch (e) {
-      _errorMessage = "Errore sconosciuto durante l'avvio.";
+      _errorMessage = "Unknown error during startup.";
       rethrow; 
     }
     notifyListeners();
@@ -116,7 +116,7 @@ class ExpenseProvider extends ChangeNotifier {
       _checkBudget(dateToCheck: date);
 
     } on RepositoryFailure catch (e) {
-      _errorMessage = "Salvataggio fallito: ${e.message}";
+      _errorMessage = "Save failed: ${e.message}";
     } catch (e) {
       _errorMessage = e.toString(); 
     } finally {
@@ -146,7 +146,7 @@ class ExpenseProvider extends ChangeNotifier {
       _checkBudget(dateToCheck: date);
 
     } on RepositoryFailure catch (e) {
-      _errorMessage = "Modifica fallita: ${e.message}";
+      _errorMessage = "Edit failed: ${e.message}";
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -171,9 +171,9 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
 
     } on RepositoryFailure catch (e) {
-      _errorMessage = "Eliminazione fallita. I dati sono stati ripristinati. (${e.message})";
+      _errorMessage = "Deletion failed. Data restored. (${e.message})";
     } catch (e) {
-      _errorMessage = "Errore durante l'eliminazione: $e";
+      _errorMessage = "Error deleting: $e";
     } finally {
       notifyListeners();
     }
@@ -195,9 +195,9 @@ class ExpenseProvider extends ChangeNotifier {
       _checkBudgetForList(expensesToRestore);
 
     } on RepositoryFailure catch (e) {
-      _errorMessage = "Impossibile ripristinare le spese: ${e.message}";
+      _errorMessage = "Unable to restore expenses: ${e.message}";
     } catch (e) {
-      _errorMessage = "Errore ripristino: $e";
+      _errorMessage = "Restore error: $e";
     } finally {
       notifyListeners();
     }

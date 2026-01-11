@@ -1,0 +1,231 @@
+{
+    "@@locale": "en",
+    "settingsTitle": "Settings",
+    "appearance": "Appearance",
+    "darkMode": "Dark mode",
+    "activated": "On",
+    "deactivated": "Off",
+    "notifications": "Notifications",
+    "dailyReminder": "Daily reminder",
+    "activeAt": "Active at {time}",
+    "@activeAt": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "reminderTime": "Reminder time",
+    "spendingLimitAlert": "Spending limit alert",
+    "activeMonthlyLimit": "Active ({amount}/mo)",
+    "@activeMonthlyLimit": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyLimit": "Monthly limit",
+    "notificationsInfo": "Notifications will help you track your daily expenses and stick to your monthly budget",
+    "currency": "Currency",
+    "defaultCurrency": "Default currency",
+    "language": "Language",
+    "defaultLanguage": "Default language",
+    "setMonthlyLimitTitle": "Set monthly limit",
+    "insertAmountHint": "Enter amount",
+    "selectCurrencyTitle": "Select currency",
+    "selectLanguageTitle": "Select language",
+    "languageNameIt": "Italiano (Italia)",
+    "languageNameEn": "English (US)",
+    "newExpense": "New expense",
+    "ok": "OK",
+    "deleteDialogTitleSingle": "Single deletion",
+    "deleteDialogTitleMultiple": "Multiple deletion",
+    "deleteConfirmMessage": "{count, plural, =1{Do you want to delete 1 selected expense?} other{Do you want to delete {count} selected expenses?}}",
+    "@deleteConfirmMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "deletedTitleSingle": "Deleted!",
+    "deletedTitleMultiple": "Deleted!",
+    "deleteSuccessMessage": "{count, plural, =1{1 expense deleted successfully.} other{{count} expenses deleted successfully.}}",
+    "@deleteSuccessMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "annualReport": "ANNUAL REPORT",
+    "thisMonth": "THIS MONTH",
+    "today": "Today",
+    "week": "Week",
+    "year": "Year",
+    "searchHint": "Search by description...",
+    "sortTitle": "Sort expenses",
+    "sortDateNewest": "Date: newest first",
+    "sortDateOldest": "Date: oldest first",
+    "sortAmountHighest": "Amount: highest first",
+    "sortAmountLowest": "Amount: lowest first",
+    "deleteConfirmMessageSwipe": "Do you want to delete the selected expense?",
+    "deleteSuccessMessageSwipe": "Expense deleted successfully.",
+    "noDescription": "No description",
+    "selectedCountLabel": "{count, plural, =1{1 selected} other{{count} selected}}",
+    "@selectedCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "deselectAll": "Deselect all",
+    "selectAll": "Select all",
+    "deleteSelectedTooltip": "Delete selected",
+    "descriptionHint": "Description (optional)",
+    "deleteConfirmTitle": "Confirm deletion",
+    "errorTitle": "Nope!",
+    "zeroValueError": "You cannot create an expense with a value of 0.",
+    "createdTitle": "Created!",
+    "editedTitle": "Edited!",
+    "expenseCreated": "Expense created successfully.",
+    "expenseEdited": "Expense edited successfully.",
+    "expenseInstructionTitle": "Creating or editing an expense",
+    "expenseInstructionMessage": "To confirm the creation or editing of an expense, press and hold on the screen.",
+    "profileTitle": "Profile",
+    "dataUpdated": "Data updated",
+    "refreshError": "Refresh error: {error}",
+    "@refreshError": {
+        "placeholders": {
+            "error": { "type": "String" }
+        }
+    },
+    "profilePictureUpdated": "Profile picture updated!",
+    "removePictureTitle": "Remove picture",
+    "removePictureMessage": "Are you sure you want to delete your profile picture?",
+    "pictureRemoved": "Profile picture removed",
+    "nameLabel": "Name",
+    "editNameTooltip": "Edit name",
+    "emailLabel": "Email",
+    "editEmailTooltip": "Edit email",
+    "passwordLabel": "Password",
+    "editPasswordTooltip": "Edit password",
+    "userIdLabel": "User ID",
+    "copyIdTooltip": "Copy ID",
+    "idCopied": "ID copied to clipboard",
+    "deleteAccountButton": "Delete account",
+    "deleteAccountTitle": "Delete account",
+    "deleteAccountMessage": "Are you sure you want to permanently delete your account?",
+    "accountDeleted": "Account deleted successfully",
+    "save": "Save",
+    "newNameHint": "New name",
+    "nameUpdated": "Name updated successfully",
+    "newEmailHint": "New email",
+    "currentPasswordHint": "Current password",
+    "invalidData": "Please enter valid data",
+    "emailUpdateSent": "Confirmation for new email sent. Please log in.",
+    "newPasswordHint": "New password",
+    "confirmPasswordHint": "Confirm password",
+    "recoveryEmailSent": "Recovery email sent to {email}",
+    "@recoveryEmailSent": {
+        "placeholders": {
+            "email": { "type": "String" }
+        }
+    },
+    "passwordsDoNotMatch": "New passwords do not match",
+    "passwordUpdated": "Password updated successfully",
+    "notAvailable": "Not available",
+    "yearsPageTitle": "Annual Report",
+    "noExpensesTitle": "No expenses available",
+    "noExpensesSubtitle": "Expenses you add will appear here",
+    "totalYearLabel": "Total {year}",
+    "@totalYearLabel": {
+        "placeholders": {
+            "year": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyDetail": "Monthly detail",
+    "noExpensesMonthTitle": "No expenses this month",
+    "totalMonthLabel": "Total {month}",
+    "@totalMonthLabel": {
+        "placeholders": {
+            "month": { "type": "String" }
+        }
+    },
+    "dayCountLabel": "{count, plural, =1{day} other{days}}",
+    "@dayCountLabel": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "dailyExpenses": "Daily expenses",
+    "noExpensesDayTitle": "No expenses on this day",
+    "totalDayLabel": "Daily total",
+    "allExpenses": "All expenses",
+    "expenseCountLabel": "{count, plural, =1{expense} other{expenses}}",
+    "@expenseCountLabel": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "confirm": "Confirm",
+    "dontShowAgain": "Don't show again",
+    "selectYear": "Select year",
+    "logout": "Log out",
+    "logoutConfirmTitle": "Confirm logout",
+    "logoutConfirmMessage": "Are you sure you want to log out?",
+    "logoutError": "Logout error: {error}",
+    "@logoutError": {
+        "placeholders": {
+            "error": { "type": "String" }
+        }
+    },
+    "close": "Close",
+    "forgotPassword": "Forgot password?",
+    "accountFallback": "Account",
+    "appInitErrorTitle": "Oops! Unable to start the app.",
+    "appInitErrorMessage": "Check your connection and try again.",
+    "retry": "Retry",
+    "authAppTitle": "Expense Tracker",
+    "authAppSubtitle": "Manage your expenses easily",
+    "loginTab": "Login",
+    "registerTab": "Register",
+    "welcomeBack": "Welcome back!",
+    "signInToContinue": "Sign in to your account to continue",
+    "emailHint": "Email",
+    "emailRequired": "Enter email",
+    "emailInvalid": "Invalid email",
+    "passwordHint": "Password",
+    "passwordRequired": "Enter password",
+    "loginButton": "Sign In",
+    "emailNotVerifiedTitle": "Email not verified",
+    "emailNotVerifiedMessage": "You must confirm your email before logging in.",
+    "resendEmail": "Resend Email",
+    "verificationEmailSent": "Verification email sent!",
+    "insertEmailForRecovery": "Enter your email for recovery",
+    "createAccount": "Create an account",
+    "registerToStart": "Register to start tracking expenses",
+    "fullNameHint": "Full name",
+    "nameRequired": "Enter your name",
+    "passwordMinLength": "Minimum 6 characters",
+    "confirmPasswordRequired": "Confirm the password",
+    "registerButton": "Register",
+    "verifyEmailTitle": "Verify Email",
+    "verifyEmailContent": "We have sent you a verification email. Please check your inbox.",
+    "notificationDailyTitle": "💰 Expense Reminder",
+    "notificationDailyBody": "Don't forget to add your expenses today!",
+    "notificationBudgetTitle": "⚠️ Budget limit exceeded!",
+    "notificationBudgetBody": "You spent {spent} of {limit} this month",
+    "@notificationBudgetBody": {
+        "placeholders": {
+            "spent": { "type": "String" },
+            "limit": { "type": "String" }
+        }
+    }
+}

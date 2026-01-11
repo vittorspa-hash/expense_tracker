@@ -3,6 +3,7 @@ import 'package:expense_tracker/components/report/report_period_list_item.dart';
 import 'package:expense_tracker/components/report/report_section_header.dart';
 import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/days_page.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/report_date_utils.dart';
@@ -51,7 +52,8 @@ class _MonthsPageState extends State<MonthsPage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final monthName = ReportDateUtils.monthNames[widget.month - 1];
+    final monthName = ReportDateUtils.getMonthNames(context)[widget.month - 1];
+    final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -81,9 +83,9 @@ class _MonthsPageState extends State<MonthsPage>
               // 
               if (dailyExpenses.isEmpty) {
                 return buildWithFadeAnimation(
-                  const ReportEmptyState(
-                    title: "Nessuna spesa in questo mese",
-                    subtitle: "Le spese che aggiungi appariranno qui",
+                  ReportEmptyState(
+                    title: loc.noExpensesMonthTitle,
+                    subtitle: loc.noExpensesSubtitle, // Riutilizzo la stringa generica
                     icon: Icons.event_busy_rounded,
                     useCircleBackground: true, // Mantiene lo stile originale col cerchio
                   ),
@@ -100,16 +102,14 @@ class _MonthsPageState extends State<MonthsPage>
                   children: [
                     // Riepilogo Mese
                     ReportTotalCard(
-                      label: "Totale $monthName",
+                      label: loc.totalMonthLabel(monthName),
                       totalAmount: totalMonth,
                       icon: Icons.calendar_month_rounded,
                       itemCount: dailyExpenses.length,
-                      itemLabel: dailyExpenses.length == 1
-                          ? "giorno"
-                          : "giorni",
+                      itemLabel: loc.dayCountLabel(dailyExpenses.length),
                     ),
 
-                    const ReportSectionHeader(title: "Spese giornaliere"),
+                    ReportSectionHeader(title: loc.dailyExpenses),
 
                     SizedBox(height: 12.h),
 
@@ -133,10 +133,10 @@ class _MonthsPageState extends State<MonthsPage>
                             badgeText: "${date.day}",
                             badgeSubtext: DateFormat(
                               "MMM",
-                              "it_IT",
+                              Localizations.localeOf(context).toString(),
                             ).format(date).toUpperCase(),
-                            title: ReportDateUtils.getDayOfWeek(date),
-                            subtitle: ReportDateUtils.formatDateItaliano(date),
+                            title: ReportDateUtils.getDayOfWeek(context, date),
+                            subtitle: ReportDateUtils.formatDate(context, date),
                             totalAmount: total,
                             percentage: (total / totalMonth) * 100,
                             onTap: () {

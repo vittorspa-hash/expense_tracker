@@ -1,5 +1,6 @@
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
@@ -59,9 +60,9 @@ class _RegisterFormState extends State<RegisterForm> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final provider = context.watch<AuthProvider>();
     final isLoading = provider.isLoading;
+    final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -90,7 +91,7 @@ class _RegisterFormState extends State<RegisterForm> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Crea un account",
+                    loc.createAccount,
                     style: TextStyle(
                       fontSize: 22.sp,
                       fontWeight: FontWeight.w800,
@@ -100,7 +101,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   ),
                   SizedBox(height: 8.h),
                   Text(
-                    "Registrati per iniziare a tracciare le spese",
+                    loc.registerToStart,
                     style: TextStyle(
                       fontSize: 14.sp,
                       color: isDark ? AppColors.greyDark : AppColors.greyLight,
@@ -113,12 +114,12 @@ class _RegisterFormState extends State<RegisterForm> {
                     controller: _nameController,
                     focusNode: _nameFocus,
                     nextFocus: _emailFocus,
-                    hint: "Nome completo",
+                    hint: loc.fullNameHint,
                     icon: FontAwesomeIcons.user,
                     capitalization: TextCapitalization.words,
                     enabled: !isLoading,
                     validator: (v) =>
-                        v!.trim().isEmpty ? "Inserisci il tuo nome" : null,
+                        v!.trim().isEmpty ? loc.nameRequired : null,
                   ),
 
                   SizedBox(height: 8.h),
@@ -128,15 +129,15 @@ class _RegisterFormState extends State<RegisterForm> {
                     controller: _emailController,
                     focusNode: _emailFocus,
                     nextFocus: _passwordFocus,
-                    hint: "Email",
+                    hint: loc.emailHint,
                     icon: FontAwesomeIcons.envelope,
                     keyboardType: TextInputType.emailAddress,
                     enabled: !isLoading,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return "Inserisci l'email";
+                        return loc.emailRequired;
                       }
-                      if (!v.contains("@")) return "Email non valida";
+                      if (!v.contains("@")) return loc.emailInvalid;
                       return null;
                     },
                   ),
@@ -148,7 +149,7 @@ class _RegisterFormState extends State<RegisterForm> {
                     controller: _passwordController,
                     focusNode: _passwordFocus,
                     nextFocus: _confirmFocus,
-                    hint: "Password",
+                    hint: loc.passwordHint,
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure1,
                     enabled: !isLoading,
@@ -156,10 +157,10 @@ class _RegisterFormState extends State<RegisterForm> {
                         setState(() => _obscure1 = !_obscure1),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return "Inserisci la password";
+                        return loc.passwordRequired;
                       }
                       if (v.length < 6) {
-                        return "Minimo 6 caratteri";
+                        return loc.passwordMinLength;
                       }
                       return null;
                     },
@@ -171,7 +172,7 @@ class _RegisterFormState extends State<RegisterForm> {
                   AuthTextField(
                     controller: _confirmController,
                     focusNode: _confirmFocus,
-                    hint: "Conferma password",
+                    hint: loc.confirmPasswordHint,
                     icon: FontAwesomeIcons.lock,
                     obscure: _obscure2,
                     isLast: true,
@@ -180,10 +181,10 @@ class _RegisterFormState extends State<RegisterForm> {
                         setState(() => _obscure2 = !_obscure2),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
-                        return "Conferma la password";
+                        return loc.confirmPasswordRequired;
                       }
                       if (v != _passwordController.text) {
-                        return "Le password non coincidono";
+                        return loc.passwordsDoNotMatch;
                       }
                       return null;
                     },
@@ -199,7 +200,7 @@ class _RegisterFormState extends State<RegisterForm> {
             AuthButton(
               onPressed: isLoading ? null : _handleRegister,
               icon: isLoading ? null : FontAwesomeIcons.userPlus,
-              text: isLoading ? "" : "Registrati",
+              text: isLoading ? "" : loc.registerButton,
               child: isLoading
                   ? SizedBox(
                       height: 20.h,
@@ -238,9 +239,10 @@ class _RegisterFormState extends State<RegisterForm> {
   // la chiamata al servizio di registrazione e la visualizzazione del dialog di successo.
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
+    final loc = AppLocalizations.of(context)!;
 
     if (_passwordController.text != _confirmController.text) {
-      _showSnack("Le password non coincidono", isError: true);
+      _showSnack(loc.passwordsDoNotMatch, isError: true);
       return;
     }
 
@@ -258,9 +260,8 @@ class _RegisterFormState extends State<RegisterForm> {
       // Successo: Informa l'utente della verifica email necessaria
       await DialogUtils.showInfoDialog(
         context,
-        title: "Verifica Email",
-        content:
-            "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
+        title: loc.verifyEmailTitle,
+        content: loc.verifyEmailContent,
       );
 
     } catch (e) {

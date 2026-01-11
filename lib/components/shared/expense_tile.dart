@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -40,18 +41,27 @@ class _ExpenseTileState extends State<ExpenseTile> {
   bool _isPressed = false; 
 
   // --- FORMATTAZIONE DATA ---
-  // Helper locale per convertire il timestamp in formato leggibile italiano.
-  String formatDateItaliano(DateTime date) {
-    final giorno = DateFormat("d", "it_IT").format(date);
-    final mese = DateFormat("MMMM", "it_IT").format(date);
-    final anno = DateFormat("y", "it_IT").format(date);
-    final meseCapitalizzato = mese[0].toUpperCase() + mese.substring(1);
+  // Helper locale per convertire il timestamp in formato leggibile localizzato.
+  // Aggiornato per utilizzare il locale corrente invece di "it_IT" fisso.
+  String _formatDate(BuildContext context, DateTime date) {
+    final locale = Localizations.localeOf(context).toString();
+    
+    final giorno = DateFormat("d", locale).format(date);
+    final mese = DateFormat("MMMM", locale).format(date);
+    final anno = DateFormat("y", locale).format(date);
+    
+    // Mantiene la logica di capitalizzazione (utile per IT, innocua per EN)
+    final meseCapitalizzato = mese.isNotEmpty 
+        ? mese[0].toUpperCase() + mese.substring(1) 
+        : mese;
+        
     return "$giorno $meseCapitalizzato $anno";
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final loc = AppLocalizations.of(context)!;
     
     // --- CURRENCY PROVIDER ---
     // Consumer per ascoltare i cambiamenti della valuta e aggiornare automaticamente
@@ -165,7 +175,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            formatDateItaliano(widget.expenseModel.createdOn),
+                            _formatDate(context, widget.expenseModel.createdOn),
                             style: TextStyle(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w600,
@@ -178,7 +188,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                           SizedBox(height: 4.h),
                           Text(
                             widget.expenseModel.description ??
-                                "Nessuna descrizione",
+                                loc.noDescription,
                             style: TextStyle(
                               fontSize: 12.sp,
                               color: isDark

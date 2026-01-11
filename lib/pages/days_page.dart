@@ -2,6 +2,7 @@ import 'package:expense_tracker/components/report/report_empty_state.dart';
 import 'package:expense_tracker/components/report/report_section_header.dart';
 import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -71,7 +72,7 @@ class _DaysPageState extends State<DaysPage>
         backgroundColor: AppColors.snackBar,
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
-          label: 'OK',
+          label: AppLocalizations.of(context)!.ok,
           textColor: AppColors.textLight,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -85,8 +86,8 @@ class _DaysPageState extends State<DaysPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final date = DateTime(widget.year, widget.month, widget.day);
-    final dateLabel = ReportDateUtils.formatDateItaliano(date);
-    final dayOfWeek = ReportDateUtils.getDayOfWeek(date);
+    final dateLabel = ReportDateUtils.formatDate(context, date);
+    final dayOfWeek = ReportDateUtils.getDayOfWeek(context, date);
 
     return Consumer2<ExpenseProvider, MultiSelectProvider>(
       builder: (context, expenseProvider, multiSelect, child) {
@@ -163,11 +164,13 @@ class _DaysPageState extends State<DaysPage>
     ExpenseProvider expenseprovider,
     bool isDark,
   ) {
+    final loc = AppLocalizations.of(context)!;
+
     if (expensesList.isEmpty) {
       return buildWithFadeAnimation(
-        const ReportEmptyState(
-          title: "Nessuna spesa in questo giorno",
-          subtitle: "Le spese che aggiungi appariranno qui",
+        ReportEmptyState(
+          title: loc.noExpensesDayTitle,
+          subtitle: loc.noExpensesSubtitle, // Riutilizzo
           icon: Icons.receipt_long_rounded,
           useCircleBackground: true,
         ),
@@ -183,14 +186,14 @@ class _DaysPageState extends State<DaysPage>
       Column(
         children: [
           ReportTotalCard(
-            label: "Totale giornata",
+            label: loc.totalDayLabel,
             totalAmount: totalDay,
             icon: Icons.receipt_rounded,
             itemCount: expensesList.length,
-            itemLabel: expensesList.length == 1 ? "spesa" : "spese",
+            itemLabel: loc.expenseCountLabel(expensesList.length),
           ),
 
-          const ReportSectionHeader(title: "Tutte le spese"),
+          ReportSectionHeader(title: loc.allExpenses),
 
           SizedBox(height: 12.h),
 
@@ -230,10 +233,10 @@ class _DaysPageState extends State<DaysPage>
                       // 1. Dialogo conferma
                       final confirm = await DialogUtils.showConfirmDialog(
                         context,
-                        title: "Conferma eliminazione",
-                        content: "Vuoi eliminare la spesa selezionata?",
-                        confirmText: "Elimina",
-                        cancelText: "Annulla",
+                        title: loc.deleteConfirmTitle,
+                        content: loc.deleteConfirmMessageSwipe,
+                        confirmText: loc.delete,
+                        cancelText: loc.cancel,
                       );
 
                       if (confirm != true) return false;
@@ -250,8 +253,8 @@ class _DaysPageState extends State<DaysPage>
                       if (context.mounted) {
                         SnackbarUtils.show(
                           context: context,
-                          title: "Eliminata!",
-                          message: "Spesa eliminata con successo.",
+                          title: loc.deletedTitleSingle,
+                          message: loc.deleteSuccessMessageSwipe,
                           deletedItem: expense,
                           onDelete: (_) {},
                           onRestore: (exp) =>

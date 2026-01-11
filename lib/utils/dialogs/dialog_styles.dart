@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
@@ -23,9 +24,14 @@ class DialogStyles {
       isDark(context) ? AppColors.textLight : AppColors.textDark;
 
   // Euristica per determinare se un'azione è distruttiva (Rosso) basandosi sul testo.
-  static bool isDestructiveAction(String text) =>
-      text.toLowerCase().contains("elimina") ||
-      text.toLowerCase().contains("logout");
+  // Aggiornato per supportare sia Italiano che Inglese.
+  static bool isDestructiveAction(String text) {
+    final t = text.toLowerCase();
+    return t.contains("elimina") || 
+           t.contains("delete") || 
+           t.contains("logout") || 
+           t.contains("log out");
+  }
 
   // --- STILI BASE ---
   // Definizioni di forme e bordi comuni.
@@ -45,6 +51,8 @@ class DialogStyles {
   /// Solitamente usato in fondo ai BottomSheet Android.
   static Widget buildCloseButton(BuildContext context) {
     final isDarkMode = isDark(context);
+    final loc = AppLocalizations.of(context)!;
+    
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -58,7 +66,7 @@ class DialogStyles {
           ),
         ),
         onPressed: () => Navigator.pop(context),
-        child: Text("Chiudi", style: TextStyle(fontSize: 16.sp)),
+        child: Text(loc.close, style: TextStyle(fontSize: 16.sp)),
       ),
     );
   }
