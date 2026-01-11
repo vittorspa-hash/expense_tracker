@@ -65,7 +65,7 @@ class ExpenseActionHandler {
       deletedItem: expensesToDelete,
       onDelete: (_) {},
       onRestore: (_) async {
-        await expenseProvider.restoreExpenses(expensesToDelete);
+        await expenseProvider.restoreExpenses(expensesToDelete, loc);
       },
     );
   }

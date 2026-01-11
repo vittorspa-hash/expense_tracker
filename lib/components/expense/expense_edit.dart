@@ -33,6 +33,7 @@ class ExpenseEdit extends StatefulWidget {
     required double value,
     required String? description,
     required DateTime date,
+    required AppLocalizations l10n,
   })
   onSubmit;
 
@@ -285,7 +286,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               deletedItem: deletedExpense,
               onDelete: (_) {},
               onRestore: (exp) async {
-                await expenseProvider.restoreExpenses([exp]);
+                await expenseProvider.restoreExpenses([exp], loc);
               },
             );
           }
@@ -318,6 +319,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       value: value,
       description: description.isEmpty ? null : description,
       date: selectedDate,
+      l10n: loc,
     );
 
     if (!mounted) return;

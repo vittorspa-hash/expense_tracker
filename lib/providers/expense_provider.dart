@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/services/expense_service.dart';
@@ -6,13 +7,8 @@ import 'package:expense_tracker/utils/repository_failure.dart';
 import 'package:flutter/foundation.dart';
 
 /// FILE: expense_provider.dart
-/// DESCRIZIONE: State Manager per la gestione delle spese (ChangeNotifier).
-/// Centralizza la logica di business per il CRUD delle spese, il calcolo dei totali
-/// e l'integrazione con il sistema di notifiche per i limiti di budget.
-
 class ExpenseProvider extends ChangeNotifier {
   // --- STATO E DIPENDENZE ---
-  // Iniezione dei servizi necessari (Notifiche e API) e inizializzazione.
   final NotificationProvider _notificationProvider;
   final ExpenseService _expenseService;
 
@@ -23,24 +19,19 @@ class ExpenseProvider extends ChangeNotifier {
        _expenseService = expenseService;
 
   // --- STATO DATI ---
-  // Lista principale delle spese e getter protetto per evitare modifiche dirette dall'esterno.
   List<ExpenseModel> _expenses = [];
   List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
   // --- STATO ERRORI ---
-  // Gestione centralizzata degli errori per mostrarli nella UI (es. SnackBar).
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  // Resetta lo stato di errore, utile quando l'utente chiude un avviso o riprova un'azione.
   void clearError() {
     _errorMessage = null;
     notifyListeners();
   }
 
   // --- CACHE TOTALI ---
-  // Variabili per memorizzare i totali calcolati e ottimizzare le performance
-  // evitando ricalcoli on-demand ad ogni accesso.
   double _todayTotal = 0.0;
   double _weekTotal = 0.0;
   double _monthTotal = 0.0;
@@ -52,7 +43,6 @@ class ExpenseProvider extends ChangeNotifier {
   double get totalExpenseYear => _yearTotal;
 
   // --- HELPER INTERNI ---
-  // Ricalcola tutti i totali basandosi sulla lista corrente delle spese.
   void _refreshTotals() {
     _todayTotal = ExpenseCalculator.totalExpenseToday(_expenses);
     _weekTotal = ExpenseCalculator.totalExpenseWeek(_expenses);
@@ -60,14 +50,11 @@ class ExpenseProvider extends ChangeNotifier {
     _yearTotal = ExpenseCalculator.totalExpenseYear(_expenses);
   }
   
-  // Ordina la lista interna per data decrescente (comportamento di default).
   void _sortByDateDesc() {
     ExpenseCalculator.sortInPlace(_expenses, "date_desc");
   }
 
   // --- INIZIALIZZAZIONE ---
-  // Carica le spese dell'utente all'avvio dell'applicazione.
-  // Intercetta errori specifici (RepositoryFailure) rilanciandoli per la gestione nel wrapper.
   Future<void> initialise() async {
     _errorMessage = null;
     try {
@@ -83,7 +70,6 @@ class ExpenseProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Pulisce lo stato locale (es. al logout) per evitare dati residui.
   void clear() {
     _expenses = [];
     _errorMessage = null;
@@ -92,12 +78,13 @@ class ExpenseProvider extends ChangeNotifier {
   }
 
   // --- CREAZIONE & MODIFICA ---
-  // Crea una nuova spesa gestendo persistenza remota, aggiornamento locale e verifica budget.
-  // In caso di errore remoto, lo stato locale non viene alterato.
+  
+  /// MODIFICATO: Aggiunto parametro l10n
   Future<void> createExpense({
     required double value,
     required String? description,
     required DateTime date,
+    required AppLocalizations l10n, // NECESSARIO per la notifica
   }) async {
     _errorMessage = null;
     notifyListeners(); 
@@ -113,7 +100,8 @@ class ExpenseProvider extends ChangeNotifier {
       _sortByDateDesc(); 
       _refreshTotals();
       
-      _checkBudget(dateToCheck: date);
+      // Passiamo l10n al controllo budget
+      _checkBudget(dateToCheck: date, l10n: l10n);
 
     } on RepositoryFailure catch (e) {
       _errorMessage = "Save failed: ${e.message}";
@@ -124,12 +112,13 @@ class ExpenseProvider extends ChangeNotifier {
     }
   }
 
-  // Modifica una spesa esistente, aggiornando ordinamento e totali dopo il successo del backend.
+  /// MODIFICATO: Aggiunto parametro l10n
   Future<void> editExpense(
     ExpenseModel expenseModel, {
     required double value,
     required String? description,
     required DateTime date,
+    required AppLocalizations l10n, // NECESSARIO per la notifica
   }) async {
     _errorMessage = null;
     notifyListeners();
@@ -143,7 +132,9 @@ class ExpenseProvider extends ChangeNotifier {
       );
       _sortByDateDesc();
       _refreshTotals();
-      _checkBudget(dateToCheck: date);
+      
+      // Passiamo l10n al controllo budget
+      _checkBudget(dateToCheck: date, l10n: l10n);
 
     } on RepositoryFailure catch (e) {
       _errorMessage = "Edit failed: ${e.message}";
@@ -155,8 +146,8 @@ class ExpenseProvider extends ChangeNotifier {
   }
 
   // --- ELIMINAZIONE UNIFICATA ---
-  // Elimina una lista di spese (batch). Esegue le chiamate remote in parallelo
-  // e aggiorna la UI solo se tutte le operazioni hanno successo.
+  // Nota: Delete non richiede l10n perché cancellando le spese 
+  // non si rischia di superare il budget (si scende).
   Future<void> deleteExpenses(List<ExpenseModel> expensesToDelete) async {
     if (expensesToDelete.isEmpty) return;
     _errorMessage = null;
@@ -180,8 +171,11 @@ class ExpenseProvider extends ChangeNotifier {
   }
 
   // --- RIPRISTINO UNIFICATO ---
-  // Ripristina spese precedentemente eliminate (es. tasto "Annulla"), aggiornando remoto e locale.
-  Future<void> restoreExpenses(List<ExpenseModel> expensesToRestore) async {
+  /// MODIFICATO: Aggiunto parametro l10n (il ripristino può far superare il budget)
+  Future<void> restoreExpenses(
+    List<ExpenseModel> expensesToRestore, 
+    AppLocalizations l10n, 
+  ) async {
     if (expensesToRestore.isEmpty) return;
     _errorMessage = null;
     notifyListeners();
@@ -192,7 +186,9 @@ class ExpenseProvider extends ChangeNotifier {
       _expenses.addAll(expensesToRestore);
       _sortByDateDesc(); 
       _refreshTotals();
-      _checkBudgetForList(expensesToRestore);
+      
+      // Passiamo l10n
+      _checkBudgetForList(expensesToRestore, l10n);
 
     } on RepositoryFailure catch (e) {
       _errorMessage = "Unable to restore expenses: ${e.message}";
@@ -204,35 +200,41 @@ class ExpenseProvider extends ChangeNotifier {
   }
 
   // --- HELPER BUDGET & ORDINAMENTO ---
-  // Verifica se una singola spesa impatta il budget del mese corrente e notifica se necessario.
-  Future<void> _checkBudget({required DateTime dateToCheck}) async {
+  
+  /// MODIFICATO: Accetta l10n e lo passa al NotificationProvider
+  Future<void> _checkBudget({
+    required DateTime dateToCheck,
+    required AppLocalizations l10n,
+  }) async {
     final now = DateTime.now();
     if (dateToCheck.month != now.month || dateToCheck.year != now.year) return;
 
     if (_notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal);
+      // Qui avviene il passaggio chiave
+      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n);
     }
   }
 
-  // Verifica se una lista di spese (es. ripristinate) impatta il budget del mese corrente.
-  Future<void> _checkBudgetForList(List<ExpenseModel> expenses) async {
+  /// MODIFICATO: Accetta l10n
+  Future<void> _checkBudgetForList(
+    List<ExpenseModel> expenses, 
+    AppLocalizations l10n,
+  ) async {
     final now = DateTime.now();
     bool hasCurrentMonthExpense = expenses.any((e) => 
       e.createdOn.month == now.month && e.createdOn.year == now.year
     );
 
     if (hasCurrentMonthExpense && _notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal);
+      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n);
     }
   }
   
-  // Applica un criterio di ordinamento alla lista spese e notifica la UI.
   void sortBy(String criteria) {
     ExpenseCalculator.sortInPlace(_expenses, criteria);
     notifyListeners();
   }
 
-  // Getter delegati al calcolatore per raggruppare le spese (per grafici o liste).
   Map<String, double> get expensesByMonth => ExpenseCalculator.expensesByMonth(_expenses);
   
   Map<String, double> expensesByDay(int year, int month) => 

@@ -258,7 +258,7 @@ class _DaysPageState extends State<DaysPage>
                           deletedItem: expense,
                           onDelete: (_) {},
                           onRestore: (exp) =>
-                              expenseprovider.restoreExpenses([exp]),
+                              expenseprovider.restoreExpenses([exp], loc),
                         );
                       }
 

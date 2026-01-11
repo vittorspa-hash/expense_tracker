@@ -4,6 +4,7 @@ import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/models/expense_model.dart';
+import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
@@ -60,6 +61,10 @@ class _HomePageState extends State<HomePage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<ProfileProvider>().loadLocalData();
+        final l10n = AppLocalizations.of(context);
+        if (l10n != null) {
+          context.read<NotificationProvider>().rescheduleNotifications(l10n);
+        }
       }
     });
 

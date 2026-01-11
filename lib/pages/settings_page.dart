@@ -163,7 +163,7 @@ class _SettingsPageState extends State<SettingsPage>
                           child: Switch(
                             value: notificationProvider.dailyReminderEnabled,
                             onChanged: (value) {
-                              notificationProvider.toggleDailyReminder(value);
+                              notificationProvider.toggleDailyReminder(value, AppLocalizations.of(context)!);
                             },
                             activeThumbColor: AppColors.primary,
                           ),
@@ -336,8 +336,8 @@ class _SettingsPageState extends State<SettingsPage>
       initialTime: provider.reminderTime,
     );
 
-    if (picked != null && picked != provider.reminderTime) {
-      await provider.setReminderTime(picked);
+    if (picked != null && picked != provider.reminderTime && context.mounted) {
+      await provider.setReminderTime(picked, AppLocalizations.of(context)!);
     }
   }
 
@@ -415,7 +415,23 @@ class _SettingsPageState extends State<SettingsPage>
     );
 
     if (result != null) {
-      await languageProvider.changeLanguage(Locale(result));
+      // 1. Creiamo il Locale per la nuova lingua scelta
+      final newLocale = Locale(result);
+      
+      // 2. Aggiorniamo la lingua nell'app (questo aggiorna la UI)
+      await languageProvider.changeLanguage(newLocale);
+
+      // 3. AGGIORNAMENTO NOTIFICHE:
+      // Carichiamo manualmente le traduzioni per la NUOVA lingua.
+      // Usiamo '.delegate.load()' invece di '.of(context)' per essere sicuri
+      // di avere le stringhe nuove al 100% immediatamente.
+      final newL10n = await AppLocalizations.delegate.load(newLocale);
+
+      // 4. Se il widget è ancora montato, rischeduliamo le notifiche
+      if (context.mounted) {
+        context.read<NotificationProvider>().rescheduleNotifications(newL10n);
+        debugPrint("🌍 Notifiche aggiornate alla lingua: $result");
+      }
     }
   }
 

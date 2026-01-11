@@ -263,7 +263,7 @@ class HomeContentList extends StatelessWidget {
                                 deletedItem: expense,
                                 onDelete: (_) {},
                                 onRestore: (exp) =>
-                                    expenseProvider.restoreExpenses([exp]),
+                                    expenseProvider.restoreExpenses([exp], loc),
                               );
                             }
 

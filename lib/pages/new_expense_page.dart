@@ -1,3 +1,4 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +52,7 @@ class _NewExpensePageState extends State<NewExpensePage>
     required double value,
     required String? description,
     required DateTime date,
+    required AppLocalizations l10n
   }) async {
     final provider = context.read<ExpenseProvider>();
 
@@ -58,6 +60,7 @@ class _NewExpensePageState extends State<NewExpensePage>
       value: value,
       description: description,
       date: date,
+      l10n: l10n
     );
 
     if (!mounted) return;

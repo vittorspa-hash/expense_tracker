@@ -55,6 +55,7 @@ class _EditExpensePageState extends State<EditExpensePage>
     required double value,
     required String? description,
     required DateTime date,
+    required AppLocalizations l10n,
   }) async {
     final provider = context.read<ExpenseProvider>();
 
@@ -63,6 +64,7 @@ class _EditExpensePageState extends State<EditExpensePage>
       value: value,
       description: description,
       date: date,
+      l10n: l10n,
     );
 
     if (!mounted) return;
@@ -110,7 +112,7 @@ class _EditExpensePageState extends State<EditExpensePage>
       message: loc.deleteSuccessMessageSwipe,
       deletedItem: modelToDelete,
       onDelete: (_) {}, // Già eliminata
-      onRestore: (exp) => provider.restoreExpenses([exp]),
+      onRestore: (exp) => provider.restoreExpenses([exp], loc),
     );
 
     Navigator.pop(context);
