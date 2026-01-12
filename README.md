@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 **Expense Tracker** è un'app mobile Flutter per la gestione delle spese personali.  
-Permette di creare e tenere traccia delle spese, con statistiche giornaliere, mensili e annuali, supporto a notifiche e dark mode.
+Permette di creare e tenere traccia delle spese, con statistiche giornaliere, mensili e annuali, supporto a notifiche, dark mode e personalizzazione di lingua e valuta.
 
 ---
 
@@ -13,6 +13,7 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 - Inviare notifiche giornaliere e avvisi di superamento limite spesa.
 - Offrire un'esperienza responsive e adaptive su dispositivi mobili.
 - Supportare autenticazione sicura tramite Firebase.
+- Garantire accessibilità internazionale tramite supporto multilingua e multivaluta.
 
 ---
 
@@ -27,7 +28,7 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
   - AuthPage → Login e registrazione
   - HomePage → Overview delle spese recenti
   - ProfilePage → Informazioni utente
-  - SettingsPage → Impostazioni app
+  - SettingsPage → Impostazioni app (Tema, Notifiche, Lingua, Valuta)
 - **Notifiche locali**:
   - Giornaliera
   - Superamento limite spesa
@@ -52,6 +53,7 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 - `lib/main.dart` → Entry Point: Configurazione ambiente, inizializzazione Firebase, Dependency Injection (GetIt) e iniezione dei MultiProvider
 - `lib/app.dart` → App Configuration: Tema, localizzazione, routing e gestione lifecycle
 - `lib/components/` →  Widget UI riutilizzabili divisi per contesto
+- `lib/l10n/` →  File di configurazione per la localizzazione (.arb) e stringhe tradotte
 - `lib/models/` → Data classes e modelli di dominio (ExpenseModel)
 - `lib/pages/` → Schermate dell'applicazione
 - `lib/providers/` → State Layer: Collegano la UI alla logica di business
@@ -74,7 +76,8 @@ Permette di creare e tenere traccia delle spese, con statistiche giornaliere, me
 - **Responsive Layout:** `flutter_screenutil`  
 - **Notifications:** `flutter_local_notifications`  
 - **Charts:** `fl_chart`  
-- **Utilities:** `uuid` (ID univoci), `intl` (Formattazione date)
+- **Internationalization:** `flutter_localizations`, `intl`
+- **Utilities:** `uuid` (ID univoci)
 
 ---
 

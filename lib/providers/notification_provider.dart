@@ -166,7 +166,7 @@ class NotificationProvider extends ChangeNotifier {
   // Verifica se la spesa corrente ha superato il limite mensile impostato.
   // Se il limite è superato e l'avviso è abilitato, genera dinamicamente il testo
   // della notifica (con i valori monetari formattati) e la invia immediatamente.
-  Future<void> checkBudgetLimit(double currentMonthlySpent, AppLocalizations l10n) async {
+  Future<void> checkBudgetLimit(double currentMonthlySpent, AppLocalizations l10n, String currencySymbol) async {
     if (!_limitAlertEnabled) return;
     
     if (currentMonthlySpent >= _monthlyLimit) {
@@ -175,8 +175,8 @@ class NotificationProvider extends ChangeNotifier {
       final String title = l10n.notificationBudgetTitle;
       
       // Formattiamo i numeri come stringhe (come richiesto dal tuo .arb)
-      final String spentString = currentMonthlySpent.toStringAsFixed(2);
-      final String limitString = _monthlyLimit.toStringAsFixed(2);
+      final String spentString = "$currencySymbol${currentMonthlySpent.toStringAsFixed(2)}";
+      final String limitString = "$currencySymbol${_monthlyLimit.toStringAsFixed(2)}";
       
       // Generiamo il body usando il metodo generato da Flutter
       final String body = l10n.notificationBudgetBody(spentString, limitString);

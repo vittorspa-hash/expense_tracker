@@ -1,4 +1,5 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
@@ -58,6 +59,7 @@ class _EditExpensePageState extends State<EditExpensePage>
     required AppLocalizations l10n,
   }) async {
     final provider = context.read<ExpenseProvider>();
+    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     await provider.editExpense(
       widget.expenseModel,
@@ -65,6 +67,7 @@ class _EditExpensePageState extends State<EditExpensePage>
       description: description,
       date: date,
       l10n: l10n,
+      currencySymbol: currencySymbol,
     );
 
     if (!mounted) return;
@@ -89,6 +92,7 @@ class _EditExpensePageState extends State<EditExpensePage>
     final provider = context.read<ExpenseProvider>();
     final modelToDelete = widget.expenseModel;
     final loc = AppLocalizations.of(context)!;
+    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     await provider.deleteExpenses([modelToDelete]);
 
@@ -112,7 +116,7 @@ class _EditExpensePageState extends State<EditExpensePage>
       message: loc.deleteSuccessMessageSwipe,
       deletedItem: modelToDelete,
       onDelete: (_) {}, // Già eliminata
-      onRestore: (exp) => provider.restoreExpenses([exp], loc),
+      onRestore: (exp) => provider.restoreExpenses([exp], loc, currencySymbol),
     );
 
     Navigator.pop(context);

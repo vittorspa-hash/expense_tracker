@@ -3,6 +3,7 @@ import 'package:expense_tracker/components/report/report_section_header.dart';
 import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -165,6 +166,7 @@ class _DaysPageState extends State<DaysPage>
     bool isDark,
   ) {
     final loc = AppLocalizations.of(context)!;
+    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     if (expensesList.isEmpty) {
       return buildWithFadeAnimation(
@@ -258,7 +260,7 @@ class _DaysPageState extends State<DaysPage>
                           deletedItem: expense,
                           onDelete: (_) {},
                           onRestore: (exp) =>
-                              expenseprovider.restoreExpenses([exp], loc),
+                              expenseprovider.restoreExpenses([exp], loc, currencySymbol),
                         );
                       }
 

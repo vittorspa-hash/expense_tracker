@@ -203,7 +203,7 @@
     "emailInvalid": "Invalid email",
     "passwordHint": "Password",
     "passwordRequired": "Enter password",
-    "loginButton": "Sign In",
+    "loginButton": "Log In",
     "emailNotVerifiedTitle": "Email not verified",
     "emailNotVerifiedMessage": "You must confirm your email before logging in.",
     "resendEmail": "Resend Email",

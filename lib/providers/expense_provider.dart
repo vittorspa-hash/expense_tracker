@@ -85,6 +85,7 @@ class ExpenseProvider extends ChangeNotifier {
     required String? description,
     required DateTime date,
     required AppLocalizations l10n, // NECESSARIO per la notifica
+    required String currencySymbol,
   }) async {
     _errorMessage = null;
     notifyListeners(); 
@@ -101,7 +102,7 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
       
       // Passiamo l10n al controllo budget
-      _checkBudget(dateToCheck: date, l10n: l10n);
+      _checkBudget(dateToCheck: date, l10n: l10n, currencySymbol: currencySymbol);
 
     } on RepositoryFailure catch (e) {
       _errorMessage = "Save failed: ${e.message}";
@@ -119,6 +120,7 @@ class ExpenseProvider extends ChangeNotifier {
     required String? description,
     required DateTime date,
     required AppLocalizations l10n, // NECESSARIO per la notifica
+    required String currencySymbol,
   }) async {
     _errorMessage = null;
     notifyListeners();
@@ -134,7 +136,7 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
       
       // Passiamo l10n al controllo budget
-      _checkBudget(dateToCheck: date, l10n: l10n);
+      _checkBudget(dateToCheck: date, l10n: l10n, currencySymbol: currencySymbol);
 
     } on RepositoryFailure catch (e) {
       _errorMessage = "Edit failed: ${e.message}";
@@ -175,6 +177,7 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> restoreExpenses(
     List<ExpenseModel> expensesToRestore, 
     AppLocalizations l10n, 
+    String currencySymbol,
   ) async {
     if (expensesToRestore.isEmpty) return;
     _errorMessage = null;
@@ -188,7 +191,7 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
       
       // Passiamo l10n
-      _checkBudgetForList(expensesToRestore, l10n);
+      _checkBudgetForList(expensesToRestore, l10n, currencySymbol);
 
     } on RepositoryFailure catch (e) {
       _errorMessage = "Unable to restore expenses: ${e.message}";
@@ -205,13 +208,14 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> _checkBudget({
     required DateTime dateToCheck,
     required AppLocalizations l10n,
+    required String currencySymbol,
   }) async {
     final now = DateTime.now();
     if (dateToCheck.month != now.month || dateToCheck.year != now.year) return;
 
     if (_notificationProvider.limitAlertEnabled) {
       // Qui avviene il passaggio chiave
-      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n);
+      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n, currencySymbol);
     }
   }
 
@@ -219,6 +223,7 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> _checkBudgetForList(
     List<ExpenseModel> expenses, 
     AppLocalizations l10n,
+    String currencySymbol,
   ) async {
     final now = DateTime.now();
     bool hasCurrentMonthExpense = expenses.any((e) => 
@@ -226,7 +231,7 @@ class ExpenseProvider extends ChangeNotifier {
     );
 
     if (hasCurrentMonthExpense && _notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n);
+      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n, currencySymbol);
     }
   }
   

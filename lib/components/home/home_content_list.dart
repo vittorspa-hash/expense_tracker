@@ -1,4 +1,5 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -37,8 +38,8 @@ class HomeContentList extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
 
-    return Consumer2<MultiSelectProvider, ExpenseProvider>(
-      builder: (context, multiSelect, expenseProvider, child) {
+    return Consumer3<MultiSelectProvider, ExpenseProvider, CurrencyProvider>(
+      builder: (context, multiSelect, expenseProvider, currencyProvider, child) {
         // --- FILTRO DATI LOCALE ---
         // Filtra la lista proveniente dal provider in base alla query di ricerca corrente.
         final filteredExpenses = expenseProvider.expenses.where((expense) {
@@ -222,6 +223,7 @@ class HomeContentList extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final expense = filteredExpenses[index];
                         final isSelected = multiSelect.isSelected(expense.uuid);
+                        final currencySymbol = currencyProvider.currencySymbol;
 
                         return Dismissible(
                           key: Key(expense.uuid),
@@ -263,7 +265,7 @@ class HomeContentList extends StatelessWidget {
                                 deletedItem: expense,
                                 onDelete: (_) {},
                                 onRestore: (exp) =>
-                                    expenseProvider.restoreExpenses([exp], loc),
+                                    expenseProvider.restoreExpenses([exp], loc, currencySymbol),
                               );
                             }
 

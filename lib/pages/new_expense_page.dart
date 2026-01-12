@@ -1,4 +1,5 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
@@ -55,12 +56,14 @@ class _NewExpensePageState extends State<NewExpensePage>
     required AppLocalizations l10n
   }) async {
     final provider = context.read<ExpenseProvider>();
+    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     await provider.createExpense(
       value: value,
       description: description,
       date: date,
-      l10n: l10n
+      l10n: l10n,
+      currencySymbol: currencySymbol,
     );
 
     if (!mounted) return;

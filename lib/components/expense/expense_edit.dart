@@ -255,6 +255,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   Widget floatingActionButton(BuildContext context, bool isDark) {
     final expenseProvider = context.read<ExpenseProvider>();
     final loc = AppLocalizations.of(context)!;
+    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     return FloatingActionButton(
       heroTag: null,
@@ -286,7 +287,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               deletedItem: deletedExpense,
               onDelete: (_) {},
               onRestore: (exp) async {
-                await expenseProvider.restoreExpenses([exp], loc);
+                await expenseProvider.restoreExpenses([exp], loc, currencySymbol);
               },
             );
           }
