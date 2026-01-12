@@ -1,0 +1,233 @@
+{
+    "@@locale": "es",
+    "settingsTitle": "Configuración",
+    "appearance": "Apariencia",
+    "darkMode": "Tema oscuro",
+    "activated": "Activado",
+    "deactivated": "Desactivado",
+    "notifications": "Notificaciones",
+    "dailyReminder": "Recordatorio diario",
+    "activeAt": "Activo a las {time}",
+    "@activeAt": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "reminderTime": "Hora del recordatorio",
+    "spendingLimitAlert": "Alerta de límite de gasto",
+    "activeMonthlyLimit": "Activo ({amount}/mes)",
+    "@activeMonthlyLimit": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyLimit": "Límite mensual",
+    "notificationsInfo": "Las notificaciones te ayudarán a realizar un seguimiento de tus gastos diarios y a respetar el presupuesto mensual",
+    "currency": "Moneda",
+    "defaultCurrency": "Moneda predeterminada",
+    "language": "Idioma",
+    "defaultLanguage": "Idioma predeterminado",
+    "setMonthlyLimitTitle": "Establecer límite mensual",
+    "insertAmountHint": "Introducir importe",
+    "selectCurrencyTitle": "Seleccionar moneda",
+    "selectLanguageTitle": "Seleccionar idioma",
+    "languageNameIt": "Italiano (Italia)",
+    "languageNameEn": "Inglés (EE.UU.)",
+	"languageNameFr": "Francés (Francia)",
+	"languageNameEs": "Español (España)",
+    "newExpense": "Nuevo gasto",
+    "ok": "OK",
+    "deleteDialogTitleSingle": "Eliminación única",
+    "deleteDialogTitleMultiple": "Eliminación múltiple",
+    "deleteConfirmMessage": "{count, plural, =1{¿Quieres eliminar 1 gasto seleccionado?} other{¿Quieres eliminar {count} gastos seleccionados?}}",
+    "@deleteConfirmMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "deletedTitleSingle": "¡Eliminado!",
+    "deletedTitleMultiple": "¡Eliminados!",
+    "deleteSuccessMessage": "{count, plural, =1{1 gasto eliminado con éxito.} other{{count} gastos eliminados con éxito.}}",
+    "@deleteSuccessMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "annualReport": "INFORME ANUAL",
+    "thisMonth": "ESTE MES",
+    "today": "Hoy",
+    "week": "Semana",
+    "year": "Año",
+    "searchHint": "Buscar por descripción...",
+    "sortTitle": "Ordenar gastos",
+    "sortDateNewest": "Fecha: más reciente primero",
+    "sortDateOldest": "Fecha: más antiguo primero",
+    "sortAmountHighest": "Importe: de mayor a menor",
+    "sortAmountLowest": "Importe: de menor a mayor",
+    "deleteConfirmMessageSwipe": "¿Quieres eliminar el gasto seleccionado?",
+    "deleteSuccessMessageSwipe": "Gasto eliminado con éxito.",
+    "noDescription": "Sin descripción",
+    "selectedCountLabel": "{count, plural, =1{1 seleccionado} other{{count} seleccionados}}",
+    "@selectedCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "deselectAll": "Deseleccionar todo",
+    "selectAll": "Seleccionar todo",
+    "deleteSelectedTooltip": "Eliminar seleccionados",
+    "descriptionHint": "Descripción (opcional)",
+    "deleteConfirmTitle": "Confirmar eliminación",
+    "errorTitle": "¡Vaya!",
+    "zeroValueError": "No puedes crear un gasto con valor igual a 0.",
+    "createdTitle": "¡Creado!",
+    "editedTitle": "¡Modificado!",
+    "expenseCreated": "Gasto creado con éxito.",
+    "expenseEdited": "Gasto modificado con éxito.",
+    "expenseInstructionTitle": "Creación o modificación de un gasto",
+    "expenseInstructionMessage": "Para confirmar la creación o modificación de un gasto, mantén pulsada la pantalla.",
+    "profileTitle": "Perfil",
+    "dataUpdated": "Datos actualizados",
+    "refreshError": "Error de actualización: {error}",
+    "@refreshError": {
+        "placeholders": {
+            "error": { "type": "String" }
+        }
+    },
+    "profilePictureUpdated": "¡Foto de perfil actualizada!",
+    "removePictureTitle": "Eliminar imagen",
+    "removePictureMessage": "¿Estás seguro de que quieres eliminar la foto de perfil?",
+    "pictureRemoved": "Imagen de perfil eliminada",
+    "nameLabel": "Nombre",
+    "editNameTooltip": "Modificar nombre",
+    "emailLabel": "Correo",
+    "editEmailTooltip": "Modificar correo",
+    "passwordLabel": "Contraseña",
+    "editPasswordTooltip": "Modificar contraseña",
+    "userIdLabel": "ID de usuario",
+    "copyIdTooltip": "Copiar ID",
+    "idCopied": "ID copiado en el portapapeles",
+    "deleteAccountButton": "Eliminar cuenta",
+    "deleteAccountTitle": "Eliminar cuenta",
+    "deleteAccountMessage": "¿Estás seguro de que quieres eliminar definitivamente tu cuenta?",
+    "accountDeleted": "Cuenta eliminada con éxito",
+    "save": "Guardar",
+    "newNameHint": "Nuevo nombre",
+    "nameUpdated": "Nombre actualizado con éxito",
+    "newEmailHint": "Nuevo correo",
+    "currentPasswordHint": "Contraseña actual",
+    "invalidData": "Introduce datos válidos",
+    "emailUpdateSent": "Confirmación del nuevo correo enviada. Inicia sesión.",
+    "newPasswordHint": "Nueva contraseña",
+    "confirmPasswordHint": "Confirmar contraseña",
+    "recoveryEmailSent": "Correo de recuperación enviado a {email}",
+    "@recoveryEmailSent": {
+        "placeholders": {
+            "email": { "type": "String" }
+        }
+    },
+    "passwordsDoNotMatch": "Las nuevas contraseñas no coinciden",
+    "passwordUpdated": "Contraseña actualizada con éxito",
+    "notAvailable": "No disponible",
+    "yearsPageTitle": "Informe Anual",
+    "noExpensesTitle": "Ningún gasto disponible",
+    "noExpensesSubtitle": "Los gastos que añadas aparecerán aquí",
+    "totalYearLabel": "Total {year}",
+    "@totalYearLabel": {
+        "placeholders": {
+            "year": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyDetail": "Detalle mensual",
+    "noExpensesMonthTitle": "Ningún gasto este mes",
+    "totalMonthLabel": "Total {month}",
+    "@totalMonthLabel": {
+        "placeholders": {
+            "month": { "type": "String" }
+        }
+    },
+    "dayCountLabel": "{count, plural, =1{día} other{días}}",
+    "@dayCountLabel": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "dailyExpenses": "Gastos diarios",
+    "noExpensesDayTitle": "Ningún gasto en este día",
+    "totalDayLabel": "Total día",
+    "allExpenses": "Todos los gastos",
+    "expenseCountLabel": "{count, plural, =1{gasto} other{gastos}}",
+    "@expenseCountLabel": {
+        "placeholders": {
+            "count": { "type": "int" }
+        }
+    },
+    "confirm": "Confirmar",
+    "dontShowAgain": "No mostrar más",
+    "selectYear": "Seleccionar año",
+    "logout": "Cerrar sesión",
+    "logoutConfirmTitle": "Confirmar cierre de sesión",
+    "logoutConfirmMessage": "¿Estás seguro de que quieres cerrar sesión?",
+    "logoutError": "Error al cerrar sesión: {error}",
+    "@logoutError": {
+        "placeholders": {
+            "error": { "type": "String" }
+        }
+    },
+    "close": "Cerrar",
+    "forgotPassword": "¿Olvidaste la contraseña?",
+    "accountFallback": "Cuenta",
+    "appInitErrorTitle": "¡Vaya! No se pudo iniciar la app.",
+    "appInitErrorMessage": "Comprueba tu conexión e inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "authAppTitle": "Expense Tracker",
+    "authAppSubtitle": "Gestiona tus gastos de forma sencilla",
+    "loginTab": "Entrar",
+    "registerTab": "Registro",
+    "welcomeBack": "¡Bienvenido de nuevo!",
+    "signInToContinue": "Inicia sesión en tu cuenta para continuar",
+    "emailHint": "Correo electrónico",
+    "emailRequired": "Introduce el correo",
+    "emailInvalid": "Correo no válido",
+    "passwordHint": "Contraseña",
+    "passwordRequired": "Introduce la contraseña",
+    "loginButton": "Iniciar sesión",
+    "emailNotVerifiedTitle": "Correo no verificado",
+    "emailNotVerifiedMessage": "Debes confirmar tu correo antes de acceder.",
+    "resendEmail": "Reenviar correo",
+    "verificationEmailSent": "¡Correo de verificación enviado!",
+    "insertEmailForRecovery": "Introduce tu correo para la recuperación",
+    "createAccount": "Crear una cuenta",
+    "registerToStart": "Regístrate para empezar a controlar los gastos",
+    "fullNameHint": "Nombre completo",
+    "nameRequired": "Introduce tu nombre",
+    "passwordMinLength": "Mínimo 6 caracteres",
+    "confirmPasswordRequired": "Confirma la contraseña",
+    "registerButton": "Registrarse",
+    "verifyEmailTitle": "Verificar correo",
+    "verifyEmailContent": "Te hemos enviado un correo de verificación. Revisa tu bandeja de entrada.",
+    "notificationDailyTitle": "💰 Recordatorio de gastos",
+    "notificationDailyBody": "¡No olvides introducir tus gastos de hoy!",
+    "notificationBudgetTitle": "⚠️ ¡Límite de presupuesto superado!",
+    "notificationBudgetBody": "Has gastado {spent} de {limit} este mes",
+    "@notificationBudgetBody": {
+        "placeholders": {
+            "spent": { "type": "String" },
+            "limit": { "type": "String" }
+        }
+    }
+}

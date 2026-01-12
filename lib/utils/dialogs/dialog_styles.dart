@@ -14,7 +14,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class DialogStyles {
   // --- HELPER AMBIENTE & TEMA ---
   // Metodi statici per rilevare la piattaforma e il tema corrente (Dark/Light).
-  // 
+  //
   static bool get isIOS => Platform.isIOS;
 
   static bool isDark(BuildContext context) =>
@@ -27,10 +27,16 @@ class DialogStyles {
   // Aggiornato per supportare sia Italiano che Inglese.
   static bool isDestructiveAction(String text) {
     final t = text.toLowerCase();
-    return t.contains("elimina") || 
-           t.contains("delete") || 
-           t.contains("logout") || 
-           t.contains("log out");
+    return
+    // Cancellazione (Delete)
+        t.contains("elimina") || // IT, ES (Eliminar contiene elimina)
+        t.contains("delete") || // EN
+        t.contains("supprimer") || // FR
+        // Logout / Uscita
+        t.contains("logout") || // IT, EN
+        t.contains("log out") || // EN variation
+        t.contains("déconnexion") || // FR
+        t.contains("cerrar sesión"); // ES (Specifico per non confondere con "Cerrar/Chiudi")
   }
 
   // --- STILI BASE ---
@@ -52,7 +58,7 @@ class DialogStyles {
   static Widget buildCloseButton(BuildContext context) {
     final isDarkMode = isDark(context);
     final loc = AppLocalizations.of(context)!;
-    
+
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -73,7 +79,7 @@ class DialogStyles {
 
   // --- BUILDER ADATTIVI (PLATFORM AWARE) ---
   // Questi metodi restituiscono il widget nativo corretto in base a `isIOS`.
-  // 
+  //
 
   /// Pulsante d'azione per i Dialoghi (Alert).
   /// - iOS: CupertinoDialogAction (senza sfondo, stile testo nativo).
@@ -87,7 +93,9 @@ class DialogStyles {
     if (isIOS) {
       return CupertinoDialogAction(
         isDefaultAction: returnValue != false, // Grassetto se non è "Annulla"
-        isDestructiveAction: returnValue == true && isDestructiveAction(text), // Rosso se distruttivo
+        isDestructiveAction:
+            returnValue == true &&
+            isDestructiveAction(text), // Rosso se distruttivo
         onPressed: () => Navigator.pop(context, returnValue),
         child: Text(
           text,

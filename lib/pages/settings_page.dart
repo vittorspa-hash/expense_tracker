@@ -67,6 +67,10 @@ class _SettingsPageState extends State<SettingsPage>
         return AppLocalizations.of(context)!.languageNameIt;
       case 'en':
         return AppLocalizations.of(context)!.languageNameEn;
+      case 'fr':
+        return AppLocalizations.of(context)!.languageNameFr;
+      case 'es':
+        return AppLocalizations.of(context)!.languageNameEs;
       default:
         return AppLocalizations.of(context)!.languageNameIt;
     }
@@ -411,6 +415,8 @@ class _SettingsPageState extends State<SettingsPage>
       options: [
         {"title": loc.languageNameIt, "criteria": "it"},
         {"title": loc.languageNameEn, "criteria": "en"},
+        {"title": loc.languageNameFr, "criteria": "fr"},
+        {"title": loc.languageNameEs, "criteria": "es"},
       ],
     );
 
