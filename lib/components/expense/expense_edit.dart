@@ -14,25 +14,28 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: expense_edit.dart
-/// DESCRIZIONE: Schermata per la creazione e la modifica di una spesa.
-/// Gestisce l'input dell'importo (con formattazione valuta), descrizione e data.
-/// Implementa un meccanismo di salvataggio basato su "Long Press" sullo sfondo
-/// e la logica di eliminazione con undo tramite Snackbar.
+/// DESCRIZIONE: Schermata generica per la creazione o la modifica di una spesa.
+/// Gestisce l'input dell'utente (importo, descrizione, data, valuta), la validazione
+/// e delega il salvataggio o l'eliminazione tramite callback esterne.
 
 class ExpenseEdit extends StatefulWidget {
   // --- PARAMETRI ---
-  // Valori iniziali (null in fase di creazione), icone e callback per le operazioni CRUD.
   final double? initialValue;
   final String? initialDescription;
   final DateTime? initialDate;
-  final IconData? floatingActionButtonIcon;
 
+  final String? initialCurrencyCode;
+
+  final Widget? Function(bool isHovered)? headerBuilder;
+
+  final IconData? floatingActionButtonIcon;
   final Future<ExpenseModel?> Function()? onFloatingActionButtonPressed;
 
   final Future<void> Function({
     required double value,
     required String? description,
     required DateTime date,
+    required String currencyCode,
     required AppLocalizations l10n,
   })
   onSubmit;
@@ -42,6 +45,8 @@ class ExpenseEdit extends StatefulWidget {
     this.initialValue,
     this.initialDescription,
     this.initialDate,
+    this.initialCurrencyCode,
+    this.headerBuilder,
     this.floatingActionButtonIcon,
     this.onFloatingActionButtonPressed,
     required this.onSubmit,
@@ -52,144 +57,194 @@ class ExpenseEdit extends StatefulWidget {
 }
 
 class _ExpenseEditState extends State<ExpenseEdit> {
-  // Controller per i campi di testo e stato per feedback visivo al tocco (Long Press).
   final priceController = TextEditingController();
   final descriptionController = TextEditingController();
   bool isTappedDown = false;
   late DateTime selectedDate;
 
+  late Currency _selectedCurrency;
+
+  // --- INIZIALIZZAZIONE ---
+  // Configura i controller con i valori iniziali (se presenti) o di default.
+  // Imposta la valuta iniziale e pianifica il controllo per mostrare
+  // il dialog delle istruzioni dopo il rendering del frame.
   @override
   void initState() {
     super.initState();
-    // Inizializzazione dei campi con valori esistenti o default.
     priceController.text = widget.initialValue?.toString() ?? "";
     descriptionController.text = widget.initialDescription ?? "";
     selectedDate = widget.initialDate ?? DateTime.now();
 
-    // Mostra il dialog di istruzioni per il salvataggio se necessario.
+    if (widget.initialCurrencyCode != null) {
+      _selectedCurrency = Currency.fromCode(widget.initialCurrencyCode!);
+    } else {
+      _selectedCurrency = context.read<CurrencyProvider>().currentCurrency;
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInstructionDialogIfNeeded();
     });
   }
 
+  // --- COSTRUZIONE UI ---
+  // Definisce il layout principale. Include un GestureDetector globale (InkWell)
+  // per gestire il "Long Press" per il salvataggio rapido e la gestione del focus.
+  // Visualizza anche un overlay di caricamento quando necessario.
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isLoading = context.select<ExpenseProvider, bool>((p) => p.isLoading);
+
+    final header = widget.headerBuilder?.call(isTappedDown);
 
     return Scaffold(
       backgroundColor: isDark
           ? AppColors.editPageBackgroundDark
           : AppColors.editPageBackgroundLight,
-      // --- GESTORE INTERAZIONE GLOBALE ---
-      // InkWell avvolge il corpo per rilevare il Long Press necessario al salvataggio.
-      // Gestisce il focus e il feedback visivo (cambio colore).
-      body: InkWell(
-        onLongPress: onSubmit,
-        onHighlightChanged: (highlighted) =>
-            setState(() => isTappedDown = highlighted),
-        splashColor: isDark
-            ? AppColors.editPageBackgroundDark
-            : AppColors.editPageBackgroundLight,
-        focusColor: Colors.transparent,
-        highlightColor: AppColors.primary,
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            inputPrice(),
-            inputDescription(),
-            SizedBox(height: 20.h),
-            inputDate(),
-          ],
-        ),
+
+      body: Stack(
+        children: [
+          InkWell(
+            onLongPress: isLoading ? null : onSubmit,
+            onHighlightChanged: (highlighted) {
+              if (!isLoading) setState(() => isTappedDown = highlighted);
+            },
+            splashColor: isDark
+                ? AppColors.editPageBackgroundDark
+                : AppColors.editPageBackgroundLight,
+            focusColor: Colors.transparent,
+            highlightColor: AppColors.primary,
+            onTap: () {
+              FocusScope.of(context).unfocus();
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (header != null) ...[header, SizedBox(height: 20.h)],
+
+                inputPrice(isDark),
+                inputDescription(),
+                SizedBox(height: 20.h),
+                inputDate(),
+              ],
+            ),
+          ),
+
+          if (isLoading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.3),
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            ),
+        ],
       ),
-      floatingActionButton: widget.floatingActionButtonIcon == null
+
+      floatingActionButton:
+          (widget.floatingActionButtonIcon == null || isLoading)
           ? null
           : floatingActionButton(context, isDark),
     );
   }
 
-  // --- INPUT PREZZO ---
-  // Widget che si adatta alla valuta selezionata (CurrencyProvider).
-  // Gestisce il simbolo valuta, i decimali e la formattazione del testo.
-  Widget inputPrice() {
-    return Consumer<CurrencyProvider>(
-      builder: (context, currencyProvider, child) {
-        final currency = currencyProvider.currentCurrency;
+  // --- INPUT PREZZO E VALUTA ---
+  // Widget composto che permette di inserire l'importo numerico e selezionare la valuta.
+  // Gestisce la formattazione dell'input (virgola/punto) e lo stile del testo.
+  Widget inputPrice(bool isDark) {
+    final String hintText = _selectedCurrency == Currency.jpy ? "0" : "0.00";
+    final textColor = isTappedDown
+        ? AppColors.textLight
+        : AppColors.textTappedDown;
 
-        final String hintText = currency == Currency.jpy ? "0" : "0.00";
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                currencyProvider.currencySymbol,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () => _showCurrencyPicker(isDark),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+              color: Colors.transparent,
+              child: Text(
+                _selectedCurrency.symbol,
                 style: TextStyle(
                   fontSize: 50.sp,
-                  color: isTappedDown
-                      ? AppColors.textLight
-                      : AppColors.textTappedDown,
+                  color: textColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-          
-              SizedBox(width: 10.w),
-          
-              Flexible(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: IntrinsicWidth(
-                    child: TextField(
-                      controller: priceController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      cursorColor: isTappedDown
-                          ? AppColors.textLight
-                          : AppColors.textTappedDown,
-                      style: TextStyle(
-                        fontSize: 50.sp,
-                        color: isTappedDown
-                            ? AppColors.textLight
-                            : AppColors.textTappedDown,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
-                        TextInputFormatter.withFunction((oldValue, newValue) {
-                          final text = newValue.text.replaceAll(',', '.');
-                          return newValue.copyWith(
-                            text: text,
-                            selection: newValue.selection,
-                          );
-                        }),
-                      ],
-                      decoration: InputDecoration(
-                        hintText: hintText,
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(
-                          color: AppColors.textEditPage,
-                          fontSize: 50.sp,
-                        ),
-                      ),
+            ),
+          ),
+
+          SizedBox(width: 10.w),
+
+          Flexible(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: IntrinsicWidth(
+                child: TextField(
+                  controller: priceController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  cursorColor: textColor,
+                  style: TextStyle(
+                    fontSize: 50.sp,
+                    color: textColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+                    TextInputFormatter.withFunction((oldValue, newValue) {
+                      final text = newValue.text.replaceAll(',', '.');
+                      return newValue.copyWith(
+                        text: text,
+                        selection: newValue.selection,
+                      );
+                    }),
+                  ],
+                  decoration: InputDecoration(
+                    hintText: hintText,
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(
+                      color: AppColors.secondaryDark,
+                      fontSize: 50.sp,
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
+  // --- SELETTORE VALUTA ---
+  // Mostra un foglio modale per permettere all'utente di cambiare la valuta della transazione.
+  Future<void> _showCurrencyPicker(bool isDark) async {
+    final options = Currency.values
+        .map((c) => {"title": "${c.name} (${c.symbol})", "criteria": c.code})
+        .toList();
+
+    final result = await DialogUtils.showSortSheet(
+      context,
+      isDark: isDark,
+      options: options,
+      title: AppLocalizations.of(context)!.selectCurrencyTitle,
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedCurrency = Currency.fromCode(result);
+      });
+    }
+  }
+
   // --- INPUT DESCRIZIONE ---
-  // Campo di testo semplice per aggiungere dettagli opzionali alla spesa.
+  // Campo di testo semplice per aggiungere dettagli alla spesa.
   Widget inputDescription() => Padding(
     padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: TextField(
@@ -209,13 +264,13 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       decoration: InputDecoration(
         hintText: AppLocalizations.of(context)!.descriptionHint,
         border: InputBorder.none,
-        hintStyle: TextStyle(color: AppColors.textEditPage, fontSize: 18.sp),
+        hintStyle: TextStyle(color: AppColors.secondaryDark, fontSize: 18.sp),
       ),
     ),
   );
 
   // --- INPUT DATA ---
-  // Visualizza la data selezionata e apre il DatePicker al tocco.
+  // Visualizza la data corrente formattata e apre il date picker al tocco.
   Widget inputDate() {
     final locale = Localizations.localeOf(context).toString();
     final formattedDate = DateFormat("d MMMM y", locale).format(selectedDate);
@@ -249,9 +304,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- AZIONE FLOTTANTE (ELIMINAZIONE) ---
-  // Pulsante per eliminare la spesa corrente.
-  // Include conferma via dialog e possibilità di ripristino via Snackbar.
+  // --- GESTIONE ELIMINAZIONE ---
+  // Costruisce il FloatingActionButton (solitamente per eliminare la spesa esistente).
+  // Gestisce il dialog di conferma e l'eventuale ripristino tramite Snackbar.
   Widget floatingActionButton(BuildContext context, bool isDark) {
     final expenseProvider = context.read<ExpenseProvider>();
     final loc = AppLocalizations.of(context)!;
@@ -274,10 +329,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           final deletedExpense = await widget.onFloatingActionButtonPressed!();
 
           if (!context.mounted) return;
-
-          if (expenseProvider.errorMessage != null) {
-            return;
-          }
+          if (expenseProvider.errorMessage != null) return;
 
           if (deletedExpense != null) {
             SnackbarUtils.show(
@@ -287,7 +339,11 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               deletedItem: deletedExpense,
               onDelete: (_) {},
               onRestore: (exp) async {
-                await expenseProvider.restoreExpenses([exp], loc, currencySymbol);
+                await expenseProvider.restoreExpenses(
+                  [exp],
+                  loc,
+                  currencySymbol,
+                );
               },
             );
           }
@@ -297,9 +353,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- LOGICA DI SALVATAGGIO ---
-  // Valida l'input (importo > 0), invoca il callback di salvataggio
-  // e mostra feedback all'utente.
+  // --- SALVATAGGIO ---
+  // Valida i dati (importo non nullo) e chiama la funzione di submit passata come parametro.
+  // Fornisce feedback all'utente tramite Snackbar.
   Future<void> onSubmit() async {
     final loc = AppLocalizations.of(context)!;
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
@@ -320,14 +376,12 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       value: value,
       description: description.isEmpty ? null : description,
       date: selectedDate,
+      currencyCode: _selectedCurrency.code,
       l10n: loc,
     );
 
     if (!mounted) return;
-
-    if (expenseProvider.errorMessage != null) {
-      return;
-    }
+    if (expenseProvider.errorMessage != null) return;
 
     SnackbarUtils.show(
       context: context,
@@ -338,9 +392,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- UTILS & TUTORIAL ---
-  // Funzioni ausiliarie per la selezione della data, formattazione stringhe
-  // e visualizzazione del dialog istruzioni "Long Press".
+  // --- SELETTORE DATA ---
+  // Apre il date picker nativo adattivo per selezionare una data passata o odierna.
   Future<void> _pickDate(BuildContext context) async {
     final DateTime? pickedDate = await DialogUtils.showDatePickerAdaptive(
       context,
@@ -350,7 +403,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
 
     if (!mounted) return;
-
     if (pickedDate != null && pickedDate != selectedDate) {
       setState(() {
         selectedDate = pickedDate;
@@ -358,6 +410,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     }
   }
 
+  // --- UTILITY FORMATTAZIONE ---
+  // Helper per capitalizzare la prima lettera del mese nella stringa della data.
   String capitalizeMonth(String date) {
     final parts = date.split(' ');
     if (parts.length < 3) return date;
@@ -367,6 +421,9 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     return "$day $month $year";
   }
 
+  // --- ISTRUZIONI UTENTE ---
+  // Controlla nelle SharedPreferences se è necessario mostrare il tutorial
+  // per l'utilizzo della schermata (es. gestures) e lo visualizza una tantum.
   Future<void> _showInstructionDialogIfNeeded() async {
     final prefs = await SharedPreferences.getInstance();
     final uid = FirebaseAuth.instance.currentUser?.uid ?? "guest";

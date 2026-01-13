@@ -1,5 +1,6 @@
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/language_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
@@ -398,6 +399,9 @@ class _SettingsPageState extends State<SettingsPage>
     if (result != null) {
       final selectedCurrency = Currency.fromCode(result);
       await currencyProvider.setCurrency(selectedCurrency);
+      if (context.mounted) {
+        context.read<ExpenseProvider>().updateAppCurrency(selectedCurrency.code);
+      }
     }
   }
 

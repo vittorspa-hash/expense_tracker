@@ -103,7 +103,9 @@
     "refreshError": "Errore refresh: {error}",
     "@refreshError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "profilePictureUpdated": "Immagine profilo aggiornata!",
@@ -135,7 +137,9 @@
     "recoveryEmailSent": "Email di recupero inviata a {email}",
     "@recoveryEmailSent": {
         "placeholders": {
-            "email": { "type": "String" }
+            "email": {
+                "type": "String"
+            }
         }
     },
     "passwordsDoNotMatch": "Le nuove password non coincidono",
@@ -157,13 +161,17 @@
     "totalMonthLabel": "Totale {month}",
     "@totalMonthLabel": {
         "placeholders": {
-            "month": { "type": "String" }
+            "month": {
+                "type": "String"
+            }
         }
     },
     "dayCountLabel": "{count, plural, =1{giorno} other{giorni}}",
     "@dayCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "dailyExpenses": "Spese giornaliere",
@@ -173,7 +181,9 @@
     "expenseCountLabel": "{count, plural, =1{spesa} other{spese}}",
     "@expenseCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "confirm": "Conferma",
@@ -185,7 +195,9 @@
     "logoutError": "Errore logout: {error}",
     "@logoutError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "close": "Chiudi",
@@ -226,8 +238,23 @@
     "notificationBudgetBody": "Hai speso {spent} su {limit} questo mese",
     "@notificationBudgetBody": {
         "placeholders": {
-            "spent": { "type": "String" },
-            "limit": { "type": "String" }
+            "spent": {
+                "type": "String"
+            },
+            "limit": {
+                "type": "String"
+            }
+        }
+    },
+    "editExpenseConvertedTitle": "Valore convertito",
+    "editExpenseExchangeRateDate": "Al {date}: ",
+    "@editExpenseExchangeRateDate": {
+        "description": "Etichetta data per il tasso di cambio. Esempio: Al 12/01/2024:",
+        "placeholders": {
+            "date": {
+                "type": "String",
+                "example": "12/01/2024"
+            }
         }
     }
 }

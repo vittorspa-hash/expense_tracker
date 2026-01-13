@@ -49,7 +49,7 @@ class AppColors {
 
   // --- INTERAZIONE E STRUTTURA ---
   // Superfici e divisori con contrasti ridotti per maggiore eleganza
-  static Color textTappedDown = const Color(0xFF7E57C2); // Viola medio per feedback
+  static Color textTappedDown = const Color(0xFF9575CD); // Viola medio-chiaro più delicato
   static Color cardDark = const Color(0xFF252525); // Card scura più morbida
   static Color cardLight = const Color(0xFFFFFFFF); // Card chiara bianco puro
   static Color shadow = const Color(0xFF000000).withValues(alpha: 0.08); // Ombra più leggera

@@ -8,10 +8,9 @@ import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: new_expense_page.dart
-/// DESCRIZIONE: Pagina per la creazione di una nuova spesa.
-/// Funge da container per il componente riutilizzabile ExpenseEdit, iniettando
-/// la logica specifica per la creazione (createExpense) e gestendo la navigazione
-/// in base all'esito dell'operazione asincrona.
+/// DESCRIZIONE: Pagina dedicata alla creazione di una nuova spesa.
+/// Funge da wrapper per il componente riutilizzabile ExpenseEdit, gestendo
+/// specificamente la logica di creazione (onSubmit) e l'animazione di ingresso.
 
 class NewExpensePage extends StatefulWidget {
   static const route = "/expense/new";
@@ -25,14 +24,17 @@ class NewExpensePage extends StatefulWidget {
 class _NewExpensePageState extends State<NewExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   
-  // --- ANIMAZIONI ---
-  // Configurazione del mixin per l'effetto di fade-in all'apertura della pagina.
+  // --- CONFIGURAZIONE ANIMAZIONE ---
+  // Implementazione dei getter richiesti dal FadeAnimationMixin.
+  // vsync fornisce il ticker necessario per controllare l'animazione.
   @override
   TickerProvider get vsync => this;
 
   @override
   Duration get fadeAnimationDuration => const Duration(milliseconds: 400);
 
+  // --- CICLO DI VITA ---
+  // Inizializza l'animazione all'apertura della pagina e libera le risorse alla chiusura.
   @override
   void initState() {
     super.initState();
@@ -45,14 +47,15 @@ class _NewExpensePageState extends State<NewExpensePage>
     super.dispose();
   }
 
-  // --- LOGICA DI SALVATAGGIO ---
-  // Callback passata al form ExpenseEdit. Esegue la creazione della spesa tramite Provider.
-  // Se l'operazione ha successo, chiude la pagina (pop).
-  // Se fallisce (es. errore connessione), mostra una SnackBar e mantiene l'utente sulla pagina.
+  // --- LOGICA DI CREAZIONE ---
+  // Callback invocata quando l'utente conferma l'inserimento nel form.
+  // Recupera i provider necessari, tenta la creazione della spesa e gestisce
+  // il feedback visivo (chiusura pagina o snackbar di errore).
   Future<void> onSubmit({
     required double value,
     required String? description,
     required DateTime date,
+    required String currencyCode, 
     required AppLocalizations l10n
   }) async {
     final provider = context.read<ExpenseProvider>();
@@ -64,6 +67,7 @@ class _NewExpensePageState extends State<NewExpensePage>
       date: date,
       l10n: l10n,
       currencySymbol: currencySymbol,
+      currencyCode: currencyCode, 
     );
 
     if (!mounted) return;
@@ -81,6 +85,9 @@ class _NewExpensePageState extends State<NewExpensePage>
     Navigator.pop(context);
   }
 
+  // --- COSTRUZIONE UI ---
+  // Renderizza il componente ExpenseEdit avvolto nell'animazione di dissolvenza.
+  // Non vengono passati parametri opzionali come initialValue poiché si tratta di una nuova spesa.
   @override
   Widget build(BuildContext context) {
     return buildWithFadeAnimation(ExpenseEdit(onSubmit: onSubmit));

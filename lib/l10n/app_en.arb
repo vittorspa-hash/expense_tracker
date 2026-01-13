@@ -103,7 +103,9 @@
     "refreshError": "Refresh error: {error}",
     "@refreshError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "profilePictureUpdated": "Profile picture updated!",
@@ -135,7 +137,9 @@
     "recoveryEmailSent": "Recovery email sent to {email}",
     "@recoveryEmailSent": {
         "placeholders": {
-            "email": { "type": "String" }
+            "email": {
+                "type": "String"
+            }
         }
     },
     "passwordsDoNotMatch": "New passwords do not match",
@@ -157,13 +161,17 @@
     "totalMonthLabel": "Total {month}",
     "@totalMonthLabel": {
         "placeholders": {
-            "month": { "type": "String" }
+            "month": {
+                "type": "String"
+            }
         }
     },
     "dayCountLabel": "{count, plural, =1{day} other{days}}",
     "@dayCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "dailyExpenses": "Daily expenses",
@@ -173,7 +181,9 @@
     "expenseCountLabel": "{count, plural, =1{expense} other{expenses}}",
     "@expenseCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "confirm": "Confirm",
@@ -185,7 +195,9 @@
     "logoutError": "Logout error: {error}",
     "@logoutError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "close": "Close",
@@ -226,8 +238,14 @@
     "notificationBudgetBody": "You spent {spent} of {limit} this month",
     "@notificationBudgetBody": {
         "placeholders": {
-            "spent": { "type": "String" },
-            "limit": { "type": "String" }
+            "spent": {
+                "type": "String"
+            },
+            "limit": {
+                "type": "String"
+            }
         }
-    }
+    },
+    "editExpenseConvertedTitle": "Converted value",
+    "editExpenseExchangeRateDate": "As of {date}: "
 }

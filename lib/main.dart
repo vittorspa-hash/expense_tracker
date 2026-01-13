@@ -104,6 +104,7 @@ void main() async {
             ChangeNotifierProvider(
               create: (_) => ExpenseProvider(
                 expenseService: getIt<ExpenseService>(),
+                currencyService: getIt<CurrencyService>(),
                 notificationProvider: notificationProvider,
               ),
             ),

@@ -37,8 +37,8 @@
     "selectLanguageTitle": "Seleccionar idioma",
     "languageNameIt": "Italiano (Italia)",
     "languageNameEn": "Inglés (EE.UU.)",
-	"languageNameFr": "Francés (Francia)",
-	"languageNameEs": "Español (España)",
+    "languageNameFr": "Francés (Francia)",
+    "languageNameEs": "Español (España)",
     "newExpense": "Nuevo gasto",
     "ok": "OK",
     "deleteDialogTitleSingle": "Eliminación única",
@@ -103,7 +103,9 @@
     "refreshError": "Error de actualización: {error}",
     "@refreshError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "profilePictureUpdated": "¡Foto de perfil actualizada!",
@@ -135,7 +137,9 @@
     "recoveryEmailSent": "Correo de recuperación enviado a {email}",
     "@recoveryEmailSent": {
         "placeholders": {
-            "email": { "type": "String" }
+            "email": {
+                "type": "String"
+            }
         }
     },
     "passwordsDoNotMatch": "Las nuevas contraseñas no coinciden",
@@ -157,13 +161,17 @@
     "totalMonthLabel": "Total {month}",
     "@totalMonthLabel": {
         "placeholders": {
-            "month": { "type": "String" }
+            "month": {
+                "type": "String"
+            }
         }
     },
     "dayCountLabel": "{count, plural, =1{día} other{días}}",
     "@dayCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "dailyExpenses": "Gastos diarios",
@@ -173,7 +181,9 @@
     "expenseCountLabel": "{count, plural, =1{gasto} other{gastos}}",
     "@expenseCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "confirm": "Confirmar",
@@ -185,7 +195,9 @@
     "logoutError": "Error al cerrar sesión: {error}",
     "@logoutError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "close": "Cerrar",
@@ -226,8 +238,14 @@
     "notificationBudgetBody": "Has gastado {spent} de {limit} este mes",
     "@notificationBudgetBody": {
         "placeholders": {
-            "spent": { "type": "String" },
-            "limit": { "type": "String" }
+            "spent": {
+                "type": "String"
+            },
+            "limit": {
+                "type": "String"
+            }
         }
-    }
+    },
+    "editExpenseConvertedTitle": "Valor convertido",
+    "editExpenseExchangeRateDate": "Al {date}: "
 }

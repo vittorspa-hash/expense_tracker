@@ -1,17 +1,19 @@
 // FILE: expense_model.dart
 // DESCRIZIONE: Modello dati fondamentale per una singola spesa.
 // Gestisce la struttura dati, la serializzazione per il database (Firebase)
-// e include metodi di utilità per la clonazione immutabile.
+// e include metodi di utilità per la clonazione immutabile e la conversione valuta.
 
 class ExpenseModel {
   // --- PROPRIETÀ ---
-  // Definiscono lo stato della spesa. 
-  // 
-  String uuid;          // ID univoco della spesa
-  double value;         // Importo
-  String? description;  // Note opzionali
-  DateTime createdOn;   // Timestamp creazione
-  String userId;        // Riferimento proprietario (Foreign Key logica)
+  String uuid;           // ID univoco della spesa
+  double value;          // Importo
+  String? description;   // Note opzionali
+  DateTime createdOn;    // Timestamp creazione
+  String userId;         // Riferimento proprietario
+  
+  // NUOVE PROPRIETÀ PER MULTI-VALUTA
+  String currency;                   // Codice valuta in cui è stata salvata la spesa (es. "USD")
+  Map<String, double> exchangeRates; // Snapshot dei tassi di cambio al momento della spesa
 
   // --- COSTRUTTORE ---
   ExpenseModel({
@@ -20,43 +22,53 @@ class ExpenseModel {
     required this.description,
     required this.createdOn,
     required this.userId,
+    required this.currency,      // Ora richiesto
+    required this.exchangeRates, // Ora richiesto
   });
 
   // --- SERIALIZZAZIONE (DB -> APP) ---
-  // Factory method per creare un'istanza partendo da una Mappa (es. JSON da Firebase).
-  // Gestisce la conversione sicura dei tipi numerici e delle date (Epoch ms -> DateTime).
   factory ExpenseModel.fromMap(Map<String, dynamic> data) {
+    // Parsing sicuro della mappa dei tassi
+    // Se 'exchangeRates' è null (vecchie spese), usiamo una mappa vuota.
+    Map<String, double> parsedRates = {};
+    if (data["exchangeRates"] != null) {
+      (data["exchangeRates"] as Map<String, dynamic>).forEach((key, val) {
+        parsedRates[key] = (val as num).toDouble();
+      });
+    }
+
     return ExpenseModel(
       uuid: data["uuid"], 
-      value: (data["value"] as num).toDouble(), // Gestione sicura int/double
+      value: (data["value"] as num).toDouble(), 
       description: data["description"], 
-      createdOn: DateTime.fromMillisecondsSinceEpoch(
-        data["createdOn"],
-      ), 
-      userId: data["userId"], 
+      createdOn: DateTime.fromMillisecondsSinceEpoch(data["createdOn"]), 
+      userId: data["userId"],
+      // Gestione retroattiva: se la spesa è vecchia e non ha valuta, assumiamo EUR
+      currency: data["currency"] ?? "EUR", 
+      exchangeRates: parsedRates,
     );
   }
 
   // --- SERIALIZZAZIONE (APP -> DB) ---
-  // Converte l'oggetto in Mappa per il salvataggio su database.
-  // Le date vengono convertite in millisecondi (Epoch) per compatibilità.
   Map<String, dynamic> toMap() => {
     "uuid": uuid,
     "value": value,
     "description": description,
     "createdOn": createdOn.millisecondsSinceEpoch,
     "userId": userId,
+    "currency": currency,
+    "exchangeRates": exchangeRates,
   };
 
   // --- UTILITY (COPYWITH) ---
-  // Pattern standard per creare una copia modificata dell'oggetto corrente
-  // senza alterare l'istanza originale (utile per aggiornamenti di stato parziali).
   ExpenseModel copyWith({
     String? uuid,
     double? value,
     String? description,
     DateTime? createdOn,
     String? userId,
+    String? currency,
+    Map<String, double>? exchangeRates,
   }) {
     return ExpenseModel(
       uuid: uuid ?? this.uuid,
@@ -64,6 +76,30 @@ class ExpenseModel {
       description: description ?? this.description,
       createdOn: createdOn ?? this.createdOn,
       userId: userId ?? this.userId,
+      currency: currency ?? this.currency,
+      exchangeRates: exchangeRates ?? this.exchangeRates,
     );
+  }
+
+  // --- LOGICA DI CONVERSIONE ---
+  // Restituisce il valore della spesa convertito nella valuta target
+  // utilizzando i tassi storici salvati nell'oggetto.
+  double getValueIn(String targetCurrency) {
+    // 1. Se la valuta target è la stessa della spesa, restituisci il valore originale
+    if (currency == targetCurrency) return value;
+
+    // 2. Se non abbiamo tassi salvati (es. vecchia spesa o offline), restituisci valore originale (fallback)
+    if (exchangeRates.isEmpty) return value;
+
+    // 3. Recupera i tassi. Assumiamo che i tassi siano relativi a una base comune (es. EUR = 1.0)
+    // Se la valuta non è trovata nella mappa, fallback a 1.0 per evitare crash
+    double rateSource = exchangeRates[currency] ?? 0.0;
+    double rateTarget = exchangeRates[targetCurrency] ?? 0.0;
+
+    // 4. Prevenzione divisione per zero
+    if (rateSource == 0.0 || rateTarget == 0.0) return value;
+
+    // 5. Formula di conversione: (Valore / TassoSorgente) * TassoTarget
+    return (value / rateSource) * rateTarget;
   }
 }

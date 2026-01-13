@@ -37,8 +37,8 @@
     "selectLanguageTitle": "Sélectionner la langue",
     "languageNameIt": "Italien (Italie)",
     "languageNameEn": "Anglais (US)",
-	"languageNameFr": "Français (France)",
-	"languageNameEs": "Espagnol (Espagne)",
+    "languageNameFr": "Français (France)",
+    "languageNameEs": "Espagnol (Espagne)",
     "newExpense": "Nouvelle dépense",
     "ok": "OK",
     "deleteDialogTitleSingle": "Suppression unique",
@@ -103,7 +103,9 @@
     "refreshError": "Erreur d'actualisation : {error}",
     "@refreshError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "profilePictureUpdated": "Photo de profil mise à jour !",
@@ -135,7 +137,9 @@
     "recoveryEmailSent": "E-mail de récupération envoyé à {email}",
     "@recoveryEmailSent": {
         "placeholders": {
-            "email": { "type": "String" }
+            "email": {
+                "type": "String"
+            }
         }
     },
     "passwordsDoNotMatch": "Les nouveaux mots de passe ne correspondent pas",
@@ -157,13 +161,17 @@
     "totalMonthLabel": "Total {month}",
     "@totalMonthLabel": {
         "placeholders": {
-            "month": { "type": "String" }
+            "month": {
+                "type": "String"
+            }
         }
     },
     "dayCountLabel": "{count, plural, =1{jour} other{jours}}",
     "@dayCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "dailyExpenses": "Dépenses journalières",
@@ -173,7 +181,9 @@
     "expenseCountLabel": "{count, plural, =1{dépense} other{dépenses}}",
     "@expenseCountLabel": {
         "placeholders": {
-            "count": { "type": "int" }
+            "count": {
+                "type": "int"
+            }
         }
     },
     "confirm": "Confirmer",
@@ -185,7 +195,9 @@
     "logoutError": "Erreur de déconnexion : {error}",
     "@logoutError": {
         "placeholders": {
-            "error": { "type": "String" }
+            "error": {
+                "type": "String"
+            }
         }
     },
     "close": "Fermer",
@@ -226,8 +238,14 @@
     "notificationBudgetBody": "Vous avez dépensé {spent} sur {limit} ce mois-ci",
     "@notificationBudgetBody": {
         "placeholders": {
-            "spent": { "type": "String" },
-            "limit": { "type": "String" }
+            "spent": {
+                "type": "String"
+            },
+            "limit": {
+                "type": "String"
+            }
         }
-    }
+    },
+    "editExpenseConvertedTitle": "Valeur convertie",
+    "editExpenseExchangeRateDate": "Au {date}: "
 }

@@ -49,6 +49,9 @@ dependencies:
   # Lint
   flutter_lints: ^6.0.0
 
+  # Rete
+  http: ^1.6.0
+
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_test:
