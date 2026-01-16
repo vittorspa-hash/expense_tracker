@@ -6,10 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; 
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: edit_expense_page.dart
 /// DESCRIZIONE: Pagina dedicata alla modifica di una spesa esistente.
@@ -29,7 +28,6 @@ class EditExpensePage extends StatefulWidget {
 
 class _EditExpensePageState extends State<EditExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- CONFIGURAZIONE ANIMAZIONE ---
   // Setup del TickerProvider per l'animazione di dissolvenza in ingresso.
   @override
@@ -51,41 +49,51 @@ class _EditExpensePageState extends State<EditExpensePage>
   }
 
   // --- HEADER CONVERSIONE VALUTA ---
-  // Costruisce un banner informativo se la valuta della spesa è diversa dalla valuta corrente dell'app.
-  // Mostra il valore convertito approssimativo e la data del tasso di cambio.
-  // I colori del banner si adattano dinamicamente allo stato 'hovered' del widget genitore.
+  // Costruisce un banner informativo se la valuta della spesa è diversa da quella dell'app.
+  // Gestisce due stati:
+  // 1. Successo: Mostra data e valore convertito.
+  // 2. Warning: Mostra avviso se i tassi non sono disponibili (Soft Fail).
   Widget? _buildExchangeRateBanner(BuildContext context, bool isHovered) {
     final model = widget.expenseModel;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final loc = AppLocalizations.of(context)!;
 
-    final currentAppCurrency = Provider.of<CurrencyProvider>(context, listen: false).currencyCode;
+    final loc = AppLocalizations.of(context)!;
+    final currencyProvider = Provider.of<CurrencyProvider>(
+      context,
+      listen: false,
+    );
+    final currentAppCurrency = currencyProvider.currencyCode;
     final originalCurrency = model.currency;
 
     if (model.exchangeRates.isEmpty) return null;
     if (originalCurrency == currentAppCurrency) return null;
 
-    final convertedValue = model.getValueIn(currentAppCurrency);
-    final currencyProvider = Provider.of<CurrencyProvider>(context, listen: false);
-    final formattedConverted = currencyProvider.formatAmount(convertedValue);
-    final dateStr = DateFormat('dd/MM/yyyy').format(model.createdOn);
+    // Verifica validità tasso (per decidere icona e testo)
+    final bool hasRate = model.exchangeRates.containsKey(currentAppCurrency);
 
-    final Color iconColor = isHovered ? AppColors.textLight : AppColors.primary;
-    final Color titleColor = isHovered 
-        ? AppColors.textLight 
+    // --- CONFIGURAZIONE COLORI (RIPRISTINATA) ---
+    // Usiamo sempre AppColors.primary, indipendentemente dall'errore.
+    final Color baseColor = AppColors.primary; 
+
+    final Color iconColor = isHovered ? AppColors.textLight : baseColor;
+
+    final Color titleColor = isHovered
+        ? AppColors.textLight
         : (isDark ? AppColors.greyLight : AppColors.greyDark);
-    final Color textColor = isHovered 
-        ? AppColors.textLight 
+
+    final Color textColor = isHovered
+        ? AppColors.textLight
         : (isDark ? AppColors.textLight : AppColors.textDark);
-    final Color highlightColor = isHovered ? AppColors.textLight  : AppColors.primary;
-    
-    final Color boxBgColor = isHovered 
-        ? AppColors.textLight.withValues(alpha: 0.1) 
-        : AppColors.primary.withValues(alpha: 0.08);
-    final Color boxBorderColor = isHovered 
-        ? AppColors.textLight.withValues(alpha: 0.3) 
-        : AppColors.primary.withValues(alpha: 0.2);
+
+    final Color highlightColor = isHovered ? AppColors.textLight : baseColor;
+
+    final Color boxBgColor = isHovered
+        ? AppColors.textLight.withValues(alpha: 0.1)
+        : baseColor.withValues(alpha: 0.08);
+
+    final Color boxBorderColor = isHovered
+        ? AppColors.textLight.withValues(alpha: 0.3)
+        : baseColor.withValues(alpha: 0.2);
 
     return Container(
       width: double.infinity,
@@ -94,16 +102,15 @@ class _EditExpensePageState extends State<EditExpensePage>
       decoration: BoxDecoration(
         color: boxBgColor,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: boxBorderColor,
-          width: 1,
-        ),
+        border: Border.all(color: boxBorderColor, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.currency_exchange_rounded,
+            hasRate
+                ? Icons.currency_exchange_rounded
+                : Icons.warning_amber_rounded,
             color: iconColor,
             size: 26.sp,
           ),
@@ -112,34 +119,34 @@ class _EditExpensePageState extends State<EditExpensePage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  loc.editExpenseConvertedTitle, 
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.bold,
-                    color: titleColor,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                RichText(
-                  text: TextSpan(
+                if (hasRate) ...[
+                  Text(
+                    loc.editExpenseConvertedTitle,
                     style: TextStyle(
-                      fontSize: 15.sp,
-                      color: textColor,
-                      fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.bold,
+                      color: titleColor,
+                      letterSpacing: 0.5,
                     ),
-                    children: [
-                      TextSpan(text: loc.editExpenseExchangeRateDate(dateStr)),
-                      TextSpan(
-                        text: "≈ $formattedConverted",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: highlightColor,
-                        ),
-                      ),
-                    ],
                   ),
-                ),
+                ] else ...[
+                   SizedBox(height: 2.h),
+                ],
+
+                // --- CONTENUTO VARIABILE ---
+                if (hasRate) ...[
+                  _buildSuccessContent(
+                    context,
+                    model,
+                    currentAppCurrency,
+                    currencyProvider,
+                    loc,
+                    textColor,
+                    highlightColor,
+                  ),
+                ] else ...[
+                  _buildErrorContent(textColor, highlightColor, loc),
+                ],
               ],
             ),
           ),
@@ -148,9 +155,70 @@ class _EditExpensePageState extends State<EditExpensePage>
     );
   }
 
+  // Helper per il contenuto di successo (RichText esistente)
+  Widget _buildSuccessContent(
+    BuildContext context,
+    ExpenseModel model,
+    String targetCurrency,
+    CurrencyProvider cp,
+    AppLocalizations loc,
+    Color textColor,
+    Color highlightColor,
+  ) {
+    final convertedValue = model.getValueIn(targetCurrency);
+    final formattedConverted = cp.formatAmount(convertedValue);
+    final dateStr = DateFormat('dd/MM/yyyy').format(model.createdOn);
+
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(
+          fontSize: 15.sp,
+          color: textColor,
+          fontFamily: Theme.of(context).textTheme.bodyMedium?.fontFamily,
+        ),
+        children: [
+          TextSpan(text: loc.editExpenseExchangeRateDate(dateStr)),
+          TextSpan(
+            text: "≈ $formattedConverted",
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: highlightColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper per il contenuto di errore 
+  Widget _buildErrorContent(Color textColor, Color highlightColor, AppLocalizations loc) {
+    return Padding(
+      padding: EdgeInsets.only(top: 2.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            loc.conversionUnavailable,
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: highlightColor, // Colore arancione
+            ),
+          ),
+          Text(
+            loc.retryWhenOnline, 
+            style: TextStyle(
+              fontSize: 12.sp,
+              color: textColor,
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
   // --- SALVATAGGIO MODIFICHE ---
   // Invia i dati aggiornati al provider per la modifica nel database.
-  // Gestisce eventuali errori mostrando una SnackBar o chiude la pagina in caso di successo.
   Future<void> onSubmit({
     required double value,
     required String? description,
@@ -170,51 +238,23 @@ class _EditExpensePageState extends State<EditExpensePage>
       l10n: l10n,
       currencySymbol: currencySymbol,
     );
-
-    if (!mounted) return;
-
-    if (provider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.errorMessage!), backgroundColor: AppColors.snackBar),
-      );
-      provider.clearError();
-      return;
-    }
-
-    Navigator.pop(context);
   }
 
   // --- ELIMINAZIONE SPESA ---
   // Gestisce la cancellazione della spesa corrente tramite il provider.
-  // Mostra una SnackBar con l'opzione "Annulla" per ripristinare l'elemento eliminato.
   Future<ExpenseModel?> onDelete() async {
     final provider = context.read<ExpenseProvider>();
     final modelToDelete = widget.expenseModel;
-    final loc = AppLocalizations.of(context)!;
-    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     await provider.deleteExpenses([modelToDelete]);
 
     if (!mounted) return null;
 
     if (provider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(provider.errorMessage!), backgroundColor: AppColors.snackBar),
-      );
       return null;
     }
 
-    SnackbarUtils.show(
-      context: context,
-      title: loc.deletedTitleSingle,
-      message: loc.deleteSuccessMessageSwipe,
-      deletedItem: modelToDelete,
-      onDelete: (_) {},
-      onRestore: (exp) => provider.restoreExpenses([exp], loc, currencySymbol),
-    );
-
-    Navigator.pop(context);
-    return null;
+    return modelToDelete;
   }
 
   // --- COSTRUZIONE UI ---
@@ -227,11 +267,12 @@ class _EditExpensePageState extends State<EditExpensePage>
         initialValue: widget.expenseModel.value,
         initialDescription: widget.expenseModel.description,
         initialDate: widget.expenseModel.createdOn,
-        
-        initialCurrencyCode: widget.expenseModel.currency, 
-        
-        headerBuilder: (isHovered) => _buildExchangeRateBanner(context, isHovered),
-        
+
+        initialCurrencyCode: widget.expenseModel.currency,
+
+        headerBuilder: (isHovered) =>
+            _buildExchangeRateBanner(context, isHovered),
+
         floatingActionButtonIcon: Icons.delete,
         onFloatingActionButtonPressed: onDelete,
         onSubmit: onSubmit,

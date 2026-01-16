@@ -247,5 +247,10 @@
         }
     },
     "editExpenseConvertedTitle": "Valeur convertie",
-    "editExpenseExchangeRateDate": "Au {date}: "
+    "editExpenseExchangeRateDate": "Au {date}: ",
+    "warningOfflineCurrencyCreate": "Dépense créée avec succès. Conversion de devise non disponible.",
+    "warningOfflineCurrencyEdit": "Dépense modifiée avec succès. Conversion de devise non disponible.",
+    "warningTitle": "Attention!",
+    "conversionUnavailable": "Conversion non disponible",
+    "retryWhenOnline": "Modifiez la dépense lorsque vous êtes en ligne pour mettre à jour."
 }

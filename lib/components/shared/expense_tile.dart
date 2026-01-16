@@ -10,9 +10,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: expense_tile.dart
 /// DESCRIZIONE: Componente UI che rappresenta una singola voce di spesa nella lista.
-/// Visualizza i dettagli principali (importo, data, descrizione) e gestisce intelligentemente
-/// la valuta: se la spesa è stata fatta in una valuta diversa da quella attuale dell'app,
-/// mostra sia l'originale che la conversione.
+/// Visualizza i dettagli principali (importo, data, descrizione).
+/// Gestisce la logica multi-valuta: se la spesa è in una valuta diversa da quella dell'app,
+/// mostra il controvalore convertito oppure un'icona di warning se i tassi non sono disponibili
+/// (es. spesa creata offline con strategia "Soft Fail").
 
 class ExpenseTile extends StatefulWidget {
   final ExpenseModel expenseModel; 
@@ -39,7 +40,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
 
   // --- FORMATTAZIONE DATI ---
   // Helper locale per formattare la data (es. "12 Gennaio 2024").
-  // Capitalizza manualmente il mese poiché DateFormat potrebbe restituirlo minuscolo.
+  // Gestisce la capitalizzazione del mese per coerenza stilistica.
   String _formatDate(BuildContext context, DateTime date) {
     final locale = Localizations.localeOf(context).toString();
     
@@ -54,16 +55,13 @@ class _ExpenseTileState extends State<ExpenseTile> {
     return "$giorno $meseCapitalizzato $anno";
   }
 
-  // Restituisce la stringa dell'importo formattata secondo la valuta
-  // in cui è stata originariamente registrata la spesa.
+  // Restituisce la stringa dell'importo formattata secondo la valuta originale della spesa.
   String _getOriginalAmount() {
     final currency = Currency.fromCode(widget.expenseModel.currency);
     return currency.format(widget.expenseModel.value);
   }
 
   // --- COSTRUZIONE UI ---
-  // Utilizza un Consumer sul CurrencyProvider per aggiornare la UI in tempo reale
-  // se l'utente cambia la valuta principale dell'applicazione.
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -72,24 +70,28 @@ class _ExpenseTileState extends State<ExpenseTile> {
     return Consumer<CurrencyProvider>(
       builder: (context, currencyProvider, child) {
         
-        // 1. Logica di Conversione
-        // Confrontiamo la valuta corrente dell'app con quella salvata nella spesa.
+        // --- 1. LOGICA DI CONVERSIONE E FEEDBACK ---
         final currentCurrencyCode = currencyProvider.currencyCode;
         final originalCurrencyCode = widget.expenseModel.currency;
         
-        // Se diverse, calcoliamo il controvalore da mostrare come info aggiuntiva.
+        // Determiniamo se è necessario mostrare informazioni aggiuntive (valute diverse)
         final bool showConversion = currentCurrencyCode != originalCurrencyCode;
         
         String? convertedAmountString;
-        
+        bool hasRate = false;
+
         if (showConversion) {
-          final convertedValue = widget.expenseModel.getValueIn(currentCurrencyCode);
-          // Aggiungiamo '≈' per indicare che è una conversione basata su tassi storici.
-          convertedAmountString = "≈ ${currencyProvider.formatAmount(convertedValue)}";
+          // Verifica integrità dati: controlliamo se il tasso necessario esiste.
+          // Se manca, significa che la spesa è stata salvata offline ("Soft Fail").
+          hasRate = widget.expenseModel.exchangeRates.containsKey(currentCurrencyCode);
+
+          if (hasRate) {
+             final convertedValue = widget.expenseModel.getValueIn(currentCurrencyCode);
+             convertedAmountString = "≈ ${currencyProvider.formatAmount(convertedValue)}";
+          }
         }
 
-        // 2. Gestione Interazioni
-        // Gestisce il tap (modifica/selezione) e l'animazione di pressione (scale).
+        // --- 2. LAYOUT COMPONENTE ---
         return GestureDetector(
           onLongPress: widget.onLongPress,
           onTapDown: (_) => setState(() => _isPressed = true),
@@ -140,8 +142,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                 child: Row(
                   children: [
                     // --- BOX IMPORTO ---
-                    // Visualizza l'importo. Contiene logica condizionale per mostrare
-                    // anche il valore convertito se necessario.
+                    // Visualizza l'importo originale e, se necessario, la conversione o il warning.
                     Container(
                       width: 90.w,
                       padding: EdgeInsets.symmetric(
@@ -165,7 +166,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                       child: Column( 
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Valore Originale (Grande)
+                          // A) Valore Originale (Sempre visibile)
                           SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             physics: const BouncingScrollPhysics(),
@@ -180,25 +181,37 @@ class _ExpenseTileState extends State<ExpenseTile> {
                             ),
                           ),
                           
-                          // Valore Convertito (Piccolo) - Visibile solo se le valute differiscono
-                          if (showConversion && convertedAmountString != null) ...[
+                          // B) Riga Sottostante (Conversione o Icona Errore)
+                          if (showConversion) ...[
                              SizedBox(height: 2.h), 
-                             SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                               child: Text(
-                                convertedAmountString,
-                                style: TextStyle(
-                                  color: isDark 
-                                    ? AppColors.textDark.withValues(alpha: 0.8) 
-                                    : AppColors.primary.withValues(alpha: 0.8),
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 10.sp, 
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                             
+                             if (!hasRate) 
+                               // CASO ERRORE (Soft Fail):
+                               // La mappa dei tassi è incompleta. Mostriamo icona discreta.
+                               Icon(
+                                 Icons.warning_amber_rounded,
+                                 color: AppColors.primary, 
+                                 size: 14.sp,
+                               )
+                             else if (convertedAmountString != null)
+                               // CASO SUCCESSO:
+                               // Mostriamo il controvalore calcolato.
+                               SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                physics: const BouncingScrollPhysics(),
+                                 child: Text(
+                                  convertedAmountString,
+                                  style: TextStyle(
+                                    color: isDark 
+                                      ? AppColors.textDark.withValues(alpha: 0.8) 
+                                      : AppColors.primary.withValues(alpha: 0.8),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 10.sp, 
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                 ),
                                ),
-                             ),
                           ]
                         ],
                       ),
@@ -207,7 +220,6 @@ class _ExpenseTileState extends State<ExpenseTile> {
                     SizedBox(width: 16.w),
 
                     // --- DETTAGLI SPESA ---
-                    // Data e descrizione testuale.
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,7 +256,6 @@ class _ExpenseTileState extends State<ExpenseTile> {
                     SizedBox(width: 12.w),
 
                     // --- INDICATORE STATO ---
-                    // Mostra una freccia (navigazione) o checkbox (selezione).
                     SizedBox(
                       width: 40.w,
                       height: 40.h,

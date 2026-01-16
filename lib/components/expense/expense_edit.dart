@@ -15,8 +15,9 @@ import 'package:provider/provider.dart';
 
 /// FILE: expense_edit.dart
 /// DESCRIZIONE: Schermata generica per la creazione o la modifica di una spesa.
-/// Gestisce l'input dell'utente (importo, descrizione, data, valuta), la validazione
-/// e delega il salvataggio o l'eliminazione tramite callback esterne.
+/// Gestisce l'input dell'utente e funge da "Hub" per il feedback visivo delle operazioni.
+/// Centralizza la logica di visualizzazione delle Snackbar (Successo vs Warning)
+/// basandosi sullo stato del Provider dopo il tentativo di salvataggio.
 
 class ExpenseEdit extends StatefulWidget {
   // --- PARAMETRI ---
@@ -65,9 +66,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   late Currency _selectedCurrency;
 
   // --- INIZIALIZZAZIONE ---
-  // Configura i controller con i valori iniziali (se presenti) o di default.
-  // Imposta la valuta iniziale e pianifica il controllo per mostrare
-  // il dialog delle istruzioni dopo il rendering del frame.
+  // Configura i controller e imposta la valuta iniziale.
+  // Gestisce anche la visualizzazione "una tantum" del tutorial gestures.
   @override
   void initState() {
     super.initState();
@@ -87,9 +87,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- COSTRUZIONE UI ---
-  // Definisce il layout principale. Include un GestureDetector globale (InkWell)
-  // per gestire il "Long Press" per il salvataggio rapido e la gestione del focus.
-  // Visualizza anche un overlay di caricamento quando necessario.
+  // Layout principale con GestureDetector globale per le interazioni.
+  // Sovrappone un indicatore di caricamento quando il Provider è occupato.
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -132,7 +131,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
           if (isLoading)
             Container(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: AppColors.backgroundDark.withValues(alpha: 0.3),
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
@@ -148,8 +147,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- INPUT PREZZO E VALUTA ---
-  // Widget composto che permette di inserire l'importo numerico e selezionare la valuta.
-  // Gestisce la formattazione dell'input (virgola/punto) e lo stile del testo.
+  // Gestisce l'inserimento dell'importo e la selezione della valuta tramite modale.
   Widget inputPrice(bool isDark) {
     final String hintText = _selectedCurrency == Currency.jpy ? "0" : "0.00";
     final textColor = isTappedDown
@@ -223,7 +221,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- SELETTORE VALUTA ---
-  // Mostra un foglio modale per permettere all'utente di cambiare la valuta della transazione.
   Future<void> _showCurrencyPicker(bool isDark) async {
     final options = Currency.values
         .map((c) => {"title": "${c.name} (${c.symbol})", "criteria": c.code})
@@ -244,7 +241,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- INPUT DESCRIZIONE ---
-  // Campo di testo semplice per aggiungere dettagli alla spesa.
   Widget inputDescription() => Padding(
     padding: EdgeInsets.symmetric(horizontal: 24.w),
     child: TextField(
@@ -270,7 +266,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   );
 
   // --- INPUT DATA ---
-  // Visualizza la data corrente formattata e apre il date picker al tocco.
   Widget inputDate() {
     final locale = Localizations.localeOf(context).toString();
     final formattedDate = DateFormat("d MMMM y", locale).format(selectedDate);
@@ -305,8 +300,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- GESTIONE ELIMINAZIONE ---
-  // Costruisce il FloatingActionButton (solitamente per eliminare la spesa esistente).
-  // Gestisce il dialog di conferma e l'eventuale ripristino tramite Snackbar.
+  // FloatingActionButton per l'eliminazione.
+  // Gestisce il flusso completo: Dialog Conferma -> Chiamata Provider -> Snackbar Feedback.
   Widget floatingActionButton(BuildContext context, bool isDark) {
     final expenseProvider = context.read<ExpenseProvider>();
     final loc = AppLocalizations.of(context)!;
@@ -329,7 +324,17 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           final deletedExpense = await widget.onFloatingActionButtonPressed!();
 
           if (!context.mounted) return;
-          if (expenseProvider.errorMessage != null) return;
+          
+          // Se c'è un errore bloccante, lo mostriamo e ci fermiamo.
+          if (expenseProvider.errorMessage != null){
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(expenseProvider.errorMessage!),
+                backgroundColor: AppColors.snackBar,
+              ),
+            );
+            return;
+          }
 
           if (deletedExpense != null) {
             SnackbarUtils.show(
@@ -346,6 +351,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                 );
               },
             );
+            Navigator.pop(context);
           }
         }
       },
@@ -353,9 +359,13 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- SALVATAGGIO ---
-  // Valida i dati (importo non nullo) e chiama la funzione di submit passata come parametro.
-  // Fornisce feedback all'utente tramite Snackbar.
+  // --- SALVATAGGIO (ON SUBMIT) ---
+  // Punto cruciale per la gestione del feedback utente.
+  // 1. Valida e chiama la funzione di salvataggio (delegata al genitore/provider).
+  // 2. Controlla lo stato del Provider per decidere quale Snackbar mostrare:
+  //    - ERRORE: Operazione fallita (es. DB rotto). Non chiude la pagina.
+  //    - WARNING: "Soft Fail" (es. salvataggio OK ma tassi mancanti). Chiude la pagina.
+  //    - SUCCESSO: Operazione completata perfettamente. Chiude la pagina.
   Future<void> onSubmit() async {
     final loc = AppLocalizations.of(context)!;
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
@@ -381,19 +391,43 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
 
     if (!mounted) return;
-    if (expenseProvider.errorMessage != null) return;
 
-    SnackbarUtils.show(
-      context: context,
-      title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
-      message: widget.initialValue == null
-          ? loc.expenseCreated
-          : loc.expenseEdited,
-    );
+    // 1. GESTIONE ERRORE BLOCCANTE
+    if (expenseProvider.errorMessage != null){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(expenseProvider.errorMessage!),
+          backgroundColor: AppColors.snackBar,
+        ),
+      );
+      return; // Stop, l'utente deve poter riprovare
+    }
+
+    // 2. GESTIONE WARNING vs SUCCESSO
+    // Se c'è un warningMessage (es. tassi non scaricati in creazione o riparazione fallita),
+    // mostriamo quello. Altrimenti, successo standard.
+    if (expenseProvider.warningMessage != null) {
+      SnackbarUtils.show(
+        context: context,
+        title: loc.warningTitle,
+        message: expenseProvider.warningMessage!,
+      );
+    } 
+    else {
+      SnackbarUtils.show(
+        context: context,
+        title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
+        message: widget.initialValue == null
+            ? loc.expenseCreated
+            : loc.expenseEdited,
+      );
+    }
+    
+    // Chiudiamo la pagina in caso di Successo o Warning
+    Navigator.pop(context);
   }
 
   // --- SELETTORE DATA ---
-  // Apre il date picker nativo adattivo per selezionare una data passata o odierna.
   Future<void> _pickDate(BuildContext context) async {
     final DateTime? pickedDate = await DialogUtils.showDatePickerAdaptive(
       context,
@@ -411,7 +445,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- UTILITY FORMATTAZIONE ---
-  // Helper per capitalizzare la prima lettera del mese nella stringa della data.
   String capitalizeMonth(String date) {
     final parts = date.split(' ');
     if (parts.length < 3) return date;
@@ -422,8 +455,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- ISTRUZIONI UTENTE ---
-  // Controlla nelle SharedPreferences se è necessario mostrare il tutorial
-  // per l'utilizzo della schermata (es. gestures) e lo visualizza una tantum.
   Future<void> _showInstructionDialogIfNeeded() async {
     final prefs = await SharedPreferences.getInstance();
     final uid = FirebaseAuth.instance.currentUser?.uid ?? "guest";

@@ -256,5 +256,10 @@
                 "example": "12/01/2024"
             }
         }
-    }
+    },
+    "warningOfflineCurrencyCreate": "Spesa creata con successo. Conversione valuta non disponibile.",
+    "warningOfflineCurrencyEdit": "Spesa modificata con successo. Conversione valuta non disponibile.",
+    "warningTitle": "Attenzione!",
+    "conversionUnavailable": "Conversione non disponibile",
+    "retryWhenOnline": "Modifica la spesa quando sei online per aggiornare."
 }

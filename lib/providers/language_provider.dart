@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/services/language_service.dart';
 
@@ -26,10 +27,24 @@ class LanguageProvider extends ChangeNotifier {
   // Se esiste un salvataggio lo applica, altrimenti mantiene il default o usa quella di sistema.
   Future<void> fetchLocale() async {
     final savedCode = await _languageService.getSavedLanguageCode();
+    
     if (savedCode != null) {
+      // 1. C'è una preferenza salvata: usiamo quella
       _currentLocale = Locale(savedCode);
     } else {
-      _currentLocale = const Locale('it'); 
+      // 2. Nessun salvataggio: rileviamo la lingua del dispositivo
+      final systemLocale = ui.PlatformDispatcher.instance.locale;
+      
+      // Lista delle lingue supportate dalla tua app
+      const supportedCodes = ['it', 'en', 'fr', 'es'];
+
+      // Se la lingua del telefono è tra quelle supportate, la usiamo.
+      // Altrimenti (es. Tedesco), usiamo l'Inglese (o Italiano) come fallback.
+      if (supportedCodes.contains(systemLocale.languageCode)) {
+        _currentLocale = Locale(systemLocale.languageCode);
+      } else {
+        _currentLocale = const Locale('en'); // Fallback internazionale
+      }
     }
     notifyListeners();
   }

@@ -51,6 +51,7 @@ dependencies:
 
   # Rete
   http: ^1.6.0
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

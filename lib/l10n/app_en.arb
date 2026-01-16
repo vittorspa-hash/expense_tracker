@@ -247,5 +247,10 @@
         }
     },
     "editExpenseConvertedTitle": "Converted value",
-    "editExpenseExchangeRateDate": "As of {date}: "
+    "editExpenseExchangeRateDate": "As of {date}: ",
+    "warningOfflineCurrencyCreate": "Expense created successfully. Currency conversion not available.",
+    "warningOfflineCurrencyEdit": "Expense edited successfully. Currency conversion not available.",
+    "warningTitle": "Warning!",
+    "conversionUnavailable": "Conversion not available",
+    "retryWhenOnline": "Edit the expense when you are online to update."
 }

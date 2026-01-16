@@ -1,6 +1,5 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
@@ -49,8 +48,7 @@ class _NewExpensePageState extends State<NewExpensePage>
 
   // --- LOGICA DI CREAZIONE ---
   // Callback invocata quando l'utente conferma l'inserimento nel form.
-  // Recupera i provider necessari, tenta la creazione della spesa e gestisce
-  // il feedback visivo (chiusura pagina o snackbar di errore).
+  // Recupera i provider necessari e tenta la creazione della spesa 
   Future<void> onSubmit({
     required double value,
     required String? description,
@@ -69,20 +67,6 @@ class _NewExpensePageState extends State<NewExpensePage>
       currencySymbol: currencySymbol,
       currencyCode: currencyCode, 
     );
-
-    if (!mounted) return;
-
-    if (provider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(provider.errorMessage!),
-          backgroundColor: AppColors.snackBar,
-        ),
-      );
-      return; 
-    }
-
-    Navigator.pop(context);
   }
 
   // --- COSTRUZIONE UI ---

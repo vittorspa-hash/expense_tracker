@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,19 +7,28 @@ import 'package:expense_tracker/providers/currency_provider.dart';
 
 /// FILE: services/currency_service.dart
 /// DESCRIZIONE: Service responsabile della gestione delle valute.
-/// Gestisce la persistenza locale della preferenza utente tramite SharedPreferences
-/// e comunica con API esterne (Frankfurter) per ottenere i tassi di cambio aggiornati.
+/// Implementa strategia "Network First, Cache Fallback".
+/// Se nessun dato è disponibile (né rete, né cache), LANCIA UN'ECCEZIONE 
+/// permettendo al Provider di gestire il "Soft Fail" (fallback 1:1 e avviso UI).
+
+// --- ECCEZIONE CUSTOM ---
+class CurrencyFetchException implements Exception {
+  final String message;
+  CurrencyFetchException(this.message);
+  
+  @override
+  String toString() => "CurrencyFetchException: $message";
+}
 
 class CurrencyService {
   static const String _currencyKey = 'selected_currency';
+  static const String _rateCachePrefix = 'rates_cache_'; 
   
   static const String _apiBaseUrl = 'https://api.frankfurter.app/latest';
-  
   static const List<String> _supportedCodes = ['EUR', 'USD', 'GBP', 'JPY'];
 
-  // --- PERSISTENZA ---
-  // Salva il codice della valuta selezionata (Enum) nella memoria locale
-  // per mantenerla attiva ai successivi avvii dell'app.
+  // --- PERSISTENZA PREFERENZA UTENTE ---
+  
   Future<void> saveCurrency(Currency currency) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -28,16 +38,12 @@ class CurrencyService {
     }
   }
 
-  // Recupera la valuta salvata dalle preferenze.
-  // Se non viene trovata alcuna preferenza (es. primo avvio), restituisce Euro come default.
   Future<Currency> getCurrency() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final currencyCode = prefs.getString(_currencyKey);
       
-      if (currencyCode == null) {
-        return Currency.euro;
-      }
+      if (currencyCode == null) return Currency.euro;
       
       return Currency.fromCode(currencyCode);
     } catch (e) {
@@ -45,7 +51,6 @@ class CurrencyService {
     }
   }
 
-  // Rimuove la preferenza salvata, riportando l'app allo stato iniziale per la valuta.
   Future<void> clearCurrency() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -55,47 +60,72 @@ class CurrencyService {
     }
   }
 
-  // --- API TASSI DI CAMBIO ---
-  // Scarica i tassi di cambio attuali da un'API pubblica (Frankfurter).
-  // Costruisce la richiesta escludendo la valuta base e richiedendo solo le valute supportate.
-  // Gestisce errori di rete o offline restituendo una mappa sicura (fallback) 
-  // che contiene solo la valuta base a valore 1.0.
+  // --- API TASSI DI CAMBIO CON CACHING ---
+  
+  // 1. Tenta Network (con timeout) -> Se OK, Salva in Cache e restituisce.
+  // 2. Se Network fallisce -> Tenta di leggere dalla Cache.
+  // 3. Se Cache manca o corrotta -> LANCIA ECCEZIONE (Il Provider attiverà il warning).
   Future<Map<String, double>> getExchangeRates(String baseCurrencyCode) async {
-    // 1. Validazione preliminare
+    // Validazione: se la valuta non è supportata dall'API, restituisci 1:1 standard.
     if (!_supportedCodes.contains(baseCurrencyCode)) {
       return {baseCurrencyCode: 1.0};
     }
 
-    // 2. Preparazione target
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = '$_rateCachePrefix$baseCurrencyCode';
     final targets = _supportedCodes.where((c) => c != baseCurrencyCode).join(',');
 
+    // 1. TENTATIVO NETWORK
     try {
-      // 3. Chiamata API
       final url = Uri.parse('$_apiBaseUrl?from=$baseCurrencyCode&to=$targets');
-      final response = await http.get(url);
+      final response = await http.get(url).timeout(const Duration(seconds: 6));
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final Map<String, dynamic> ratesJson = data['rates'];
-
-        // 4. Mapping e normalizzazione
-        final Map<String, double> rates = {};
-        
-        // Aggiungiamo la base stessa per semplificare i calcoli futuri
-        rates[baseCurrencyCode] = 1.0; 
-
-        ratesJson.forEach((key, value) {
-          rates[key] = (value as num).toDouble();
-        });
-
-        return rates;
+        // Successo: Salviamo in cache per usi futuri offline
+        await prefs.setString(cacheKey, response.body);
+        return _parseRatesJson(response.body, baseCurrencyCode);
       } else {
-        debugPrint('CurrencyService Error: API returned ${response.statusCode}');
-        return {baseCurrencyCode: 1.0};
+        debugPrint('CurrencyService API Error: ${response.statusCode}. Trying cache...');
       }
     } catch (e) {
-      debugPrint('CurrencyService Error: $e');
-      return {baseCurrencyCode: 1.0};
+      debugPrint('CurrencyService Network Error: $e. Switching to cache...');
     }
+
+    // 2. TENTATIVO CACHE (FALLBACK)
+    if (prefs.containsKey(cacheKey)) {
+      try {
+        final cachedJson = prefs.getString(cacheKey);
+        if (cachedJson != null) {
+          debugPrint('CurrencyService: Using cached rates for $baseCurrencyCode');
+          return _parseRatesJson(cachedJson, baseCurrencyCode);
+        }
+      } catch (e) {
+        debugPrint('CurrencyService Cache Error: Could not parse cache. $e');
+      }
+    }
+
+    // 3. FALLIMENTO TOTALE (Critical Path)
+    // Nessuna rete e nessuna cache valida.
+    // L'app deve sapere che la conversione è impossibile per attivare il warning.
+    debugPrint('CurrencyService: No data available (No Net, No Cache). Throwing exception.');
+    throw CurrencyFetchException("Impossible to retrieve exchange rates for $baseCurrencyCode");
+  }
+
+  // --- HELPER PRIVATI ---
+  
+  Map<String, double> _parseRatesJson(String jsonString, String baseCurrencyCode) {
+    final data = json.decode(jsonString);
+    final Map<String, dynamic> ratesJson = data['rates'];
+    
+    final Map<String, double> rates = {};
+    
+    // Assicuriamo che il tasso base sia sempre presente e uguale a 1.0
+    rates[baseCurrencyCode] = 1.0; 
+
+    ratesJson.forEach((key, value) {
+      rates[key] = (value as num).toDouble();
+    });
+
+    return rates;
   }
 }

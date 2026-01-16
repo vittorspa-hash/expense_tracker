@@ -31,21 +31,25 @@ class ExpenseProvider extends ChangeNotifier {
   List<ExpenseModel> _expenses = [];
   List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
-  // --- STATO UI (ERRORI & LOADING) ---
+  // --- STATO UI (ERRORI & WARNING) ---
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
-  
-  bool _isLoading = false; 
+
+  String? _warningMessage;
+  String? get warningMessage => _warningMessage;
+
+  bool _isLoading = false;
   bool get isLoading => _isLoading;
 
   // --- STATO VALUTA ---
   // Mantiene la valuta di visualizzazione corrente ('EUR', 'USD', ecc.).
   // Fondamentale per convertire i totali visualizzati nella dashboard
   // indipendentemente dalla valuta originale delle singole transazioni.
-  String _appCurrency = 'EUR'; 
+  String _appCurrency = 'EUR';
 
   void clearError() {
     _errorMessage = null;
+    _warningMessage = null;
     notifyListeners();
   }
 
@@ -70,7 +74,7 @@ class ExpenseProvider extends ChangeNotifier {
     _monthTotal = ExpenseCalculator.totalExpenseMonth(_expenses, _appCurrency);
     _yearTotal = ExpenseCalculator.totalExpenseYear(_expenses, _appCurrency);
   }
-  
+
   void _sortByDateDesc() {
     ExpenseCalculator.sortInPlace(_expenses, "date_desc");
   }
@@ -81,7 +85,7 @@ class ExpenseProvider extends ChangeNotifier {
   void updateAppCurrency(String newCurrencyCode) {
     if (_appCurrency != newCurrencyCode) {
       _appCurrency = newCurrencyCode;
-      _refreshTotals(); 
+      _refreshTotals();
       notifyListeners();
     }
   }
@@ -92,16 +96,15 @@ class ExpenseProvider extends ChangeNotifier {
     _errorMessage = null;
     try {
       _expenses = await _expenseService.loadUserExpenses();
-      
+
       // Nota: La valuta iniziale viene impostata esternamente o è di default.
       _refreshTotals();
-      
     } on RepositoryFailure catch (e) {
       _errorMessage = "Error loading data: ${e.message}";
-      rethrow; 
+      rethrow;
     } catch (e) {
       _errorMessage = "Unknown error during startup.";
-      rethrow; 
+      rethrow;
     }
     notifyListeners();
   }
@@ -114,71 +117,123 @@ class ExpenseProvider extends ChangeNotifier {
   }
 
   // --- CREAZIONE NUOVA SPESA ---
-  // 1. Recupera i tassi di cambio per la valuta della transazione.
-  // 2. Salva la spesa tramite il servizio.
-  // 3. Aggiorna la lista locale e verifica il budget.
+  // Implementa la strategia "Soft Fail" per la valuta:
+  // 1. Tenta di scaricare i tassi di cambio.
+  // 2. Se fallisce (offline/errore), usa il fallback 1:1 e imposta un warning.
+  // 3. Salva comunque la spesa nel database.
   Future<void> createExpense({
     required double value,
     required String? description,
     required DateTime date,
-    required AppLocalizations l10n, 
+    required AppLocalizations l10n,
     required String currencySymbol,
-    required String currencyCode, 
+    required String currencyCode,
   }) async {
     _errorMessage = null;
-    _isLoading = true; 
-    notifyListeners(); 
+    _warningMessage = null;
+    _isLoading = true;
+    notifyListeners();
 
     try {
-      final exchangeRates = await _currencyService.getExchangeRates(currencyCode);
+      Map<String, double> exchangeRates;
 
+      // BLOCCO RECUPERO TASSI (SOFT FAIL)
+      try {
+        exchangeRates = await _currencyService.getExchangeRates(currencyCode);
+      } on CurrencyFetchException {
+        // Se il recupero fallisce, non blocchiamo l'utente.
+        // Usiamo tassi 1:1 e avvisiamo che la conversione non è disponibile.
+        debugPrint("Currency fetch failed. Using fallback 1:1.");
+        exchangeRates = {currencyCode: 1.0};
+        _warningMessage = l10n.warningOfflineCurrencyCreate;
+      }
+
+      // Procediamo al salvataggio (con tassi reali o fallback)
       final expense = await _expenseService.createExpense(
         value: value,
         description: description,
         date: date,
-        currency: currencyCode,      
-        exchangeRates: exchangeRates 
+        currency: currencyCode,
+        exchangeRates: exchangeRates,
       );
 
       _expenses.add(expense);
-      _sortByDateDesc(); 
-      _refreshTotals(); 
-      
-      _checkBudget(dateToCheck: date, l10n: l10n, currencySymbol: currencySymbol);
+      _sortByDateDesc();
+      _refreshTotals();
 
+      _checkBudget(
+        dateToCheck: date,
+        l10n: l10n,
+        currencySymbol: currencySymbol,
+      );
     } on RepositoryFailure catch (e) {
+      // Gli errori del DB rimangono bloccanti (mostrano snackbar rossa)
       _errorMessage = "Save failed: ${e.message}";
     } catch (e) {
-      _errorMessage = e.toString(); 
+      _errorMessage = e.toString();
     } finally {
-      _isLoading = false; 
+      _isLoading = false;
       notifyListeners();
     }
   }
 
   // --- MODIFICA SPESA ---
-  // Gestisce l'aggiornamento di una spesa esistente, inclusa l'eventuale
-  // modifica della valuta della transazione.
+  // Implementa la strategia "Smart Update":
+  // 1. Se la spesa è "sana" (ha tutti i tassi), usa i dati storici (nessuna chiamata rete).
+  // 2. Se la spesa è "rotta" (creata offline), tenta di scaricare i tassi per ripararla.
   Future<void> editExpense(
     ExpenseModel expenseModel, {
     required double value,
     required String? description,
     required DateTime date,
-    required String currencyCode, 
-    required AppLocalizations l10n, 
+    required String currencyCode,
+    required AppLocalizations l10n,
     required String currencySymbol,
   }) async {
     _errorMessage = null;
-    _isLoading = true; 
+    _warningMessage = null;
+    _isLoading = true;
     notifyListeners();
 
     try {
+      // 1. Partiamo dai tassi che abbiamo già in memoria (Storici)
+      Map<String, double> exchangeRates = expenseModel.exchangeRates;
+      
+      // 2. LOGICA DI RIPARAZIONE (Smart Update)
+      // Scarichiamo nuovi tassi SOLO se quelli attuali sono incompleti (<= 1 elemento).
+      bool areRatesBroken = expenseModel.exchangeRates.length <= 1;
+
+      if (areRatesBroken) {
+        try {
+          debugPrint("Rates are broken (offline creation). Fetching new rates to repair...");
+          
+          // Tentativo di riparazione: scarichiamo la mappa completa
+          exchangeRates = await _currencyService.getExchangeRates(currencyCode);
+          
+          debugPrint("Rates repaired successfully.");
+          
+        } on CurrencyFetchException {
+          debugPrint("Repair failed. Still offline.");
+          
+          // Se la riparazione fallisce (ancora offline), manteniamo lo stato rotto.
+          // Assicuriamo almeno il tasso 1:1 per la valuta corrente.
+          if (exchangeRates.isEmpty || !exchangeRates.containsKey(currencyCode)) {
+             exchangeRates = {currencyCode: 1.0};
+          }
+          
+          // Reimpostiamo il warning (il triangolino rimarrà visibile)
+          _warningMessage = l10n.warningOfflineCurrencyEdit;
+        }
+      }
+
+      // 3. SALVATAGGIO
       await _expenseService.editExpense(
         expenseModel,
         value: value,
         description: description,
         date: date,
         currency: currencyCode, 
+        exchangeRates: exchangeRates, // Mappa vecchia, nuova o riparata
       );
 
       _sortByDateDesc();
@@ -204,13 +259,14 @@ class ExpenseProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future.wait(expensesToDelete.map((e) => _expenseService.deleteExpense(e)));
+      await Future.wait(
+        expensesToDelete.map((e) => _expenseService.deleteExpense(e)),
+      );
 
       final idsToRemove = expensesToDelete.map((e) => e.uuid).toSet();
       _expenses.removeWhere((element) => idsToRemove.contains(element.uuid));
 
       _refreshTotals();
-
     } on RepositoryFailure catch (e) {
       _errorMessage = "Deletion failed. Data restored. (${e.message})";
     } catch (e) {
@@ -223,8 +279,8 @@ class ExpenseProvider extends ChangeNotifier {
   // --- RIPRISTINO ---
   // Annulla l'eliminazione ripristinando le spese precedentemente rimosse.
   Future<void> restoreExpenses(
-    List<ExpenseModel> expensesToRestore, 
-    AppLocalizations l10n, 
+    List<ExpenseModel> expensesToRestore,
+    AppLocalizations l10n,
     String currencySymbol,
   ) async {
     if (expensesToRestore.isEmpty) return;
@@ -232,14 +288,15 @@ class ExpenseProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future.wait(expensesToRestore.map((e) => _expenseService.restoreExpense(e)));
+      await Future.wait(
+        expensesToRestore.map((e) => _expenseService.restoreExpense(e)),
+      );
 
       _expenses.addAll(expensesToRestore);
-      _sortByDateDesc(); 
+      _sortByDateDesc();
       _refreshTotals();
-      
-      _checkBudgetForList(expensesToRestore, l10n, currencySymbol);
 
+      _checkBudgetForList(expensesToRestore, l10n, currencySymbol);
     } on RepositoryFailure catch (e) {
       _errorMessage = "Unable to restore expenses: ${e.message}";
     } catch (e) {
@@ -261,31 +318,43 @@ class ExpenseProvider extends ChangeNotifier {
     if (dateToCheck.month != now.month || dateToCheck.year != now.year) return;
 
     if (_notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n, currencySymbol);
+      await _notificationProvider.checkBudgetLimit(
+        _monthTotal,
+        l10n,
+        currencySymbol,
+      );
     }
   }
 
   Future<void> _checkBudgetForList(
-    List<ExpenseModel> expenses, 
+    List<ExpenseModel> expenses,
     AppLocalizations l10n,
     String currencySymbol,
   ) async {
     final now = DateTime.now();
-    bool hasCurrentMonthExpense = expenses.any((e) => 
-      e.createdOn.month == now.month && e.createdOn.year == now.year
+    bool hasCurrentMonthExpense = expenses.any(
+      (e) => e.createdOn.month == now.month && e.createdOn.year == now.year,
     );
 
     if (hasCurrentMonthExpense && _notificationProvider.limitAlertEnabled) {
-      await _notificationProvider.checkBudgetLimit(_monthTotal, l10n, currencySymbol);
+      await _notificationProvider.checkBudgetLimit(
+        _monthTotal,
+        l10n,
+        currencySymbol,
+      );
     }
   }
-  
+
   // --- ORDINAMENTO ---
   // Ordina la lista in memoria. Se l'ordinamento è per importo,
   // utilizza la valuta target (_appCurrency) per ordinare per valore reale.
   void sortBy(String criteria) {
     if (criteria.contains("amount")) {
-      ExpenseCalculator.sortInPlace(_expenses, criteria, targetCurrency: _appCurrency);
+      ExpenseCalculator.sortInPlace(
+        _expenses,
+        criteria,
+        targetCurrency: _appCurrency,
+      );
     } else {
       ExpenseCalculator.sortInPlace(_expenses, criteria);
     }
@@ -295,13 +364,13 @@ class ExpenseProvider extends ChangeNotifier {
   // --- DATI PER GRAFICI ---
   // Espone i dati aggregati già normalizzati nella valuta dell'app
   // pronti per essere consumati dai widget dei grafici.
-  
-  Map<String, double> get expensesByMonth => 
+
+  Map<String, double> get expensesByMonth =>
       ExpenseCalculator.expensesByMonth(_expenses, _appCurrency);
-  
-  Map<String, double> expensesByDay(int year, int month) => 
+
+  Map<String, double> expensesByDay(int year, int month) =>
       ExpenseCalculator.expensesByDay(_expenses, year, month, _appCurrency);
-  
-  List<ExpenseModel> expensesOfDay(int year, int month, int day) => 
+
+  List<ExpenseModel> expensesOfDay(int year, int month, int day) =>
       ExpenseCalculator.expensesOfDay(_expenses, year, month, day);
 }

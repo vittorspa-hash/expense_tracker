@@ -247,5 +247,10 @@
         }
     },
     "editExpenseConvertedTitle": "Valor convertido",
-    "editExpenseExchangeRateDate": "Al {date}: "
+    "editExpenseExchangeRateDate": "Al {date}: ",
+    "warningOfflineCurrencyCreate": "Gasto creado con éxito. Conversión de moneda no disponible.",
+    "warningOfflineCurrencyEdit": "Gasto modificado con éxito. Conversión de moneda no disponible.",
+    "warningTitle": "¡Atención!",
+    "conversionUnavailable": "Conversión no disponible",
+    "retryWhenOnline": "Modifica el gasto cuando estés en línea para actualizar."
 }

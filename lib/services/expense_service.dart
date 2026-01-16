@@ -6,7 +6,7 @@ import 'package:uuid/uuid.dart';
 
 /// FILE: expense_service.dart
 /// DESCRIZIONE: Service Layer per la gestione delle operazioni sulle spese.
-/// Agisce come intermediario tra il Provider (stato dell'applicazione) e il 
+/// Agisce come intermediario tra il Provider (stato dell'applicazione) e il
 /// Repository (persistenza dati su Firebase). Gestisce la logica di business
 /// per la creazione, lettura, aggiornamento ed eliminazione (CRUD), inclusa
 /// la gestione dei dati multi-valuta.
@@ -28,8 +28,8 @@ class ExpenseService {
     }
 
     final expenses = await _firebaseRepository.allExpensesForUser(user.uid);
-    
-    expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn)); 
+
+    expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
     return expenses;
   }
 
@@ -41,8 +41,8 @@ class ExpenseService {
     required double value,
     required String? description,
     required DateTime date,
-    required String currency,                   
-    required Map<String, double> exchangeRates, 
+    required String currency,
+    required Map<String, double> exchangeRates,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw RepositoryFailure("User not authenticated.");
@@ -53,8 +53,8 @@ class ExpenseService {
       description: description,
       createdOn: date,
       userId: user.uid,
-      currency: currency,           
-      exchangeRates: exchangeRates, 
+      currency: currency,
+      exchangeRates: exchangeRates,
     );
 
     await _firebaseRepository.createExpense(expense);
@@ -79,26 +79,29 @@ class ExpenseService {
   // --- MODIFICA SPESA ---
   // Aggiorna i dettagli di una spesa esistente.
   // Permette la modifica dell'importo, descrizione, data e valuta principale.
-  // NOTA: I tassi di cambio storici (exchangeRates) NON vengono aggiornati per preservare
-  // il valore storico della transazione originale.
+  // NOTA: I tassi di cambio (exchangeRates) vengono aggiornati solo se necessario
+  // (es. per riparare una spesa creata offline), altrimenti si mantengono quelli storici.
   Future<ExpenseModel> editExpense(
     ExpenseModel expenseModel, {
     required double value,
     required String? description,
     required DateTime date,
-    required String currency, 
+    required String currency,
+    required Map<String, double> exchangeRates,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user == null || expenseModel.userId != user.uid) {
-      throw RepositoryFailure("You do not have permission to edit this expense.");
+      throw RepositoryFailure(
+        "You do not have permission to edit this expense.",
+      );
     }
 
     expenseModel.value = value;
     expenseModel.description = description;
     expenseModel.createdOn = date;
-    
     expenseModel.currency = currency;
+    expenseModel.exchangeRates = exchangeRates;
 
     await _firebaseRepository.updateExpense(expenseModel);
     return expenseModel;
@@ -108,9 +111,11 @@ class ExpenseService {
   // Rimuove definitivamente una spesa dal database dopo aver verificato i permessi.
   Future<void> deleteExpense(ExpenseModel expenseModel) async {
     final user = FirebaseAuth.instance.currentUser;
-    
+
     if (user == null || expenseModel.userId != user.uid) {
-      throw RepositoryFailure("You do not have permission to delete this expense.");
+      throw RepositoryFailure(
+        "You do not have permission to delete this expense.",
+      );
     }
 
     await _firebaseRepository.deleteExpense(expenseModel);
