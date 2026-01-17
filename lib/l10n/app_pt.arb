@@ -1,0 +1,258 @@
+{
+    "@@locale": "pt",
+    "settingsTitle": "Configurações",
+    "appearance": "Aparência",
+    "darkMode": "Modo escuro",
+    "activated": "Ativado",
+    "deactivated": "Desativado",
+    "notifications": "Notificações",
+    "dailyReminder": "Lembrete diário",
+    "activeAt": "Ativo às {time}",
+    "@activeAt": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "reminderTime": "Horário do lembrete",
+    "spendingLimitAlert": "Alerta de limite de gastos",
+    "activeMonthlyLimit": "Ativo ({amount}/mês)",
+    "@activeMonthlyLimit": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyLimit": "Limite mensal",
+    "notificationsInfo": "As notificações ajudarão você a acompanhar suas despesas diárias e respeitar o orçamento mensal",
+    "currency": "Moeda",
+    "defaultCurrency": "Moeda padrão",
+    "language": "Idioma",
+    "defaultLanguage": "Idioma padrão",
+    "setMonthlyLimitTitle": "Definir limite mensal",
+    "insertAmountHint": "Inserir valor",
+    "selectCurrencyTitle": "Selecionar moeda",
+    "selectLanguageTitle": "Selecionar idioma",
+    "languageNameIt": "Italiano (Itália)",
+    "languageNameEn": "Inglês (EUA)",
+    "languageNameFr": "Francês (França)",
+    "languageNameEs": "Espanhol (Espanha)",
+    "languageNameDe": "Alemão (Alemanha)",
+	"languageNamePt": "Português (Portugal)",
+    "newExpense": "Nova despesa",
+    "ok": "OK",
+    "deleteDialogTitleSingle": "Exclusão individual",
+    "deleteDialogTitleMultiple": "Exclusão múltipla",
+    "deleteConfirmMessage": "{count, plural, =1{Deseja excluir 1 despesa selecionada?} other{Deseja excluir {count} despesas selecionadas?}}",
+    "@deleteConfirmMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "delete": "Excluir",
+    "cancel": "Cancelar",
+    "deletedTitleSingle": "Excluída!",
+    "deletedTitleMultiple": "Excluídas!",
+    "deleteSuccessMessage": "{count, plural, =1{1 despesa excluída com sucesso.} other{{count} despesas excluídas com sucesso.}}",
+    "@deleteSuccessMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "annualReport": "RELATÓRIO ANUAL",
+    "thisMonth": "ESTE MÊS",
+    "today": "Hoje",
+    "week": "Semana",
+    "year": "Ano",
+    "searchHint": "Buscar por descrição...",
+    "sortTitle": "Ordenar despesas",
+    "sortDateNewest": "Data: mais recentes primeiro",
+    "sortDateOldest": "Data: mais antigas primeiro",
+    "sortAmountHighest": "Valor: maior primeiro",
+    "sortAmountLowest": "Valor: menor primeiro",
+    "deleteConfirmMessageSwipe": "Deseja excluir a despesa selecionada?",
+    "deleteSuccessMessageSwipe": "Despesa excluída com sucesso.",
+    "noDescription": "Sem descrição",
+    "selectedCountLabel": "{count, plural, =1{1 selecionada} other{{count} selecionadas}}",
+    "@selectedCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "deselectAll": "Desmarcar tudo",
+    "selectAll": "Selecionar tudo",
+    "deleteSelectedTooltip": "Excluir selecionadas",
+    "descriptionHint": "Descrição (opcional)",
+    "deleteConfirmTitle": "Confirmar exclusão",
+    "errorTitle": "Ops!",
+    "zeroValueError": "Você não pode criar uma despesa com valor igual a 0.",
+    "createdTitle": "Criada!",
+    "editedTitle": "Editada!",
+    "expenseCreated": "Despesa criada com sucesso.",
+    "expenseEdited": "Despesa editada com sucesso.",
+    "expenseInstructionTitle": "Criação ou edição de despesa",
+    "expenseInstructionMessage": "Para confirmar a criação ou edição de uma despesa, mantenha a tela pressionada.",
+    "profileTitle": "Perfil",
+    "dataUpdated": "Dados atualizados",
+    "refreshError": "Erro ao atualizar: {error}",
+    "@refreshError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "profilePictureUpdated": "Foto de perfil atualizada!",
+    "removePictureTitle": "Remover foto",
+    "removePictureMessage": "Tem certeza de que deseja remover a foto de perfil?",
+    "pictureRemoved": "Foto de perfil removida",
+    "nameLabel": "Nome",
+    "editNameTooltip": "Editar nome",
+    "emailLabel": "E-mail",
+    "editEmailTooltip": "Editar e-mail",
+    "passwordLabel": "Senha",
+    "editPasswordTooltip": "Editar senha",
+    "userIdLabel": "ID do usuário",
+    "copyIdTooltip": "Copiar ID",
+    "idCopied": "ID copiado para a área de transferência",
+    "deleteAccountButton": "Excluir conta",
+    "deleteAccountTitle": "Excluir conta",
+    "deleteAccountMessage": "Tem certeza de que deseja excluir definitivamente sua conta?",
+    "accountDeleted": "Conta excluída com sucesso",
+    "save": "Salvar",
+    "newNameHint": "Novo nome",
+    "nameUpdated": "Nome atualizado com sucesso",
+    "newEmailHint": "Novo e-mail",
+    "currentPasswordHint": "Senha atual",
+    "invalidData": "Insira dados válidos",
+    "emailUpdateSent": "Confirmação enviada para o novo e-mail. Faça login.",
+    "newPasswordHint": "Nova senha",
+    "confirmPasswordHint": "Confirmar senha",
+    "recoveryEmailSent": "E-mail de recuperação enviado para {email}",
+    "@recoveryEmailSent": {
+        "placeholders": {
+            "email": {
+                "type": "String"
+            }
+        }
+    },
+    "passwordsDoNotMatch": "As novas senhas não coincidem",
+    "passwordUpdated": "Senha atualizada com sucesso",
+    "notAvailable": "Não disponível",
+    "yearsPageTitle": "Relatório Anual",
+    "noExpensesTitle": "Nenhuma despesa disponível",
+    "noExpensesSubtitle": "As despesas que você adicionar aparecerão aqui",
+    "totalYearLabel": "Total {year}",
+    "@totalYearLabel": {
+        "placeholders": {
+            "year": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyDetail": "Detalhe mensal",
+    "noExpensesMonthTitle": "Nenhuma despesa neste mês",
+    "totalMonthLabel": "Total {month}",
+    "@totalMonthLabel": {
+        "placeholders": {
+            "month": {
+                "type": "String"
+            }
+        }
+    },
+    "dayCountLabel": "{count, plural, =1{dia} other{dias}}",
+    "@dayCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "dailyExpenses": "Despesas diárias",
+    "noExpensesDayTitle": "Nenhuma despesa neste dia",
+    "totalDayLabel": "Total do dia",
+    "allExpenses": "Todas as despesas",
+    "expenseCountLabel": "{count, plural, =1{despesa} other{despesas}}" ,
+    "@expenseCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "confirm": "Confirmar",
+    "dontShowAgain": "Não mostrar novamente",
+    "selectYear": "Selecionar ano",
+    "logout": "Sair",
+    "logoutConfirmTitle": "Confirmar saída",
+    "logoutConfirmMessage": "Tem certeza de que deseja sair da conta?",
+    "logoutError": "Erro ao sair: {error}",
+    "@logoutError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "close": "Fechar",
+    "forgotPassword": "Esqueceu a senha?",
+    "accountFallback": "Conta",
+    "appInitErrorTitle": "Ops! Não foi possível iniciar o app.",
+    "appInitErrorMessage": "Verifique sua conexão e tente novamente.",
+    "retry": "Tentar novamente",
+    "authAppTitle": "Expense Tracker",
+    "authAppSubtitle": "Gerencie suas despesas de forma simples",
+    "loginTab": "Entrar",
+    "registerTab": "Registrar",
+    "welcomeBack": "Bem-vindo(a) de volta!",
+    "signInToContinue": "Faça login na sua conta para continuar",
+    "emailHint": "E-mail",
+    "emailRequired": "Insira o e-mail",
+    "emailInvalid": "E-mail inválido",
+    "passwordHint": "Senha",
+    "passwordRequired": "Insira a senha",
+    "loginButton": "Entrar",
+    "emailNotVerifiedTitle": "E-mail não verificado",
+    "emailNotVerifiedMessage": "Você precisa confirmar seu e-mail antes de entrar.",
+    "resendEmail": "Reenviar e-mail",
+    "verificationEmailSent": "E-mail de verificação enviado!",
+    "insertEmailForRecovery": "Insira seu e-mail para recuperação",
+    "createAccount": "Criar uma conta",
+    "registerToStart": "Cadastre-se para começar a controlar despesas",
+    "fullNameHint": "Nome completo",
+    "nameRequired": "Insira seu nome",
+    "passwordMinLength": "Mínimo de 6 caracteres",
+    "confirmPasswordRequired": "Confirme a senha",
+    "registerButton": "Registrar",
+    "verifyEmailTitle": "Verificar E-mail",
+    "verifyEmailContent": "Enviamos um e-mail de verificação. Verifique sua caixa de entrada.",
+    "notificationDailyTitle": "💰 Lembrete de despesas",
+    "notificationDailyBody": "Não se esqueça de inserir suas despesas de hoje!",
+    "notificationBudgetTitle": "⚠️ Limite de orçamento excedido!",
+    "notificationBudgetBody": "Você gastou {spent} de {limit} neste mês",
+    "@notificationBudgetBody": {
+        "placeholders": {
+            "spent": {
+                "type": "String"
+            },
+            "limit": {
+                "type": "String"
+            }
+        }
+    },
+    "editExpenseConvertedTitle": "Valor convertido",
+    "editExpenseExchangeRateDate": "Em {date}: ",
+    "warningOfflineCurrencyCreate": "Despesa criada com sucesso. Conversão de moeda não disponível.",
+    "warningOfflineCurrencyEdit": "Despesa editada com sucesso. Conversão de moeda não disponível.",
+    "warningTitle": "Atenção!",
+    "conversionUnavailable": "Conversão não disponível",
+    "retryWhenOnline": "Edite a despesa quando estiver online para atualizar."
+}

@@ -81,6 +81,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
             Locale('en'),
             Locale('fr'),
             Locale('es'),
+            Locale('de'),
+            Locale('pt'),
           ],
 
           // Configura i delegati necessari per la traduzione dei widget Material, Cupertino

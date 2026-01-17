@@ -39,6 +39,8 @@
     "languageNameEn": "English (US)",
     "languageNameFr": "French (France)",
     "languageNameEs": "Spanish (Spain)",
+    "languageNameDe": "German (Germany)",
+    "languageNamePt": "Portuguese (Portugal)",
     "newExpense": "New expense",
     "ok": "OK",
     "deleteDialogTitleSingle": "Single deletion",

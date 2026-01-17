@@ -36,7 +36,7 @@ class LanguageProvider extends ChangeNotifier {
       final systemLocale = ui.PlatformDispatcher.instance.locale;
       
       // Lista delle lingue supportate dalla tua app
-      const supportedCodes = ['it', 'en', 'fr', 'es'];
+      const supportedCodes = ['it', 'en', 'fr', 'es', 'de', 'pt'];
 
       // Se la lingua del telefono è tra quelle supportate, la usiamo.
       // Altrimenti (es. Tedesco), usiamo l'Inglese (o Italiano) come fallback.

@@ -1,0 +1,258 @@
+{
+    "@@locale": "de",
+    "settingsTitle": "Einstellungen",
+    "appearance": "Erscheinungsbild",
+    "darkMode": "Dunkelmodus",
+    "activated": "Aktiviert",
+    "deactivated": "Deaktiviert",
+    "notifications": "Benachrichtigungen",
+    "dailyReminder": "Tägliche Erinnerung",
+    "activeAt": "Aktiv um {time}",
+    "@activeAt": {
+        "placeholders": {
+            "time": {
+                "type": "String"
+            }
+        }
+    },
+    "reminderTime": "Erinnerungszeit",
+    "spendingLimitAlert": "Warnung Ausgabenlimit",
+    "activeMonthlyLimit": "Aktiv ({amount}/Monat)",
+    "@activeMonthlyLimit": {
+        "placeholders": {
+            "amount": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyLimit": "Monatliches Limit",
+    "notificationsInfo": "Benachrichtigungen helfen dir, deine täglichen Ausgaben zu verfolgen und dein monatliches Budget einzuhalten",
+    "currency": "Währung",
+    "defaultCurrency": "Standardwährung",
+    "language": "Sprache",
+    "defaultLanguage": "Standardsprache",
+    "setMonthlyLimitTitle": "Monatliches Limit festlegen",
+    "insertAmountHint": "Betrag eingeben",
+    "selectCurrencyTitle": "Währung auswählen",
+    "selectLanguageTitle": "Sprache auswählen",
+    "languageNameIt": "Italienisch (Italien)",
+    "languageNameEn": "Englisch (US)",
+    "languageNameFr": "Französisch (Frankreich)",
+    "languageNameEs": "Spanisch (Spanien)",
+    "languageNameDe": "Deutsch (Deutschland)",
+    "languageNamePt": "Portugiesisch (Portugal)",
+    "newExpense": "Neue Ausgabe",
+    "ok": "OK",
+    "deleteDialogTitleSingle": "Einzeln löschen",
+    "deleteDialogTitleMultiple": "Mehrere löschen",
+    "deleteConfirmMessage": "{count, plural, =1{Möchtest du 1 ausgewählte Ausgabe löschen?} other{Möchtest du {count} ausgewählte Ausgaben löschen?}}",
+    "@deleteConfirmMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "delete": "Löschen",
+    "cancel": "Abbrechen",
+    "deletedTitleSingle": "Gelöscht!",
+    "deletedTitleMultiple": "Gelöscht!",
+    "deleteSuccessMessage": "{count, plural, =1{1 Ausgabe erfolgreich gelöscht.} other{{count} Ausgaben erfolgreich gelöscht.}}",
+    "@deleteSuccessMessage": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "annualReport": "JAHRESBERICHT",
+    "thisMonth": "DIESER MONAT",
+    "today": "Heute",
+    "week": "Woche",
+    "year": "Jahr",
+    "searchHint": "Nach Beschreibung suchen...",
+    "sortTitle": "Ausgaben sortieren",
+    "sortDateNewest": "Datum: Neueste zuerst",
+    "sortDateOldest": "Datum: Älteste zuerst",
+    "sortAmountHighest": "Betrag: Höchster zuerst",
+    "sortAmountLowest": "Betrag: Niedrigster zuerst",
+    "deleteConfirmMessageSwipe": "Möchtest du die ausgewählte Ausgabe löschen?",
+    "deleteSuccessMessageSwipe": "Ausgabe erfolgreich gelöscht.",
+    "noDescription": "Keine Beschreibung",
+    "selectedCountLabel": "{count, plural, =1{1 ausgewählt} other{{count} ausgewählt}}",
+    "@selectedCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "deselectAll": "Alle abwählen",
+    "selectAll": "Alle auswählen",
+    "deleteSelectedTooltip": "Ausgewählte löschen",
+    "descriptionHint": "Beschreibung (optional)",
+    "deleteConfirmTitle": "Löschung bestätigen",
+    "errorTitle": "Hoppla!",
+    "zeroValueError": "Du kannst keine Ausgabe mit dem Wert 0 erstellen.",
+    "createdTitle": "Erstellt!",
+    "editedTitle": "Bearbeitet!",
+    "expenseCreated": "Ausgabe erfolgreich erstellt.",
+    "expenseEdited": "Ausgabe erfolgreich bearbeitet.",
+    "expenseInstructionTitle": "Ausgabe erstellen oder bearbeiten",
+    "expenseInstructionMessage": "Halte den Bildschirm gedrückt, um das Erstellen oder Bearbeiten einer Ausgabe zu bestätigen.",
+    "profileTitle": "Profil",
+    "dataUpdated": "Daten aktualisiert",
+    "refreshError": "Aktualisierungsfehler: {error}",
+    "@refreshError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "profilePictureUpdated": "Profilbild aktualisiert!",
+    "removePictureTitle": "Bild entfernen",
+    "removePictureMessage": "Bist du sicher, dass du dein Profilbild löschen möchtest?",
+    "pictureRemoved": "Profilbild entfernt",
+    "nameLabel": "Name",
+    "editNameTooltip": "Namen ändern",
+    "emailLabel": "E-Mail",
+    "editEmailTooltip": "E-Mail ändern",
+    "passwordLabel": "Passwort",
+    "editPasswordTooltip": "Passwort ändern",
+    "userIdLabel": "Benutzer-ID",
+    "copyIdTooltip": "ID kopieren",
+    "idCopied": "ID in die Zwischenablage kopiert",
+    "deleteAccountButton": "Konto löschen",
+    "deleteAccountTitle": "Konto löschen",
+    "deleteAccountMessage": "Bist du sicher, dass du dein Konto endgültig löschen möchtest?",
+    "accountDeleted": "Konto erfolgreich gelöscht",
+    "save": "Speichern",
+    "newNameHint": "Neuer Name",
+    "nameUpdated": "Name erfolgreich aktualisiert",
+    "newEmailHint": "Neue E-Mail",
+    "currentPasswordHint": "Aktuelles Passwort",
+    "invalidData": "Bitte gültige Daten eingeben",
+    "emailUpdateSent": "Bestätigung für neue E-Mail gesendet. Bitte melde dich an.",
+    "newPasswordHint": "Neues Passwort",
+    "confirmPasswordHint": "Passwort bestätigen",
+    "recoveryEmailSent": "E-Mail zur Wiederherstellung an {email} gesendet",
+    "@recoveryEmailSent": {
+        "placeholders": {
+            "email": {
+                "type": "String"
+            }
+        }
+    },
+    "passwordsDoNotMatch": "Die neuen Passwörter stimmen nicht überein",
+    "passwordUpdated": "Passwort erfolgreich aktualisiert",
+    "notAvailable": "Nicht verfügbar",
+    "yearsPageTitle": "Jahresbericht",
+    "noExpensesTitle": "Keine Ausgaben vorhanden",
+    "noExpensesSubtitle": "Ausgaben, die du hinzufügst, erscheinen hier",
+    "totalYearLabel": "Gesamt {year}",
+    "@totalYearLabel": {
+        "placeholders": {
+            "year": {
+                "type": "String"
+            }
+        }
+    },
+    "monthlyDetail": "Monatsdetails",
+    "noExpensesMonthTitle": "Keine Ausgaben in diesem Monat",
+    "totalMonthLabel": "Gesamt {month}",
+    "@totalMonthLabel": {
+        "placeholders": {
+            "month": {
+                "type": "String"
+            }
+        }
+    },
+    "dayCountLabel": "{count, plural, =1{Tag} other{Tage}}",
+    "@dayCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "dailyExpenses": "Tägliche Ausgaben",
+    "noExpensesDayTitle": "Keine Ausgaben an diesem Tag",
+    "totalDayLabel": "Tagesgesamt",
+    "allExpenses": "Alle Ausgaben",
+    "expenseCountLabel": "{count, plural, =1{Ausgabe} other{Ausgaben}}",
+    "@expenseCountLabel": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "confirm": "Bestätigen",
+    "dontShowAgain": "Nicht wieder anzeigen",
+    "selectYear": "Jahr auswählen",
+    "logout": "Abmelden",
+    "logoutConfirmTitle": "Abmeldung bestätigen",
+    "logoutConfirmMessage": "Bist du sicher, dass du dich abmelden möchtest?",
+    "logoutError": "Abmeldefehler: {error}",
+    "@logoutError": {
+        "placeholders": {
+            "error": {
+                "type": "String"
+            }
+        }
+    },
+    "close": "Schließen",
+    "forgotPassword": "Passwort vergessen?",
+    "accountFallback": "Konto",
+    "appInitErrorTitle": "Hoppla! App konnte nicht gestartet werden.",
+    "appInitErrorMessage": "Überprüfe deine Verbindung und versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "authAppTitle": "Expense Tracker",
+    "authAppSubtitle": "Verwalte deine Ausgaben ganz einfach",
+    "loginTab": "Anmelden",
+    "registerTab": "Registrieren",
+    "welcomeBack": "Willkommen zurück!",
+    "signInToContinue": "Melde dich an, um fortzufahren",
+    "emailHint": "E-Mail",
+    "emailRequired": "E-Mail eingeben",
+    "emailInvalid": "Ungültige E-Mail",
+    "passwordHint": "Passwort",
+    "passwordRequired": "Passwort eingeben",
+    "loginButton": "Anmelden",
+    "emailNotVerifiedTitle": "E-Mail nicht verifiziert",
+    "emailNotVerifiedMessage": "Du musst deine E-Mail bestätigen, bevor du dich anmeldest.",
+    "resendEmail": "E-Mail erneut senden",
+    "verificationEmailSent": "Verifizierungs-E-Mail gesendet!",
+    "insertEmailForRecovery": "Gib deine E-Mail zur Wiederherstellung ein",
+    "createAccount": "Konto erstellen",
+    "registerToStart": "Registriere dich, um Ausgaben zu erfassen",
+    "fullNameHint": "Vollständiger Name",
+    "nameRequired": "Gib deinen Namen ein",
+    "passwordMinLength": "Mindestens 6 Zeichen",
+    "confirmPasswordRequired": "Bestätige das Passwort",
+    "registerButton": "Registrieren",
+    "verifyEmailTitle": "E-Mail verifizieren",
+    "verifyEmailContent": "Wir haben dir eine Verifizierungs-E-Mail gesendet. Bitte überprüfe deinen Posteingang.",
+    "notificationDailyTitle": "💰 Ausgabenerinnerung",
+    "notificationDailyBody": "Vergiss nicht, deine heutigen Ausgaben einzutragen!",
+    "notificationBudgetTitle": "⚠️ Budgetlimit überschritten!",
+    "notificationBudgetBody": "Du hast diesen Monat {spent} von {limit} ausgegeben",
+    "@notificationBudgetBody": {
+        "placeholders": {
+            "spent": {
+                "type": "String"
+            },
+            "limit": {
+                "type": "String"
+            }
+        }
+    },
+    "editExpenseConvertedTitle": "Umgerechneter Wert",
+    "editExpenseExchangeRateDate": "Am {date}: ",
+    "warningOfflineCurrencyCreate": "Ausgabe erfolgreich erstellt. Währungsumrechnung nicht verfügbar.",
+    "warningOfflineCurrencyEdit": "Ausgabe erfolgreich bearbeitet. Währungsumrechnung nicht verfügbar.",
+    "warningTitle": "Achtung!",
+    "conversionUnavailable": "Umrechnung nicht verfügbar",
+    "retryWhenOnline": "Bearbeite die Ausgabe, wenn du online bist, um zu aktualisieren."
+}

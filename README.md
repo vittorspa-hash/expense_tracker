@@ -4,7 +4,7 @@
 
 **Expense Tracker** è un'app mobile Flutter per la gestione delle spese personali.  
 Permette di creare e tenere traccia delle spese, con statistiche giornaliere, mensili e annuali, 
-supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES) e un sistema multi-valuta intelligente con tassi di cambio storici.
+supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES, DE, PT) e un sistema multi-valuta intelligente con tassi di cambio storici.
 
 ---
 
@@ -22,12 +22,14 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES) e un s
 - **Autenticazione Firebase** (Login / Registrazione)
 - **Gestione spese**: Aggiunta, modifica e cancellazione delle spese
 - **Supporto Multilingua**:
-  - Rilevamento automatico lingua sistema
+  - Rilevamento automatico della lingua del dispositivo
   - Traduzione completa in:
     - 🇮🇹 Italiano (`it`)
     - 🇺🇸 Inglese (`en`)
     - 🇫🇷 Francese (`fr`)
     - 🇪🇸 Spagnolo (`es`)
+    - 🇩🇪 Tedesco (`de`)
+    - 🇵🇹 Portoghese (`pt`)
 - **Multi-Valuta Smart**: 
   - Supporto EUR, USD, GBP, JPY.
   - Conversione in tempo reale basata su API (Frankfurter).
@@ -46,11 +48,13 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES) e un s
 - **Dark Mode** e **Adaptive Layout** con supporto a Cupertino/Material
 - **Responsive Layout** con `flutter_screenutil`
 
+---
+
 ## 🌟 Feature Spotlight: Smart Multi-Currency System
 Il sistema di gestione valute è progettato per essere resiliente e garantire la coerenza dei dati storici:
 
-1. **Snapshot dei Tassi Storici:** Al momento della creazione di una spesa, vengono scaricati e salvati i tassi di cambio di quel momento. 
-Questo garantisce che una spesa fatta in passato mantenga il suo valore reale in euro dell'epoca, indipendentemente dalle fluttuazioni odierne del mercato.
+1. **Snapshot dei Tassi Storici:** Al momento della creazione di una spesa, vengono scaricati e salvati i tassi di cambio attuali. 
+Questo garantisce che una spesa di 100$ fatta 6 mesi fa mantenga il suo valore storico in € di quel giorno, non quello di oggi.
 2. **Offline Resilience (Soft Fail):** Se l'utente è offline durante la creazione, l'app tenta prima di recuperare i tassi dalla cache locale. 
 Se anche questa è vuota, non blocca l'operazione ma salva la spesa con un tasso fallback (1:1), segnalando visivamente l'anomalia tramite un'icona di warning.
 3. **Self-Healing (Smart Update):** Il sistema implementa una logica di auto-riparazione. Se l'utente modifica una spesa "offline" quando la connessione è tornata disponibile, 
@@ -64,7 +68,7 @@ il sistema scarica automaticamente i tassi mancanti, aggiorna il database e rimu
 ![Auth Page](assets/screenshots/auth_page2.png)
 
 **Home Page**  
-![Home Page](assets/screenshots/home_page2.png)
+![Home Page](assets/screenshots/home_page3.png)
 
 **Years Page**  
 ![Years Page Graph](assets/screenshots/years_page2.png)
