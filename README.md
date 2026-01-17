@@ -31,7 +31,11 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES, DE, PT
     - 🇩🇪 Tedesco (`de`)
     - 🇵🇹 Portoghese (`pt`)
 - **Multi-Valuta Smart**: 
-  - Supporto EUR, USD, GBP, JPY.
+  - Supporto per valute:
+    - EUR (€),
+    - USD ($),
+    - GBP (£),
+    - JPY (¥).
   - Conversione in tempo reale basata su API (Frankfurter).
 - **Resoconti**:
   - DaysPage → Riepilogo giornaliero
