@@ -10,17 +10,20 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES, DE, PT
 
 ## 🎯 Obiettivi del progetto
 - Monitorare le spese personali in modo semplice e veloce.
+- Sincronizzare i dati su cloud (Firestore) per garantirne l'accesso da qualsiasi dispositivo.
 - Visualizzare resoconti giornalieri, mensili e annuali.
 - Inviare notifiche giornaliere e avvisi di superamento limite spesa.
 - Offrire un'esperienza responsive e adaptive su dispositivi mobili.
-- Supportare autenticazione sicura tramite Firebase.
+- Supportare autenticazione sicura tramite Firebase Auth.
 - Garantire accessibilità internazionale tramite supporto multilingua e multivaluta.
 
 ---
 
 ## 📱 Funzionalità principali
-- **Autenticazione Firebase** (Login / Registrazione)
-- **Gestione spese**: Aggiunta, modifica e cancellazione delle spese
+- **Autenticazione Firebase Auth** (Login / Registrazione)
+- **Gestione spese & Cloud Sync**: 
+  - Aggiunta, modifica e cancellazione delle spese
+  - Salvataggio automatico su Firestore per accesso multi-device.
 - **Supporto Multilingua**:
   - Rilevamento automatico della lingua del dispositivo
   - Traduzione completa in:
@@ -54,16 +57,18 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES, DE, PT
 
 ---
 
-## 🌟 Feature Spotlight: Smart Multi-Currency System
-Il sistema di gestione valute è progettato per essere resiliente e garantire la coerenza dei dati storici:
+## 🌟 Feature Spotlight: Cloud Sync & Smart Multi-Currency
+L'architettura unisce la potenza di Cloud Firestore per la sincronizzazione real-time tra dispositivi con una logica custom per la coerenza finanziaria:
 
-1. **Snapshot dei Tassi Storici:** Al momento della creazione di una spesa, vengono scaricati e salvati i tassi di cambio attuali. 
-Questo garantisce che una spesa di 100$ fatta 6 mesi fa mantenga il suo valore storico in € di quel giorno, non quello di oggi.
-2. **Offline Resilience (Soft Fail):** Se l'utente è offline durante la creazione, l'app tenta prima di recuperare i tassi dalla cache locale. 
-Se anche questa è vuota, non blocca l'operazione ma salva la spesa con un tasso fallback (1:1), segnalando visivamente l'anomalia tramite un'icona di warning.
-3. **Self-Healing (Smart Update):** Il sistema implementa una logica di auto-riparazione. Se l'utente modifica una spesa "offline" quando la connessione è tornata disponibile, 
-il sistema scarica automaticamente i tassi mancanti, aggiorna il database e rimuove il warning.
-4. **Strategia di Caching:** Utilizzo del pattern Network-First, Cache-Fallback per garantire velocità e funzionamento anche con connettività instabile.
+1. **Cloud-First & Multi-Device**: Ogni spesa viene salvata direttamente su Firestore. Questo garantisce che i dati siano 
+accessibili e sincronizzati istantaneamente su qualsiasi dispositivo su cui l'utente effettui il login.
+2. **Snapshot dei Tassi Storici**: Al momento della creazione di una spesa, vengono scaricati e "congelati" i tassi di cambio attuali. 
+Una spesa di 100$ fatta 6 mesi fa manterrà il suo controvalore storico in €, preservando la veridicità dei report finanziari.
+3. **Hybrid Offline Resilience**:
+ - *Dati Spesa*: Grazie alla persistenza locale di Firestore, l'utente può aggiungere spese anche senza internet; il database si sincronizzerà automaticamente al ritorno della connessione.
+ - *Tassi di Cambio (Soft Fail)*: Se l'API dei cambi non è raggiungibile, il sistema tenta il recupero dalla cache locale. Se vuota, salva la spesa con un flag di warning e un tasso fallback, senza bloccare l'utente.
+4. **Self-Healing (Smart Update)**: Il sistema implementa una logica di auto-riparazione. Quando la connessione torna disponibile 
+e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente i tassi storici mancanti, aggiorna il record su Firestore e rimuove il warning.
 
 ---
 
