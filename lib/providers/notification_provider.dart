@@ -1,13 +1,12 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 
 /// FILE: notification_provider.dart
 /// DESCRIZIONE: Provider per la gestione dello stato delle notifiche.
-/// Gestisce la logica di business relativa ai promemoria e agli avvisi di budget,
-/// occupandosi della persistenza delle preferenze utente, della localizzazione dei testi
-/// e della comunicazione con il NotificationService.
+/// Gestisce SOLO lo stato UI e orchestra le chiamate al service.
+/// La business logic (quando notificare) è delegata a NotificationService.
+/// La localizzazione dei testi rimane responsabilità del Provider (è UI).
 
 class NotificationProvider extends ChangeNotifier {
   final NotificationService _notificationService;
@@ -15,20 +14,12 @@ class NotificationProvider extends ChangeNotifier {
   NotificationProvider({required NotificationService notificationService})
       : _notificationService = notificationService;
 
-  // --- STATO E PERSISTENZA ---
+  // --- STATO ---
   // Variabili di stato per configurare i promemoria e i limiti di spesa.
-  late SharedPreferences _prefs;
-
   bool _dailyReminderEnabled = false;
   TimeOfDay _reminderTime = const TimeOfDay(hour: 20, minute: 0);
   bool _limitAlertEnabled = false;
   double _monthlyLimit = 1000.0;
-
-  static const String _keyDailyReminderEnabled = 'daily_reminder_enabled';
-  static const String _keyReminderHour = 'reminder_hour';
-  static const String _keyReminderMinute = 'reminder_minute';
-  static const String _keyLimitAlertEnabled = 'limit_alert_enabled';
-  static const String _keyMonthlyLimit = 'monthly_limit';
 
   // --- GETTERS ---
   bool get dailyReminderEnabled => _dailyReminderEnabled;
@@ -37,12 +28,10 @@ class NotificationProvider extends ChangeNotifier {
   double get monthlyLimit => _monthlyLimit;
 
   // --- CICLO DI VITA (INIT) ---
-  // Inizializza il servizio di notifiche e carica le preferenze salvate su disco.
+  // Inizializza il servizio di notifiche e carica le preferenze salvate.
   // Nota: La schedulazione effettiva delle notifiche viene rimandata a un metodo successivo
   // (rescheduleNotifications) poiché in questa fase le traduzioni (l10n) non sono ancora disponibili.
   Future<void> initialize() async {
-    _prefs = await SharedPreferences.getInstance();
-    
     await _notificationService.initialize();
     await _loadSettings();
   }
@@ -62,27 +51,26 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   // --- PERSISTENZA (LOAD/SAVE) ---
-  // Carica le impostazioni da SharedPreferences o imposta valori di default.
+  // Carica le impostazioni dal service o imposta valori di default.
   Future<void> _loadSettings() async {
-    _dailyReminderEnabled = _prefs.getBool(_keyDailyReminderEnabled) ?? false;
+    _dailyReminderEnabled = _notificationService.getDailyReminderEnabled();
     
-    final hour = _prefs.getInt(_keyReminderHour) ?? 20;
-    final minute = _prefs.getInt(_keyReminderMinute) ?? 0;
+    final hour = _notificationService.getReminderHour();
+    final minute = _notificationService.getReminderMinute();
     _reminderTime = TimeOfDay(hour: hour, minute: minute);
     
-    _limitAlertEnabled = _prefs.getBool(_keyLimitAlertEnabled) ?? false;
-    _monthlyLimit = _prefs.getDouble(_keyMonthlyLimit) ?? 1000.0;
+    _limitAlertEnabled = _notificationService.getLimitAlertEnabled();
+    _monthlyLimit = _notificationService.getMonthlyLimit();
     
     notifyListeners();
   }
 
-  // Salva lo stato corrente delle impostazioni su disco.
+  // Salva lo stato corrente delle impostazioni tramite il service.
   Future<void> _saveSettings() async {
-    await _prefs.setBool(_keyDailyReminderEnabled, _dailyReminderEnabled);
-    await _prefs.setInt(_keyReminderHour, _reminderTime.hour);
-    await _prefs.setInt(_keyReminderMinute, _reminderTime.minute);
-    await _prefs.setBool(_keyLimitAlertEnabled, _limitAlertEnabled);
-    await _prefs.setDouble(_keyMonthlyLimit, _monthlyLimit);
+    await _notificationService.saveDailyReminderEnabled(_dailyReminderEnabled);
+    await _notificationService.saveReminderTime(_reminderTime.hour, _reminderTime.minute);
+    await _notificationService.saveLimitAlertEnabled(_limitAlertEnabled);
+    await _notificationService.saveMonthlyLimit(_monthlyLimit);
   }
 
   // --- GESTIONE PROMEMORIA GIORNALIERO ---
@@ -140,8 +128,6 @@ class NotificationProvider extends ChangeNotifier {
 
   // --- GESTIONE LIMITE BUDGET ---
   // Attiva o disattiva il controllo del limite di budget.
-  // Nota: Questo metodo gestisce solo il flag di stato, la logica di notifica
-  // risiede in checkBudgetLimit.
   Future<void> toggleLimitAlert(bool enabled) async {
     _limitAlertEnabled = enabled;
     await _saveSettings();
@@ -162,33 +148,29 @@ class NotificationProvider extends ChangeNotifier {
     debugPrint('💰 Limite mensile impostato: €${limit.toStringAsFixed(2)}');
   }
 
-  // --- BUSINESS LOGIC (CHECK SPESA) ---
-  // Verifica se la spesa corrente ha superato il limite mensile impostato.
-  // Se il limite è superato e l'avviso è abilitato, genera dinamicamente il testo
-  // della notifica (con i valori monetari formattati) e la invia immediatamente.
-  Future<void> checkBudgetLimit(double currentMonthlySpent, AppLocalizations l10n, String currencySymbol) async {
-    if (!_limitAlertEnabled) return;
+  // --- ORCHESTRAZIONE: VERIFICA BUDGET ---
+  
+  /// Orchestrazione: Prepara i testi localizzati (UI) e delega la decisione al service
+  /// La business logic (se notificare) è TUTTA nel NotificationService
+  Future<void> checkBudgetLimit(
+    double currentMonthlySpent,
+    AppLocalizations l10n,
+    String currencySymbol,
+  ) async {
+    // RESPONSABILITÀ UI: Preparare i testi localizzati
+    final String title = l10n.notificationBudgetTitle;
+    final String spentString = "$currencySymbol${currentMonthlySpent.toStringAsFixed(2)}";
+    final String limitString = "$currencySymbol${_monthlyLimit.toStringAsFixed(2)}";
+    final String body = l10n.notificationBudgetBody(spentString, limitString);
     
-    if (currentMonthlySpent >= _monthlyLimit) {
-      
-      // Recuperiamo le stringhe tradotte dal file .arb
-      final String title = l10n.notificationBudgetTitle;
-      
-      // Formattiamo i numeri come stringhe (come richiesto dal tuo .arb)
-      final String spentString = "$currencySymbol${currentMonthlySpent.toStringAsFixed(2)}";
-      final String limitString = "$currencySymbol${_monthlyLimit.toStringAsFixed(2)}";
-      
-      // Generiamo il body usando il metodo generato da Flutter
-      final String body = l10n.notificationBudgetBody(spentString, limitString);
-
-      // Chiamiamo il service con le stringhe pronte
-      await _notificationService.showBudgetLimitNotification(
-        title: title,
-        body: body,
-      );
-      
-      debugPrint('⚠️ Limite budget superato! $body');
-    }
+    // DELEGA TUTTA LA DECISIONE AL SERVICE (when + how)
+    await _notificationService.checkAndNotifyBudgetLimit(
+      currentMonthlySpent: currentMonthlySpent,
+      monthlyLimit: _monthlyLimit,
+      alertEnabled: _limitAlertEnabled,
+      title: title,
+      body: body,
+    );
   }
 
   // --- RESET ---

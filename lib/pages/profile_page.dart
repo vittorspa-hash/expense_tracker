@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/utils/clipboard_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
 import 'package:flutter/material.dart';
@@ -190,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage>
                         tooltip: loc.copyIdTooltip,
                         onPressed: () async {
                           final loc = AppLocalizations.of(context)!;
-                          await provider.copyToClipboard(user?.uid);
+                          await ClipboardUtils.copy(user?.uid);
                           _showSnack(loc.idCopied);
                         },
                         isLoading: provider.isLoading,

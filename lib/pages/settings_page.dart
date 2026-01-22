@@ -1,5 +1,6 @@
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/models/currency_model.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/language_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';

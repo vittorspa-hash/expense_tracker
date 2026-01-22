@@ -1,3 +1,4 @@
+import 'package:expense_tracker/models/currency_model.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

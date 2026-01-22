@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/foundation.dart'; 
 import 'package:flutter/painting.dart'; 
-import 'package:flutter/services.dart'; 
 import 'package:expense_tracker/services/profile_service.dart';
 
 /// FILE: profile_provider.dart
@@ -142,14 +141,6 @@ class ProfileProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-
-  // --- UTILS E HELPER ---
-  // Funzioni di utilità per la clipboard e per la gestione centralizzata del loading.
-  Future<void> copyToClipboard(String? text) async {
-    if (text == null) return;
-    await Clipboard.setData(ClipboardData(text: text));
-  }
-
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

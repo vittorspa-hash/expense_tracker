@@ -13,6 +13,7 @@ import 'package:expense_tracker/services/language_service.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:expense_tracker/services/profile_service.dart';
 import 'package:expense_tracker/services/theme_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
@@ -21,7 +22,8 @@ import 'package:intl/intl.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'firebase_options.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'config/firebase_options.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/multi_select_provider.dart';
 
@@ -41,27 +43,48 @@ void main() async {
   // Registrazione di Repository e Servizi come Singleton (Lazy o immediati).
   final getIt = GetIt.instance;
 
-  getIt.registerLazySingleton<FirebaseRepository>(() => FirebaseRepository());
+  final sharedPreferences = await SharedPreferences.getInstance();
+  getIt.registerSingleton<SharedPreferences>(sharedPreferences);
 
-  getIt.registerLazySingleton<AuthService>(() => AuthService());
-  getIt.registerLazySingleton<ProfileService>(() => ProfileService());
-  getIt.registerLazySingleton<ExpenseService>(
-    () => ExpenseService(firebaseRepository: getIt<FirebaseRepository>()),
+  getIt.registerSingleton<NotificationService>(
+    NotificationService(sharedPreferences: getIt<SharedPreferences>()),
   );
-  getIt.registerSingleton<NotificationService>(NotificationService());
-  getIt.registerSingleton<ThemeService>(ThemeService());
-  getIt.registerSingleton<CurrencyService>(CurrencyService());
-  getIt.registerSingleton<LanguageService>(LanguageService());
+  getIt.registerSingleton<ThemeService>(
+    ThemeService(sharedPreferences: getIt<SharedPreferences>()),
+  );
+  getIt.registerSingleton<CurrencyService>(
+    CurrencyService(sharedPreferences: getIt<SharedPreferences>()),
+  );
+  getIt.registerSingleton<LanguageService>(
+    LanguageService(sharedPreferences: getIt<SharedPreferences>()),
+  );
+
+  getIt.registerLazySingleton<FirebaseRepository>(() => FirebaseRepository());
+  getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
+
+  getIt.registerLazySingleton<AuthService>(
+    () => AuthService(firebaseAuth: getIt<FirebaseAuth>()),
+  );
+  getIt.registerLazySingleton<ProfileService>(
+    () => ProfileService(firebaseAuth: getIt<FirebaseAuth>()),
+  );
+  getIt.registerLazySingleton<ExpenseService>(
+    () => ExpenseService(
+      currencyService: getIt<CurrencyService>(),
+      firebaseRepository: getIt<FirebaseRepository>(),
+      firebaseAuth: getIt<FirebaseAuth>(),
+    ),
+  );
 
   // --- INIZIALIZZAZIONE SERVIZI ASINCRONI ---
-  // Setup di Notification Theme, Currency e Language che devono completarsi prima del rendering UI.
+  // Setup di Notification, Theme, Currency e Language che devono completarsi prima del rendering UI.
   final notificationProvider = NotificationProvider(
     notificationService: getIt<NotificationService>(),
   );
   await notificationProvider.initialize();
 
   final themeProvider = ThemeProvider(
-    themeService: getIt<ThemeService>(),
+    themeService: getIt<ThemeService>()
   );
   await themeProvider.initialize();
 
@@ -99,18 +122,16 @@ void main() async {
               create: (_) => AuthProvider(authService: getIt<AuthService>()),
             ),
             ChangeNotifierProvider(
-              create: (_) => ProfileProvider(profileService: getIt<ProfileService>()),
+              create: (_) =>
+                  ProfileProvider(profileService: getIt<ProfileService>()),
             ),
             ChangeNotifierProvider(
               create: (_) => ExpenseProvider(
                 expenseService: getIt<ExpenseService>(),
-                currencyService: getIt<CurrencyService>(),
                 notificationProvider: notificationProvider,
               ),
             ),
-            ChangeNotifierProvider(
-              create: (_) => MultiSelectProvider(),
-            ),
+            ChangeNotifierProvider(create: (_) => MultiSelectProvider()),
           ],
           child: const App(),
         );

@@ -9,16 +9,18 @@ import 'package:path_provider/path_provider.dart';
 /// dati sensibili come Nome, Email e Password.
 
 class ProfileService {
-  final fb_auth.FirebaseAuth _auth = fb_auth.FirebaseAuth.instance;
+  final fb_auth.FirebaseAuth _firebaseAuth;
+  ProfileService({required fb_auth.FirebaseAuth firebaseAuth})
+      : _firebaseAuth = firebaseAuth;
 
-  fb_auth.User? get currentUser => _auth.currentUser;
+  fb_auth.User? get currentUser => _firebaseAuth.currentUser;
 
   // --- GESTIONE FILE LOCALE ---
   // Genera il percorso del file immagine basandosi sull'UID dell'utente corrente.
   // Questo previene conflitti di sovrascrittura tra utenti diversi sullo stesso dispositivo.
   // 
   Future<File> _getUserFile() async {
-    final user = _auth.currentUser;
+    final user = _firebaseAuth.currentUser;
     if (user == null) {
       throw ProfileException(
         "No user logged in: cannot handle image.",
@@ -32,7 +34,7 @@ class ProfileService {
   // --- SINCRONIZZAZIONE ---
   // Ricarica i dati dell'utente da Firebase per assicurarsi di avere lo stato più recente.
   Future<void> reloadUser() async {
-    await _auth.currentUser?.reload();
+    await _firebaseAuth.currentUser?.reload();
   }
 
   // --- GESTIONE IMMAGINE PROFILO ---
@@ -77,7 +79,7 @@ class ProfileService {
   // Wrapper per le chiamate a Firebase Auth per modificare i dati anagrafici.
   Future<void> updateDisplayName(String newName) async {
     try {
-      await _auth.currentUser?.updateDisplayName(newName);
+      await _firebaseAuth.currentUser?.updateDisplayName(newName);
       await reloadUser();
     } catch (e) {
       throw ProfileException("Error updating name: $e");
@@ -91,7 +93,7 @@ class ProfileService {
     required String newEmail,
     required String password,
   }) async {
-    final user = _auth.currentUser;
+    final user = _firebaseAuth.currentUser;
     if (user == null) throw ProfileException("User not found");
 
     try {
@@ -104,7 +106,7 @@ class ProfileService {
 
       // 2. Verifica e Logout
       await user.verifyBeforeUpdateEmail(newEmail);
-      await _auth.signOut();
+      await _firebaseAuth.signOut();
     } on fb_auth.FirebaseAuthException catch (e) {
       throw ProfileException("Error changing email: ${e.message}");
     }
@@ -114,7 +116,7 @@ class ProfileService {
     required String currentPassword,
     required String newPassword,
   }) async {
-    final user = _auth.currentUser;
+    final user = _firebaseAuth.currentUser;
     if (user == null) throw ProfileException("User not found");
 
     try {
@@ -134,7 +136,7 @@ class ProfileService {
   // Rimuove definitivamente l'utente da Firebase Auth.
   Future<void> deleteAccount() async {
     try {
-      await _auth.currentUser?.delete();
+      await _firebaseAuth.currentUser?.delete();
     } catch (e) {
       throw ProfileException("Error deleting account: $e");
     }

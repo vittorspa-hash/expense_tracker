@@ -88,8 +88,9 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 - `lib/main.dart` → Entry Point: Configurazione ambiente, inizializzazione Firebase, Dependency Injection (GetIt) e iniezione dei MultiProvider
 - `lib/app.dart` → App Configuration: Tema, localizzazione, routing e gestione lifecycle
 - `lib/components/` →  Widget UI riutilizzabili divisi per contesto
-- `lib/l10n/` →  File di configurazione per la localizzazione (.arb) e stringhe tradotte
-- `lib/models/` → Data classes e modelli di dominio (ExpenseModel)
+- `lib/config/` → File di configurazione centralizzati
+- `lib/l10n/` →  File .arb con stringhe tradotte in 6 lingue
+- `lib/models/` → Data classes e modelli di dominio
 - `lib/pages/` → Schermate dell'applicazione
 - `lib/providers/` → State Layer: Collegano la UI alla logica di business
 - `lib/repositories/` → Data Layer: Accesso diretto ai dati (Firestore)

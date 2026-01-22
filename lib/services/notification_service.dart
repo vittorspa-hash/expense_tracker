@@ -3,15 +3,22 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 
 /// FILE: notification_service.dart
-/// DESCRIZIONE: Service Layer per la gestione delle notifiche locali.
+/// DESCRIZIONE: Service Layer per la gestione delle notifiche locali e persistenza.
 /// Si occupa dell'inizializzazione del plugin, della configurazione dei fusi orari,
-/// della gestione dei permessi e della schedulazione delle notifiche (promemoria giornalieri
-/// e avvisi di superamento del budget).
+/// della gestione dei permessi, della schedulazione delle notifiche (promemoria giornalieri
+/// e avvisi di superamento del budget) e della persistenza delle impostazioni.
+/// CONTIENE TUTTA LA BUSINESS LOGIC relativa a quando e come notificare.
 
 class NotificationService {
+  final SharedPreferences _prefs;
+
+  NotificationService({required SharedPreferences sharedPreferences})
+      : _prefs = sharedPreferences;
+
   // --- CONFIGURAZIONE PLUGIN ---
   // Istanza principale del plugin e costanti per ID e Canali.
   final FlutterLocalNotificationsPlugin _notifications =
@@ -23,9 +30,15 @@ class NotificationService {
   static const String _dailyReminderChannel = 'daily_reminder';
   static const String _budgetAlertChannel = 'budget_alert';
 
+  static const String _keyDailyReminderEnabled = 'daily_reminder_enabled';
+  static const String _keyReminderHour = 'reminder_hour';
+  static const String _keyReminderMinute = 'reminder_minute';
+  static const String _keyLimitAlertEnabled = 'limit_alert_enabled';
+  static const String _keyMonthlyLimit = 'monthly_limit';
+
   // --- INIZIALIZZAZIONE ---
   // Configura il sistema di notifiche all'avvio dell'app.
-  // Inizializza il database dei fusi orari (essenziale per le notifiche schedulate),
+  // Inizializza SharedPreferences, il database dei fusi orari (essenziale per le notifiche schedulate),
   // imposta i settings specifici per Android (icone) e iOS (permessi),
   // e crea i canali di notifica necessari per Android.
   Future<void> initialize() async {
@@ -107,8 +120,8 @@ class NotificationService {
   Future<void> _createAndroidChannels() async {
     const dailyChannel = AndroidNotificationChannel(
       _dailyReminderChannel,
-      'Daily Reminder', // Tradotto
-      description: 'Notifications to remind you to track expenses', // Tradotto
+      'Daily Reminder',
+      description: 'Notifications to remind you to track expenses',
       importance: Importance.high,
       enableVibration: true,
       playSound: true,
@@ -116,8 +129,8 @@ class NotificationService {
 
     const budgetChannel = AndroidNotificationChannel(
       _budgetAlertChannel,
-      'Budget Alerts', // Tradotto
-      description: 'Notifications when you exceed your monthly spending limit', // Tradotto
+      'Budget Alerts',
+      description: 'Notifications when you exceed your monthly spending limit',
       importance: Importance.max,
       enableVibration: true,
       playSound: true,
@@ -156,6 +169,46 @@ class NotificationService {
     }
   }
 
+  // --- PERSISTENZA (LOAD/SAVE) ---
+  // Carica le impostazioni da SharedPreferences o restituisce valori di default.
+  bool getDailyReminderEnabled() {
+    return _prefs.getBool(_keyDailyReminderEnabled) ?? false;
+  }
+
+  int getReminderHour() {
+    return _prefs.getInt(_keyReminderHour) ?? 20;
+  }
+
+  int getReminderMinute() {
+    return _prefs.getInt(_keyReminderMinute) ?? 0;
+  }
+
+  bool getLimitAlertEnabled() {
+    return _prefs.getBool(_keyLimitAlertEnabled) ?? false;
+  }
+
+  double getMonthlyLimit() {
+    return _prefs.getDouble(_keyMonthlyLimit) ?? 1000.0;
+  }
+
+  // Salva le impostazioni su SharedPreferences.
+  Future<void> saveDailyReminderEnabled(bool enabled) async {
+    await _prefs.setBool(_keyDailyReminderEnabled, enabled);
+  }
+
+  Future<void> saveReminderTime(int hour, int minute) async {
+    await _prefs.setInt(_keyReminderHour, hour);
+    await _prefs.setInt(_keyReminderMinute, minute);
+  }
+
+  Future<void> saveLimitAlertEnabled(bool enabled) async {
+    await _prefs.setBool(_keyLimitAlertEnabled, enabled);
+  }
+
+  Future<void> saveMonthlyLimit(double limit) async {
+    await _prefs.setDouble(_keyMonthlyLimit, limit);
+  }
+
   // --- SCHEDULAZIONE PROMEMORIA ---
   // Programma una notifica ricorrente giornaliera all'orario specificato.
   // Calcola la data corretta (oggi o domani se l'orario è passato), converte
@@ -184,8 +237,8 @@ class NotificationService {
 
     const androidDetails = AndroidNotificationDetails(
       _dailyReminderChannel,
-      'Daily Reminder', // Tradotto
-      channelDescription: 'Notifications to remind you to track expenses', // Tradotto
+      'Daily Reminder',
+      channelDescription: 'Notifications to remind you to track expenses',
       importance: Importance.high,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
@@ -206,8 +259,8 @@ class NotificationService {
 
     await _notifications.zonedSchedule(
       _dailyReminderId,
-      title, // Usa la stringa passata dal Provider
-      body,  // Usa la stringa passata dal Provider
+      title,
+      body,
       tzScheduledDate,
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
@@ -217,17 +270,45 @@ class NotificationService {
     debugPrint('✅ Notifica programmata per: $tzScheduledDate con testo: "$title"');
   }
 
-  // --- TRIGGER IMMEDIATI (BUDGET) ---
+  // --- BUSINESS LOGIC: VERIFICA E NOTIFICA BUDGET ---
+  
+  /// BUSINESS LOGIC: Decide se notificare il superamento budget
+  /// Contiene TUTTE le regole: alert abilitato, confronto con limite
+  Future<void> checkAndNotifyBudgetLimit({
+    required double currentMonthlySpent,
+    required double monthlyLimit,
+    required bool alertEnabled,
+    required String title,
+    required String body,
+  }) async {
+    // REGOLA 1: Se alert disabilitato, non fare nulla
+    if (!alertEnabled) {
+      debugPrint('⏭️ Avviso budget disabilitato, skip notifica');
+      return;
+    }
+    
+    // REGOLA 2: Se non ha superato il limite, non fare nulla
+    if (currentMonthlySpent < monthlyLimit) {
+      debugPrint('✅ Budget OK: ${currentMonthlySpent.toStringAsFixed(2)} < ${monthlyLimit.toStringAsFixed(2)}');
+      return;
+    }
+    
+    // REGOLA 3: Superamento rilevato, invia notifica
+    await _showBudgetLimitNotification(title: title, body: body);
+    debugPrint('⚠️ Limite budget superato! ${currentMonthlySpent.toStringAsFixed(2)} >= ${monthlyLimit.toStringAsFixed(2)}');
+  }
+
+  // --- TRIGGER IMMEDIATI (BUDGET) - METODO PRIVATO ---
   // Mostra immediatamente una notifica ad alta priorità.
-  // Utilizzato quando l'utente supera la soglia di budget impostata.
-  Future<void> showBudgetLimitNotification({
+  // Utilizzato internamente da checkAndNotifyBudgetLimit.
+  Future<void> _showBudgetLimitNotification({
     required String title,
     required String body,
   }) async {
     const androidDetails = AndroidNotificationDetails(
       _budgetAlertChannel,
-      'Budget Alerts', // Tradotto
-      channelDescription: 'Notifications when you exceed your monthly spending limit', // Tradotto
+      'Budget Alerts',
+      channelDescription: 'Notifications when you exceed your monthly spending limit',
       importance: Importance.max,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
@@ -244,8 +325,8 @@ class NotificationService {
 
     await _notifications.show(
       _budgetLimitId,
-      title, // Usa parametro
-      body,  // Usa parametro
+      title,
+      body,
       const NotificationDetails(android: androidDetails, iOS: iosDetails),
     );
   }

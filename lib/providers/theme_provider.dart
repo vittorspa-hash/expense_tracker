@@ -27,7 +27,7 @@ class ThemeProvider extends ChangeNotifier {
   // Metodo asincrono chiamato all'avvio dell'app. Recupera l'ultima preferenza
   // salvata dall'utente per garantire continuità tra le sessioni.
   Future<void> initialize() async {
-    _isDarkMode = await _themeService.loadThemePreference();
+    _isDarkMode = _themeService.loadThemePreference();
     notifyListeners();
   }
 

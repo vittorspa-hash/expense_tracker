@@ -1,3 +1,4 @@
+import 'package:expense_tracker/config/supported_locales.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/auth_wrapper.dart';
 import 'package:expense_tracker/models/expense_model.dart';
@@ -76,15 +77,8 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           locale: languageProvider.currentLocale, 
           
           // Definisce le lingue ufficialmente supportate dall'applicazione.
-          supportedLocales: const [
-            Locale('it'),
-            Locale('en'),
-            Locale('fr'),
-            Locale('es'),
-            Locale('de'),
-            Locale('pt'),
-          ],
-
+          supportedLocales: AppLocales.supportedLocales,
+          
           // Configura i delegati necessari per la traduzione dei widget Material, Cupertino
           // e delle stringhe personalizzate (AppLocalizations).
           localizationsDelegates: const [

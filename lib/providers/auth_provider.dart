@@ -89,10 +89,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> sendVerificationEmail(User user) async {
+    _setLoading(true);
     try {
       await _authService.sendVerificationEmail(user);
     } catch (e) {
       rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
