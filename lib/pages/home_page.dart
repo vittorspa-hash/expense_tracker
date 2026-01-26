@@ -32,7 +32,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with TickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- STATO E ANIMAZIONI ---
   // Controller per la barra di ricerca, per l'animazione della lista
   // e variabili di stato locale per filtri e ordinamento.
@@ -103,11 +102,7 @@ class _HomePageState extends State<HomePage>
 
     return Consumer2<MultiSelectProvider, ExpenseProvider>(
       builder: (context, multiSelect, expenseProvider, child) {
-        
         // --- GESTIONE ERRORI UI ---
-        // Ascolta lo stato degli errori del Provider. Se presente, mostra una SnackBar
-        // e resetta immediatamente l'errore per evitare loop di visualizzazione.
-        // Utilizza addPostFrameCallback per non interferire con il ciclo di build corrente.
         if (expenseProvider.errorMessage != null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showErrorSnackBar(context, expenseProvider.errorMessage!);
@@ -118,6 +113,7 @@ class _HomePageState extends State<HomePage>
         final isSelectionMode = multiSelect.isSelectionMode;
         final selectedCount = multiSelect.selectedCount;
         final filteredExpenses = _getFilteredExpenses(expenseProvider);
+        final isLoading = expenseProvider.isLoading;
 
         return Scaffold(
           appBar: isSelectionMode
@@ -126,40 +122,54 @@ class _HomePageState extends State<HomePage>
                   isDark: isDark,
                   isSelectionMode: true,
                   selectedCount: selectedCount,
-                  onCancelSelection: multiSelect.cancelSelection,
-                  onDeleteSelected: () => ExpenseActionHandler.handleDeleteSelected(context),
+                  onCancelSelection: multiSelect.deselectAll,
+                  onDeleteSelected: () =>
+                      ExpenseActionHandler.handleDeleteSelected(context),
                   onSelectAll: () => multiSelect.selectAll(filteredExpenses),
                   onDeselectAll: () => multiSelect.deselectAll(),
                   totalCount: filteredExpenses.length,
                 )
               : null,
 
-          body: Column(
+          body: Stack(
             children: [
-              HomeHeader(
-                fadeAnimation: fadeAnimation,
-                isDark: isDark,
-                onTapProfile: () => _showProfileSheet(context),
+              Column(
+                children: [
+                  HomeHeader(
+                    fadeAnimation: fadeAnimation,
+                    isDark: isDark,
+                    onTapProfile: () => _showProfileSheet(context),
+                  ),
+
+                  Expanded(
+                    child: HomeContentList(
+                      isDark: isDark,
+                      searchController: _searchController,
+                      searchQuery: _searchQuery,
+                      sortCriteria: _sortCriteria,
+                      onSortChanged: (newCriteria) {
+                        setState(() {
+                          _sortCriteria = newCriteria;
+                        });
+                      },
+                      onRefreshExpenses: _refreshExpenses,
+                    ),
+                  ),
+                ],
               ),
 
-              Expanded(
-                child: HomeContentList(
-                  isDark: isDark,
-                  searchController: _searchController,
-                  searchQuery: _searchQuery,
-                  sortCriteria: _sortCriteria,
-                  onSortChanged: (newCriteria) {
-                    setState(() {
-                      _sortCriteria = newCriteria;
-                    });
-                  },
-                  onRefreshExpenses: _refreshExpenses,
+              // Overlay per il loading durante operazioni asincrone
+              if (isLoading)
+                Container(
+                  color: AppColors.backgroundDark.withValues(alpha: 0.3),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
                 ),
-              ),
             ],
           ),
 
-          floatingActionButton: !isSelectionMode
+          floatingActionButton: !isSelectionMode && !isLoading
               ? Container(
                   decoration: BoxDecoration(
                     color: AppColors.primary,
@@ -199,15 +209,12 @@ class _HomePageState extends State<HomePage>
   }
 
   // --- HELPER INTERNI ---
-  
+
   // Mostra feedback visivo in caso di errori critici (es. fallimento eliminazione).
   void _showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message, 
-          style: TextStyle(color: AppColors.textLight,)
-        ),
+        content: Text(message, style: TextStyle(color: AppColors.textLight)),
         backgroundColor: AppColors.snackBar,
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
@@ -226,10 +233,10 @@ class _HomePageState extends State<HomePage>
     final multiSelect = context.read<MultiSelectProvider>();
     final expenseProvider = context.read<ExpenseProvider>();
 
-    multiSelect.cancelSelection();
-    
+    multiSelect.deselectAll();
+
     await expenseProvider.initialise();
-    
+
     if (_sortCriteria.isNotEmpty) {
       expenseProvider.sortBy(_sortCriteria);
     }

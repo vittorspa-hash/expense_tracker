@@ -32,9 +32,14 @@ class ProfileProvider extends ChangeNotifier {
   // Metodi per il caricamento iniziale dell'immagine dal disco e per
   // la sincronizzazione manuale (pull-to-refresh) dei dati utente da Firebase.
   Future<void> loadLocalData() async {
+  try {
     _localImage = await _profileService.getLocalImage();
+  } catch (e) {
+    _localImage = null; // Fallback sicuro
+  } finally {
     notifyListeners();
   }
+}
 
   Future<void> refreshUser() async {
     try {
@@ -105,6 +110,7 @@ class ProfileProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       await _profileService.updateEmail(newEmail: newEmail, password: password);
+      notifyListeners();
     } catch (e) {
       rethrow;
     } finally {

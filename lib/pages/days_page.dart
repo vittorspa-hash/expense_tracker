@@ -53,7 +53,7 @@ class _DaysPageState extends State<DaysPage>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<MultiSelectProvider>().cancelSelection();
+        context.read<MultiSelectProvider>().deselectAll();
       }
     });
   }
@@ -110,6 +110,7 @@ class _DaysPageState extends State<DaysPage>
 
         final isSelectionMode = multiSelect.isSelectionMode;
         final selectedCount = multiSelect.selectedCount;
+        final isLoading = expenseProvider.isLoading;
 
         return Scaffold(
           appBar: isSelectionMode
@@ -119,7 +120,7 @@ class _DaysPageState extends State<DaysPage>
                   isSelectionMode: true,
                   selectedCount: selectedCount,
                   totalCount: expensesList.length,
-                  onCancelSelection: multiSelect.cancelSelection,
+                  onCancelSelection: multiSelect.deselectAll,
                   onDeleteSelected: () =>
                       ExpenseActionHandler.handleDeleteSelected(context),
                   onSelectAll: () => multiSelect.selectAll(expensesList),
@@ -132,22 +133,35 @@ class _DaysPageState extends State<DaysPage>
                   icon: Icons.calendar_today_rounded,
                 ),
 
-          body: Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.backgroundDark
-                  : AppColors.backgroundLight,
-            ),
-            child: SafeArea(
-              child: _buildBody(
-                context,
-                expensesList,
-                isSelectionMode,
-                multiSelect,
-                expenseProvider,
-                isDark,
+          body: Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.backgroundDark
+                      : AppColors.backgroundLight,
+                ),
+                child: SafeArea(
+                  child: _buildBody(
+                    context,
+                    expensesList,
+                    isSelectionMode,
+                    multiSelect,
+                    expenseProvider,
+                    isDark,
+                  ),
+                ),
               ),
-            ),
+
+              // Overlay per il loading durante operazioni asincrone
+              if (isLoading)
+                Container(
+                  color: AppColors.backgroundDark.withValues(alpha: 0.3),
+                  child: Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                ),
+            ],
           ),
         );
       },
@@ -206,7 +220,7 @@ class _DaysPageState extends State<DaysPage>
                   : AppColors.backgroundLight,
               color: AppColors.primary,
               onRefresh: () async {
-                multiSelect.cancelSelection();
+                multiSelect.deselectAll();
                 await expenseprovider.initialise();
               },
               child: ListView.separated(
@@ -298,7 +312,7 @@ class _DaysPageState extends State<DaysPage>
         borderRadius: BorderRadius.circular(16.r),
       ),
       alignment: Alignment.centerRight,
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      padding: EdgeInsets.only(right: 20.w),
       child: Icon(
         Icons.delete_rounded,
         color: AppColors.textLight,

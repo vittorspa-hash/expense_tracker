@@ -8,7 +8,7 @@ class LanguageService {
   final SharedPreferences _prefs;
 
   LanguageService({required SharedPreferences sharedPreferences})
-      : _prefs = sharedPreferences;
+    : _prefs = sharedPreferences;
 
   static const String _languageKey = 'selected_language_code';
 
@@ -23,8 +23,12 @@ class LanguageService {
     }
   }
 
-  /// Recupera il codice lingua salvato (null se non presente)
   String? getSavedLanguageCode() {
-    return _prefs.getString(_languageKey);
+    try {
+      return _prefs.getString(_languageKey);
+    } catch (e) {
+      debugPrint('❌ Error reading language preference: $e');
+      return null; // Safe fallback
+    }
   }
 }

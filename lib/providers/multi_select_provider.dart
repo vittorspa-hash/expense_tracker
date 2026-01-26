@@ -55,17 +55,11 @@ class MultiSelectProvider extends ChangeNotifier {
 
   // Deseleziona tutto e disattiva la modalità selezione (es. pulsante "Annulla" o back).
   void deselectAll() {
-    _selectedIds.clear();
+     _selectedIds.clear();
     _isSelectionMode = false;
     notifyListeners();
   }
-
-  // Alias funzionale per la pulizia della selezione.
-  void cancelSelection() {
-    _isSelectionMode = false;
-    _selectedIds.clear();
-    notifyListeners();
-  }
+  
 
   // --- HELPER UI ---
   // Metodo di utilità per verificare rapidamente se una specifica spesa è selezionata.

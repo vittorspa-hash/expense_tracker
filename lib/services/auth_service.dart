@@ -39,10 +39,11 @@ class AuthService {
       // Aggiornamento profilo e ricarica stato utente
       await user.updateDisplayName(nome.trim());
       await user.reload();
-      user = _firebaseAuth.currentUser;
+      final reloadUser = _firebaseAuth.currentUser;
+      if (reloadUser == null) throw AuthException("User not found.");
 
       // Invio email di verifica gestito internamente
-      await sendVerificationEmail(user!);
+      await sendVerificationEmail(reloadUser);
     } on FirebaseAuthException catch (e) {
       // Utilizza il messaggio diretto di Firebase o un fallback generico in inglese
       throw AuthException(e.message ?? "An error occurred during registration.");

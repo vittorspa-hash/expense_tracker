@@ -87,17 +87,16 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 ## 🗂️ Struttura del progetto
 - `lib/main.dart` → Entry Point: Configurazione ambiente, inizializzazione Firebase, Dependency Injection (GetIt) e iniezione dei MultiProvider
 - `lib/app.dart` → App Configuration: Tema, localizzazione, routing e gestione lifecycle
-- `lib/components/` →  Widget UI riutilizzabili divisi per contesto
-- `lib/config/` → File di configurazione centralizzati
-- `lib/l10n/` →  File .arb con stringhe tradotte in 6 lingue
-- `lib/models/` → Data classes e modelli di dominio
-- `lib/pages/` → Schermate dell'applicazione
-- `lib/providers/` → State Layer: Collegano la UI alla logica di business
-- `lib/repositories/` → Data Layer: Accesso diretto ai dati (Firestore)
-- `lib/services/` → Business Logic: Logica pura condivisa iniettata tramite GetIt
-- `lib/theme/` → Definizione palette colori
+- `lib/components/` →  UI Components: Widget UI riutilizzabili divisi per contesto
+- `lib/config/` → Configuration: File di configurazione centralizzati
+- `lib/l10n/` → Localization: File .arb con stringhe tradotte in 6 lingue
+- `lib/models/` → Domain Models: Data classes e modelli di dominio
+- `lib/pages/` → Screens: Schermate dell'applicazione
+- `lib/providers/` → **State Management Layer**: Gestiscono lo stato UI e orchestrano chiamate ai service. Estendono ChangeNotifier per notificare la UI delle modifiche
+- `lib/repositories/` → **Data Access Layer**: Accesso diretto ai dati (Firestore CRUD operations)
+- `lib/services/` → **Business Logic Layer**: Contengono tutta la logica applicativa iniettata tramite GetIt
+- `lib/theme/` → Theming: Definizione palette colori
 - `lib/utils/` → Utilities: Motore di calcolo, sistema dialoghi adattivi, gestione snackbar e animazioni
-- `lib/firebase_options.dart` → Configurazione Firebase autogenerata
 
 ---
 
