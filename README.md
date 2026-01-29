@@ -117,6 +117,22 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 
 ---
 
+## 🧪 Testing
+
+Il progetto include una test suite di **61 unit test** che coprono:
+
+- **ExpenseModel** (11 test): Serializzazione, conversione multi-valuta, edge cases
+- **ExpenseService** (16 test): CRUD operations, soft-fail strategy, smart-update logic
+- **CurrencyService** (17 test): Persistenza, HTTP mocking, cache strategy
+- **ExpenseCalculator** (17 test): Calcoli temporali, aggregazioni, ordinamento
+
+### Tecnologie di Testing
+- **flutter_test**: Framework di testing Flutter
+- **mockito**: Mock di dipendenze (Firebase, HTTP, SharedPreferences)
+- **build_runner**: Generazione automatica dei mock
+
+---
+
 ## 🚀 Setup e installazione
 Clona il repository:
 ```bash

@@ -17,6 +17,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get_it/get_it.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -46,6 +47,8 @@ void main() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerSingleton<SharedPreferences>(sharedPreferences);
 
+  getIt.registerSingleton<http.Client>(http.Client());
+
   getIt.registerSingleton<NotificationService>(
     NotificationService(sharedPreferences: getIt<SharedPreferences>()),
   );
@@ -53,7 +56,10 @@ void main() async {
     ThemeService(sharedPreferences: getIt<SharedPreferences>()),
   );
   getIt.registerSingleton<CurrencyService>(
-    CurrencyService(sharedPreferences: getIt<SharedPreferences>()),
+    CurrencyService(
+      sharedPreferences: getIt<SharedPreferences>(),
+      httpClient: getIt<http.Client>(),
+    ),
   );
   getIt.registerSingleton<LanguageService>(
     LanguageService(sharedPreferences: getIt<SharedPreferences>()),

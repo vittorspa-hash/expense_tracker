@@ -12,12 +12,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class CurrencyService {
   // --- STATO E DIPENDENZE ---
-  // Iniezione di SharedPreferences per la persistenza locale dei dati.
+  // Iniezione di SharedPreferences per la persistenza locale dei dati
+  // e di un client HTTP per il recupero dei tassi di cambio.
   
   final SharedPreferences _prefs;
+  final http.Client _httpClient;
 
-  CurrencyService({required SharedPreferences sharedPreferences})
-      : _prefs = sharedPreferences;
+  CurrencyService({required SharedPreferences sharedPreferences, required http.Client httpClient})
+      : _prefs = sharedPreferences,
+        _httpClient = httpClient;
 
   // --- COSTANTI ---
   // Chiavi per la persistenza e configurazione API.
@@ -81,7 +84,7 @@ class CurrencyService {
     // Se la richiesta ha successo, aggiorna la cache locale.
     try {
       final url = Uri.parse('$_apiBaseUrl?from=$baseCurrencyCode&to=$targets');
-      final response = await http.get(url).timeout(const Duration(seconds: 6));
+      final response = await _httpClient.get(url).timeout(const Duration(seconds: 6));
       
       if (response.statusCode == 200) {
         await _prefs.setString(cacheKey, response.body);
