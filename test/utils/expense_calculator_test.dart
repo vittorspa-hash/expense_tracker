@@ -656,5 +656,54 @@ void main() {
       // ASSERT
       expect(dayExpenses, isEmpty);
     });
+
+    // =================================================================
+    // TEST 18: Sort by Amount Ascending with Currency Conversion
+    // =================================================================
+    test('Should sort by converted amount in ascending order when target currency provided', () {
+      // ARRANGE
+      final expenses = [
+        ExpenseModel(
+          uuid: '1',
+          value: 220.0, // 220 USD = 200 EUR (largest)
+          description: 'USD expense',
+          createdOn: DateTime.now(),
+          userId: 'user-123',
+          currency: 'USD',
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: '2',
+          value: 85.0, // 85 GBP = 100 EUR (medium)
+          description: 'GBP expense',
+          createdOn: DateTime.now(),
+          userId: 'user-123',
+          currency: 'GBP',
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: '3',
+          value: 50.0, // 50 EUR (smallest)
+          description: 'EUR expense',
+          createdOn: DateTime.now(),
+          userId: 'user-123',
+          currency: 'EUR',
+          exchangeRates: testRates,
+        ),
+      ];
+
+      // ACT
+      ExpenseCalculator.sortInPlace(
+        expenses,
+        'amount_asc',
+        targetCurrency: 'EUR',
+      );
+
+      // ASSERT
+      // Ordine per valore in EUR (crescente): 50 EUR < 85 GBP (100€) < 220 USD (200€)
+      expect(expenses[0].uuid, '3'); // 50 EUR (smallest)
+      expect(expenses[1].uuid, '2'); // 85 GBP = 100 EUR (medium)
+      expect(expenses[2].uuid, '1'); // 220 USD = 200 EUR (largest)
+    });
   });
 }

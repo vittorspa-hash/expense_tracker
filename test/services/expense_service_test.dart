@@ -525,5 +525,169 @@ void main() {
       final totalValues = byMonth.values.fold<double>(0, (sum, val) => sum + val);
       expect(totalValues, closeTo(225.0, 0.01)); // 100 + 50 + 75 = 225
     });
+
+    // =================================================================
+    // TEST 17: Restore Expense - Success
+    // =================================================================
+    test('Should restore expense when user is authorized', () async {
+      // ARRANGE
+      when(mockRepository.createExpense(sampleExpense))
+          .thenAnswer((_) async => {});
+
+      // ACT
+      final restored = await expenseService.restoreExpense(sampleExpense);
+
+      // ASSERT
+      expect(restored.uuid, sampleExpense.uuid);
+      expect(restored.value, sampleExpense.value);
+      verify(mockRepository.createExpense(sampleExpense)).called(1);
+    });
+
+    // =================================================================
+    // TEST 18: Restore Expense - Not Authenticated
+    // =================================================================
+    test('Should throw when restoring expense without authentication', () async {
+      // ARRANGE
+      when(mockAuth.currentUser).thenReturn(null);
+
+      // ACT & ASSERT
+      expect(
+        () => expenseService.restoreExpense(sampleExpense),
+        throwsA(isA<RepositoryFailure>()),
+      );
+
+      // Verifica che il repository NON sia stato chiamato
+      verifyNever(mockRepository.createExpense(any));
+    });
+
+    // =================================================================
+    // TEST 19: Restore Expense - Permission Denied
+    // =================================================================
+    test('Should throw when restoring another user\'s expense', () async {
+      // ARRANGE
+      final otherUserExpense = sampleExpense.copyWith(
+        userId: 'other-user-999',
+      );
+
+      // ACT & ASSERT
+      expect(
+        () => expenseService.restoreExpense(otherUserExpense),
+        throwsA(isA<RepositoryFailure>()),
+      );
+
+      // Verifica che il repository NON sia stato chiamato
+      verifyNever(mockRepository.createExpense(any));
+    });
+
+    // =================================================================
+    // TEST 20: Edit Expense - Permission Denied (User Mismatch)
+    // =================================================================
+    test('Should throw when editing expense with mismatched user', () async {
+      // ARRANGE
+      final otherUserExpense = sampleExpense.copyWith(
+        userId: 'other-user-999',
+      );
+
+      // ACT & ASSERT
+      expect(
+        () => expenseService.editExpense(
+          otherUserExpense,
+          value: 100.0,
+          description: 'Try to edit',
+          date: DateTime.now(),
+          currency: 'EUR',
+        ),
+        throwsA(isA<RepositoryFailure>()),
+      );
+
+      // Verifica che il repository NON sia stato chiamato
+      verifyNever(mockRepository.updateExpense(any));
+    });
+
+    // =================================================================
+    // TEST 21: Budget Check for List - Should Notify
+    // =================================================================
+    test('Should notify when restoring expenses exceeds budget', () {
+      // ARRANGE
+      final now = DateTime.now();
+      final currentMonthExpenses = [
+        sampleExpense.copyWith(
+          createdOn: now,
+          value: 400.0,
+        ),
+      ];
+      
+      final restoredExpenses = [
+        sampleExpense.copyWith(
+          uuid: 'restored-1',
+          createdOn: now,
+          value: 200.0,
+        ),
+      ];
+
+      final allExpenses = [...currentMonthExpenses, ...restoredExpenses];
+
+      // ACT
+      final result = expenseService.checkBudgetStatusForList(
+        allExpenses: allExpenses,
+        newExpenses: restoredExpenses,
+        targetCurrency: 'EUR',
+        budgetLimit: 500.0,
+        alertEnabled: true,
+      );
+
+      // ASSERT
+      expect(result.shouldNotify, true);
+      expect(result.currentTotal, greaterThanOrEqualTo(500.0));
+    });
+
+    // =================================================================
+    // TEST 22: Budget Check for List - No Current Month Expense
+    // =================================================================
+    test('Should not notify when restored expenses are from past months', () {
+      // ARRANGE
+      final oldExpense = sampleExpense.copyWith(
+        createdOn: DateTime(2023, 1, 15), // Anno passato
+        value: 1000.0,
+      );
+
+      // ACT
+      final result = expenseService.checkBudgetStatusForList(
+        allExpenses: [oldExpense],
+        newExpenses: [oldExpense],
+        targetCurrency: 'EUR',
+        budgetLimit: 100.0,
+        alertEnabled: true,
+      );
+
+      // ASSERT
+      expect(result.shouldNotify, false);
+    });
+
+    // =================================================================
+    // TEST 23: Budget Check for List - Alert Disabled
+    // =================================================================
+    test('Should not notify when budget alerts are disabled for list', () {
+      // ARRANGE
+      final now = DateTime.now();
+      final expenses = [
+        sampleExpense.copyWith(
+          createdOn: now,
+          value: 1000.0,
+        ),
+      ];
+
+      // ACT
+      final result = expenseService.checkBudgetStatusForList(
+        allExpenses: expenses,
+        newExpenses: expenses,
+        targetCurrency: 'EUR',
+        budgetLimit: 100.0,
+        alertEnabled: false,  // DISABILITATO
+      );
+
+      // ASSERT
+      expect(result.shouldNotify, false);
+    });
   });
 }

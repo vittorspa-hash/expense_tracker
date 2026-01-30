@@ -119,14 +119,19 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 
 ## 🧪 Testing
 
-Il progetto include una test suite di **61 unit test** che coprono:
+Il progetto include una test suite  di **69 unit test** con **~95% di coverage** sui componenti core.
 
-- **ExpenseModel** (11 test): Serializzazione, conversione multi-valuta, edge cases
-- **ExpenseService** (16 test): CRUD operations, soft-fail strategy, smart-update logic
-- **CurrencyService** (17 test): Persistenza, HTTP mocking, cache strategy
-- **ExpenseCalculator** (17 test): Calcoli temporali, aggregazioni, ordinamento
+### 📊 Coverage Breakdown
 
-### Tecnologie di Testing
+| Componente | Test | Coverage | Descrizione |
+|------------|------|----------|-------------|
+| **ExpenseModel** | 11 | 100% | Serializzazione, conversione multi-valuta, copyWith, edge cases |
+| **ExpenseCalculator** | 18 | 100% | Calcoli temporali, aggregazioni per grafici, ordinamento |
+| **ExpenseService** | 23 | 92.8% | CRUD operations, soft-fail strategy, smart-update logic, budget checks |
+| **CurrencyService** | 17 | 91.2% | Persistenza, HTTP mocking, network-cache strategy, multi-valuta |
+
+
+### 🛠️ Tecnologie di Testing
 - **flutter_test**: Framework di testing Flutter
 - **mockito**: Mock di dipendenze (Firebase, HTTP, SharedPreferences)
 - **build_runner**: Generazione automatica dei mock
