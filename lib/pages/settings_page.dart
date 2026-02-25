@@ -1,6 +1,6 @@
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/models/currency_model.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/language_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
@@ -49,15 +49,15 @@ class _SettingsPageState extends State<SettingsPage>
 
   // --- HELPER UTILITY ---
   // Restituisce l'icona Material appropriata in base all'enum della valuta.
-  IconData _getCurrencyIcon(Currency currency) {
+  IconData _getCurrencyIcon(ExpenseCurrency currency) {
     switch (currency) {
-      case Currency.euro:
+      case ExpenseCurrency.euro:
         return Icons.euro_rounded;
-      case Currency.usd:
+      case ExpenseCurrency.usd:
         return Icons.attach_money_rounded;
-      case Currency.gbp:
+      case ExpenseCurrency.gbp:
         return Icons.currency_pound_rounded;
-      case Currency.jpy:
+      case ExpenseCurrency.jpy:
         return Icons.currency_yen_rounded;
     }
   }
@@ -393,7 +393,7 @@ class _SettingsPageState extends State<SettingsPage>
       context,
       isDark: isDark,
       title: loc.selectCurrencyTitle,
-      options: Currency.values.map((currency) {
+      options: ExpenseCurrency.values.map((currency) {
         return {
           "title": "${currency.name} (${currency.symbol})",
           "criteria": currency.code,
@@ -402,10 +402,10 @@ class _SettingsPageState extends State<SettingsPage>
     );
 
     if (result != null) {
-      final selectedCurrency = Currency.fromCode(result);
+      final selectedCurrency = ExpenseCurrency.fromCode(result);
       await currencyProvider.setCurrency(selectedCurrency);
       if (context.mounted) {
-        context.read<ExpenseProvider>().updateAppCurrency(selectedCurrency.code);
+        context.read<ExpenseProvider>().updateAppCurrency(selectedCurrency);
       }
     }
   }

@@ -1,3 +1,5 @@
+import 'package:expense_tracker/models/expense_category.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/repositories/firebase_repository.dart';
 import 'package:expense_tracker/services/currency_service.dart';
@@ -50,7 +52,8 @@ class ExpenseService {
     required double value,
     required String? description,
     required DateTime date,
-    required String currency,
+    required ExpenseCurrency currency,
+    required ExpenseCategory category,
   }) async {
     final user = _firebaseAuth.currentUser;
     if (user == null) throw RepositoryFailure("User not authenticated.");
@@ -61,10 +64,10 @@ class ExpenseService {
     // SOFT-FAIL STRATEGY (BUSINESS LOGIC!)
     // Tenta di recuperare i tassi reali, ma non blocca l'operazione se fallisce.
     try {
-      exchangeRates = await _currencyService.getExchangeRates(currency);
+      exchangeRates = await _currencyService.getExchangeRates(currency.code);
     } on CurrencyFetchException {
       debugPrint("Currency fetch failed. Using fallback 1:1.");
-      exchangeRates = {currency: 1.0};
+      exchangeRates = {currency.code: 1.0};
       warning = 'offline_currency_create'; // Codice per l10n
     }
 
@@ -76,6 +79,7 @@ class ExpenseService {
       userId: user.uid,
       currency: currency,
       exchangeRates: exchangeRates,
+      category: category,
     );
 
     await _firebaseRepository.createExpense(expense);
@@ -92,7 +96,8 @@ class ExpenseService {
     required double value,
     required String? description,
     required DateTime date,
-    required String currency,
+    required ExpenseCurrency currency,
+    required ExpenseCategory category,
   }) async {
     final user = _firebaseAuth.currentUser;
     if (user == null || expenseModel.userId != user.uid) {
@@ -109,13 +114,13 @@ class ExpenseService {
     if (areRatesBroken) {
       try {
         debugPrint("Repairing broken rates...");
-        exchangeRates = await _currencyService.getExchangeRates(currency);
+        exchangeRates = await _currencyService.getExchangeRates(currency.code);
         debugPrint("Rates repaired successfully.");
       } on CurrencyFetchException {
         debugPrint("Repair failed. Still offline.");
         // Mantiene il fallback esistente se il repair fallisce
-        if (exchangeRates.isEmpty || !exchangeRates.containsKey(currency)) {
-          exchangeRates = {currency: 1.0};
+        if (exchangeRates.isEmpty || !exchangeRates.containsKey(currency.code)) {
+          exchangeRates = {currency.code: 1.0};
         }
         warning = 'offline_currency_edit';
       }
@@ -127,6 +132,7 @@ class ExpenseService {
       createdOn: date,
       currency: currency,
       exchangeRates: exchangeRates,
+      category: category,
     );
 
     await _firebaseRepository.updateExpense(updatedExpense);
@@ -169,7 +175,7 @@ class ExpenseService {
   // Delegato a ExpenseCalculator per separazione delle responsabilità.
   ExpenseTotals calculateTotals(
     List<ExpenseModel> expenses,
-    String targetCurrency,
+    ExpenseCurrency targetCurrency,
   ) {
     return ExpenseTotals(
       today: ExpenseCalculator.totalExpenseToday(expenses, targetCurrency),
@@ -186,7 +192,7 @@ class ExpenseService {
   BudgetCheckResult checkBudgetStatus({
     required List<ExpenseModel> expenses,
     required DateTime expenseDate,
-    required String targetCurrency,
+    required ExpenseCurrency targetCurrency,
     required double budgetLimit,
     required bool alertEnabled,
   }) {
@@ -221,7 +227,7 @@ class ExpenseService {
   BudgetCheckResult checkBudgetStatusForList({
     required List<ExpenseModel> allExpenses,
     required List<ExpenseModel> newExpenses,
-    required String targetCurrency,
+    required ExpenseCurrency targetCurrency,
     required double budgetLimit,
     required bool alertEnabled,
   }) {
@@ -260,7 +266,7 @@ class ExpenseService {
   List<ExpenseModel> sortExpenses(
     List<ExpenseModel> expenses,
     String criteria,
-    String? targetCurrency,
+    ExpenseCurrency? targetCurrency,
   ) {
     // Crea una copia per non mutare l'originale
     final sorted = List<ExpenseModel>.from(expenses);
@@ -288,7 +294,7 @@ class ExpenseService {
   // Restituisce una mappa mese -> totale spese convertite nella valuta target.
   Map<String, double> getExpensesByMonth(
     List<ExpenseModel> expenses,
-    String targetCurrency,
+    ExpenseCurrency targetCurrency,
   ) {
     return ExpenseCalculator.expensesByMonth(expenses, targetCurrency);
   }
@@ -299,7 +305,7 @@ class ExpenseService {
     List<ExpenseModel> expenses,
     int year,
     int month,
-    String targetCurrency,
+    ExpenseCurrency targetCurrency,
   ) {
     return ExpenseCalculator.expensesByDay(
       expenses,

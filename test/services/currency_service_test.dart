@@ -4,7 +4,7 @@
 // sistema di caching locale, e strategie di fallback offline.
 // Utilizza MOCK per simulare HTTP e SharedPreferences.
 
-import 'package:expense_tracker/models/currency_model.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/services/currency_service.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -48,7 +48,7 @@ void main() {
           .thenAnswer((_) async => true);
 
       // ACT
-      await currencyService.saveCurrency(Currency.usd);
+      await currencyService.saveCurrency(ExpenseCurrency.usd);
 
       // ASSERT
       // Verifica che setString sia stato chiamato con i parametri corretti
@@ -67,7 +67,7 @@ void main() {
       // ACT & ASSERT
       // Verifica che lanci CurrencyFetchException
       expect(
-        () => currencyService.saveCurrency(Currency.euro),
+        () => currencyService.saveCurrency(ExpenseCurrency.euro),
         throwsA(isA<CurrencyFetchException>()),
       );
     });
@@ -85,7 +85,7 @@ void main() {
       final currency = currencyService.getCurrency();
 
       // ASSERT
-      expect(currency, Currency.euro);
+      expect(currency, ExpenseCurrency.euro);
       verify(mockPrefs.getString('selected_currency')).called(1);
     });
 
@@ -103,7 +103,7 @@ void main() {
 
       // ASSERT
       // Deve tornare EUR come fallback
-      expect(currency, Currency.euro);
+      expect(currency, ExpenseCurrency.euro);
     });
 
     // =================================================================
@@ -120,7 +120,7 @@ void main() {
 
       // ASSERT
       // Deve tornare EUR come fallback (non deve crashare!)
-      expect(currency, Currency.euro);
+      expect(currency, ExpenseCurrency.euro);
     });
 
     // =================================================================
@@ -372,7 +372,7 @@ void main() {
       final currency = currencyService.getCurrency();
 
       // ASSERT
-      expect(currency, Currency.euro);
+      expect(currency, ExpenseCurrency.euro);
       expect(currency.code, 'EUR');
       expect(currency.symbol, '€');
     });
@@ -389,7 +389,7 @@ void main() {
       final currency = currencyService.getCurrency();
 
       // ASSERT
-      expect(currency, Currency.usd);
+      expect(currency, ExpenseCurrency.usd);
       expect(currency.code, 'USD');
       expect(currency.symbol, '\$');
     });
@@ -406,7 +406,7 @@ void main() {
       final currency = currencyService.getCurrency();
 
       // ASSERT
-      expect(currency, Currency.gbp);
+      expect(currency, ExpenseCurrency.gbp);
       expect(currency.code, 'GBP');
       expect(currency.symbol, '£');
     });
@@ -423,7 +423,7 @@ void main() {
       final currency = currencyService.getCurrency();
 
       // ASSERT
-      expect(currency, Currency.jpy);
+      expect(currency, ExpenseCurrency.jpy);
       expect(currency.code, 'JPY');
       expect(currency.symbol, '¥');
     });

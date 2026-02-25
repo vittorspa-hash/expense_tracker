@@ -254,5 +254,14 @@
     "warningOfflineCurrencyEdit": "Ausgabe erfolgreich bearbeitet. Währungsumrechnung nicht verfügbar.",
     "warningTitle": "Achtung!",
     "conversionUnavailable": "Umrechnung nicht verfügbar",
-    "retryWhenOnline": "Bearbeite die Ausgabe, wenn du online bist, um zu aktualisieren."
+    "retryWhenOnline": "Bearbeite die Ausgabe, wenn du online bist, um zu aktualisieren.",
+    "categoryFood": "Essen",
+    "categoryTransport": "Transport",
+    "categoryHome": "Zuhause",
+    "categoryHealth": "Gesundheit",
+    "categoryEntertainment": "Unterhaltung",
+    "categoryShopping": "Einkaufen",
+    "categoryEducation": "Bildung",
+    "categoryTravel": "Reisen", 
+    "categoryOther": "Andere"
 }

@@ -1,9 +1,10 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
+import 'package:expense_tracker/models/expense_category.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: new_expense_page.dart
@@ -13,7 +14,6 @@ import 'package:provider/provider.dart';
 
 class NewExpensePage extends StatefulWidget {
   static const route = "/expense/new";
-
   const NewExpensePage({super.key});
 
   @override
@@ -22,10 +22,7 @@ class NewExpensePage extends StatefulWidget {
 
 class _NewExpensePageState extends State<NewExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- CONFIGURAZIONE ANIMAZIONE ---
-  // Implementazione dei getter richiesti dal FadeAnimationMixin.
-  // vsync fornisce il ticker necessario per controllare l'animazione.
   @override
   TickerProvider get vsync => this;
 
@@ -33,7 +30,6 @@ class _NewExpensePageState extends State<NewExpensePage>
   Duration get fadeAnimationDuration => const Duration(milliseconds: 400);
 
   // --- CICLO DI VITA ---
-  // Inizializza l'animazione all'apertura della pagina e libera le risorse alla chiusura.
   @override
   void initState() {
     super.initState();
@@ -48,30 +44,28 @@ class _NewExpensePageState extends State<NewExpensePage>
 
   // --- LOGICA DI CREAZIONE ---
   // Callback invocata quando l'utente conferma l'inserimento nel form.
-  // Recupera i provider necessari e tenta la creazione della spesa 
+  // Ora include il parametro category selezionato dall'utente.
   Future<void> onSubmit({
     required double value,
     required String? description,
     required DateTime date,
-    required String currencyCode, 
-    required AppLocalizations l10n
+    required ExpenseCurrency currencyCode,
+    required ExpenseCategory category, // NUOVO
+    required AppLocalizations l10n,
   }) async {
     final provider = context.read<ExpenseProvider>();
-    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     await provider.createExpense(
       value: value,
       description: description,
       date: date,
       l10n: l10n,
-      currencySymbol: currencySymbol,
-      currencyCode: currencyCode, 
+      currencyCode: currencyCode,
+      category: category, // NUOVO
     );
   }
 
   // --- COSTRUZIONE UI ---
-  // Renderizza il componente ExpenseEdit avvolto nell'animazione di dissolvenza.
-  // Non vengono passati parametri opzionali come initialValue poiché si tratta di una nuova spesa.
   @override
   Widget build(BuildContext context) {
     return buildWithFadeAnimation(ExpenseEdit(onSubmit: onSubmit));

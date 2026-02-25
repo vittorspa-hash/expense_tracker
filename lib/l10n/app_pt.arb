@@ -254,5 +254,14 @@
     "warningOfflineCurrencyEdit": "Despesa editada com sucesso. Conversão de moeda não disponível.",
     "warningTitle": "Atenção!",
     "conversionUnavailable": "Conversão não disponível",
-    "retryWhenOnline": "Edite a despesa quando estiver online para atualizar."
+    "retryWhenOnline": "Edite a despesa quando estiver online para atualizar.",
+    "categoryFood": "Comida",
+    "categoryTransport": "Transporte",
+    "categoryHome": "Casa",
+    "categoryHealth": "Saúde",
+    "categoryEntertainment": "Entretenimento",
+    "categoryShopping": "Compras",
+    "categoryEducation": "Educação",
+    "categoryTravel": "Viagens",
+    "categoryOther": "Outro"
 }

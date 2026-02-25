@@ -1,5 +1,4 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
@@ -22,7 +21,6 @@ class ExpenseActionHandler {
     final expenseProvider = context.read<ExpenseProvider>();
     final count = multiSelect.selectedCount;
     final loc = AppLocalizations.of(context)!;
-    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     if (count == 0) return;
 
@@ -67,7 +65,7 @@ class ExpenseActionHandler {
       deletedItem: expensesToDelete,
       onDelete: (_) {},
       onRestore: (_) async {
-        await expenseProvider.restoreExpenses(expensesToDelete, loc, currencySymbol);
+        await expenseProvider.restoreExpenses(expensesToDelete, loc);
       },
     );
   }

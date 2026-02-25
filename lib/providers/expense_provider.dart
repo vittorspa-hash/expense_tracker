@@ -1,4 +1,6 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/models/expense_category.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/services/expense_service.dart';
@@ -15,7 +17,7 @@ import 'package:flutter/foundation.dart';
 class ExpenseProvider extends ChangeNotifier {
   // --- STATO E DIPENDENZE ---
   // Iniezione delle dipendenze per orchestrare operazioni tra expense e notifiche.
-  
+
   final NotificationProvider _notificationProvider;
   final ExpenseService _expenseService;
 
@@ -28,7 +30,7 @@ class ExpenseProvider extends ChangeNotifier {
   // --- STATO ---
   // Lista delle spese e stato UI (loading, errori, warning).
   // Le spese sono esposte come lista immutabile per prevenire modifiche esterne.
-  
+
   List<ExpenseModel> _expenses = [];
   List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
@@ -41,7 +43,7 @@ class ExpenseProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
-  String _appCurrency = 'EUR';
+  ExpenseCurrency _appCurrency = ExpenseCurrency.euro;
 
   // Cache totali (calcolati dal service) per performance.
   // Evita ricalcoli ripetuti e garantisce che i totali siano sempre sincronizzati.
@@ -69,9 +71,9 @@ class ExpenseProvider extends ChangeNotifier {
   // --- AGGIORNAMENTO VALUTA ---
   // Aggiorna la valuta dell'app e ricalcola i totali nella nuova valuta.
   // Evita notifiche superflue se la valuta non è cambiata.
-  void updateAppCurrency(String newCurrencyCode) {
-    if (_appCurrency != newCurrencyCode) {
-      _appCurrency = newCurrencyCode;
+  void updateAppCurrency(ExpenseCurrency newCurrency) {
+    if (_appCurrency != newCurrency) {
+      _appCurrency = newCurrency;
       _refreshTotals();
       notifyListeners();
     }
@@ -82,7 +84,7 @@ class ExpenseProvider extends ChangeNotifier {
   // Gestisce errori di repository e generici, impostando messaggi appropriati.
   Future<void> initialise() async {
     _errorMessage = null;
-    
+
     try {
       _expenses = await _expenseService.loadUserExpenses();
       _refreshTotals();
@@ -93,7 +95,7 @@ class ExpenseProvider extends ChangeNotifier {
       _errorMessage = "Unknown error during startup.";
       rethrow;
     }
-    
+
     notifyListeners();
   }
 
@@ -114,8 +116,8 @@ class ExpenseProvider extends ChangeNotifier {
     required String? description,
     required DateTime date,
     required AppLocalizations l10n,
-    required String currencySymbol,
-    required String currencyCode,
+    required ExpenseCurrency currencyCode,
+    required ExpenseCategory category,
   }) async {
     _errorMessage = null;
     _warningMessage = null;
@@ -129,6 +131,7 @@ class ExpenseProvider extends ChangeNotifier {
         description: description,
         date: date,
         currency: currencyCode,
+        category: category,
       );
 
       // Gestisce eventuali warning (es. conversione offline)
@@ -143,11 +146,7 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
 
       // Orchestrazione: verifica se il budget mensile è stato superato
-      await _checkBudget(
-        dateToCheck: date,
-        l10n: l10n,
-        currencySymbol: currencySymbol,
-      );
+      await _checkBudget(dateToCheck: date, l10n: l10n);
     } on RepositoryFailure catch (e) {
       _errorMessage = "Save failed: ${e.message}";
     } catch (e) {
@@ -166,9 +165,9 @@ class ExpenseProvider extends ChangeNotifier {
     required double value,
     required String? description,
     required DateTime date,
-    required String currencyCode,
+    required ExpenseCurrency currencyCode,
     required AppLocalizations l10n,
-    required String currencySymbol,
+    required ExpenseCategory category,
   }) async {
     _errorMessage = null;
     _warningMessage = null;
@@ -183,6 +182,7 @@ class ExpenseProvider extends ChangeNotifier {
         description: description,
         date: date,
         currency: currencyCode,
+        category: category,
       );
 
       if (result.warning != null) {
@@ -206,11 +206,7 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
 
       // Orchestrazione: verifica budget dopo la modifica
-      await _checkBudget(
-        dateToCheck: date,
-        l10n: l10n,
-        currencySymbol: currencySymbol,
-      );
+      await _checkBudget(dateToCheck: date, l10n: l10n);
     } on RepositoryFailure catch (e) {
       _errorMessage = "Edit failed: ${e.message}";
     } catch (e) {
@@ -255,7 +251,6 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> restoreExpenses(
     List<ExpenseModel> expensesToRestore,
     AppLocalizations l10n,
-    String currencySymbol,
   ) async {
     if (expensesToRestore.isEmpty) return;
 
@@ -276,7 +271,7 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
 
       // Orchestrazione: verifica budget per le spese ripristinate
-      await _checkBudgetForList(expensesToRestore, l10n, currencySymbol);
+      await _checkBudgetForList(expensesToRestore, l10n);
     } on RepositoryFailure catch (e) {
       _errorMessage = "Unable to restore: ${e.message}";
     } catch (e) {
@@ -293,8 +288,9 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> _checkBudget({
     required DateTime dateToCheck,
     required AppLocalizations l10n,
-    required String currencySymbol,
   }) async {
+    // CORRETTO
+    final currencySymbol = _appCurrency.symbol;
     // DELEGA TUTTA LA DECISIONE AL SERVICE
     final result = _expenseService.checkBudgetStatus(
       expenses: _expenses,
@@ -319,8 +315,9 @@ class ExpenseProvider extends ChangeNotifier {
   Future<void> _checkBudgetForList(
     List<ExpenseModel> expenses,
     AppLocalizations l10n,
-    String currencySymbol,
   ) async {
+    // CORRETTO
+    final currencySymbol = _appCurrency.symbol;
     // DELEGA TUTTA LA DECISIONE AL SERVICE
     final result = _expenseService.checkBudgetStatusForList(
       allExpenses: _expenses,
@@ -358,7 +355,7 @@ class ExpenseProvider extends ChangeNotifier {
   // --- DATI PER GRAFICI (delega al service) ---
   // Fornisce aggregazioni delle spese per i grafici della UI.
   // Tutti i calcoli sono delegati al service per mantenere la separazione di responsabilità.
-  
+
   // Restituisce le spese aggregate per mese (anno corrente).
   Map<String, double> get expensesByMonth =>
       _expenseService.getExpensesByMonth(_expenses, _appCurrency);

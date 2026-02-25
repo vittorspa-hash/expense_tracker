@@ -1,4 +1,4 @@
-import 'package:expense_tracker/models/currency_model.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -44,7 +44,7 @@ class ReportBarChart extends StatelessWidget {
         final currency = currencyProvider.currentCurrency;
         final symbol = currencyProvider.currencySymbol;
         
-        final bool isSymbolPrefix = currency == Currency.usd || currency == Currency.jpy;
+        final bool isSymbolPrefix = currency == ExpenseCurrency.usd || currency == ExpenseCurrency.jpy;
 
         // --- CONTENITORE GRAFICO ---
         // Box con stile coerente (ombra, bordi) che ospita il grafico.

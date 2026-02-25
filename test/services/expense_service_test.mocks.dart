@@ -5,7 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i6;
 
-import 'package:expense_tracker/models/currency_model.dart' as _i10;
+import 'package:expense_tracker/models/expense_currency.dart' as _i10;
 import 'package:expense_tracker/models/expense_model.dart' as _i7;
 import 'package:expense_tracker/repositories/firebase_repository.dart' as _i5;
 import 'package:expense_tracker/services/currency_service.dart' as _i9;
@@ -909,7 +909,7 @@ class MockCurrencyService extends _i1.Mock implements _i9.CurrencyService {
   }
 
   @override
-  _i6.Future<void> saveCurrency(_i10.Currency? currency) =>
+  _i6.Future<void> saveCurrency(_i10.ExpenseCurrency? currency) =>
       (super.noSuchMethod(
             Invocation.method(#saveCurrency, [currency]),
             returnValue: _i6.Future<void>.value(),
@@ -918,12 +918,12 @@ class MockCurrencyService extends _i1.Mock implements _i9.CurrencyService {
           as _i6.Future<void>);
 
   @override
-  _i10.Currency getCurrency() =>
+  _i10.ExpenseCurrency getCurrency() =>
       (super.noSuchMethod(
             Invocation.method(#getCurrency, []),
-            returnValue: _i10.Currency.euro,
+            returnValue: _i10.ExpenseCurrency.euro,
           )
-          as _i10.Currency);
+          as _i10.ExpenseCurrency);
 
   @override
   _i6.Future<void> clearCurrency() =>

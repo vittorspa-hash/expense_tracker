@@ -5,7 +5,7 @@
 /// (codice ISO, nome completo, simbolo) e fornisce logica di formattazione
 /// per visualizzare correttamente gli importi secondo le convenzioni di ogni valuta.
 
-enum Currency {
+enum ExpenseCurrency {
   euro('EUR', 'Euro', '€'),
   usd('USD', 'US Dollar', '\$'),
   gbp('GBP', 'British Pound', '£'),
@@ -18,7 +18,7 @@ enum Currency {
   final String name;   // Nome completo della valuta
   final String symbol; // Simbolo grafico della valuta
 
-  const Currency(this.code, this.name, this.symbol);
+  const ExpenseCurrency(this.code, this.name, this.symbol);
 
   // --- BUSINESS LOGIC: FORMATTAZIONE IMPORTI ---
   // Formatta un importo numerico secondo le convenzioni della valuta.
@@ -29,12 +29,12 @@ enum Currency {
     if (!showSymbol) return formattedAmount;
     
     // Yen giapponese: niente decimali
-    if (this == Currency.jpy) {
+    if (this == ExpenseCurrency.jpy) {
       return '$symbol${amount.toStringAsFixed(0)}';
     }
     
     // USD e GBP: simbolo prima dell'importo
-    if (this == Currency.usd || this == Currency.gbp) {
+    if (this == ExpenseCurrency.usd || this == ExpenseCurrency.gbp) {
       return '$symbol$formattedAmount';
     }
     
@@ -45,10 +45,10 @@ enum Currency {
   // --- FACTORY METHOD ---
   // Crea un'istanza Currency a partire dal codice ISO.
   // Restituisce Euro come fallback se il codice non è riconosciuto.
-  static Currency fromCode(String code) {
-    return Currency.values.firstWhere(
+  static ExpenseCurrency fromCode(String code) {
+    return ExpenseCurrency.values.firstWhere(
       (c) => c.code == code,
-      orElse: () => Currency.euro,
+      orElse: () => ExpenseCurrency.euro,
     );
   }
 }

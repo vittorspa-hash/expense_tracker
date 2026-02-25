@@ -254,5 +254,14 @@
     "warningOfflineCurrencyEdit": "Expense edited successfully. Currency conversion not available.",
     "warningTitle": "Warning!",
     "conversionUnavailable": "Conversion not available",
-    "retryWhenOnline": "Edit the expense when you are online to update."
+    "retryWhenOnline": "Edit the expense when you are online to update.",
+    "categoryFood": "Food",
+    "categoryTransport": "Transport",
+    "categoryHome": "Home",
+    "categoryHealth": "Health",
+    "categoryEntertainment": "Entertainment",
+    "categoryShopping": "Shopping",
+    "categoryEducation": "Education",
+    "categoryTravel": "Travel", 
+    "categoryOther": "Other"
 }

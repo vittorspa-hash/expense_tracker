@@ -1,11 +1,13 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/models/expense_category.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
+import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
-import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -29,7 +31,6 @@ class EditExpensePage extends StatefulWidget {
 class _EditExpensePageState extends State<EditExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   // --- CONFIGURAZIONE ANIMAZIONE ---
-  // Setup del TickerProvider per l'animazione di dissolvenza in ingresso.
   @override
   TickerProvider get vsync => this;
 
@@ -49,48 +50,31 @@ class _EditExpensePageState extends State<EditExpensePage>
   }
 
   // --- HEADER CONVERSIONE VALUTA ---
-  // Costruisce un banner informativo se la valuta della spesa è diversa da quella dell'app.
-  // Gestisce due stati:
-  // 1. Successo: Mostra data e valore convertito.
-  // 2. Warning: Mostra avviso se i tassi non sono disponibili (Soft Fail).
   Widget? _buildExchangeRateBanner(BuildContext context, bool isHovered) {
     final model = widget.expenseModel;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     final loc = AppLocalizations.of(context)!;
     final currencyProvider = Provider.of<CurrencyProvider>(
       context,
       listen: false,
     );
-    final currentAppCurrency = currencyProvider.currencyCode;
-    final originalCurrency = model.currency;
+    final currentAppCurrency = currencyProvider.currentCurrency;
+    if (model.currency == currentAppCurrency) return null;
 
-    if (model.exchangeRates.isEmpty) return null;
-    if (originalCurrency == currentAppCurrency) return null;
+    final bool hasRate = model.exchangeRates.containsKey(currentAppCurrency.code);
 
-    // Verifica validità tasso (per decidere icona e testo)
-    final bool hasRate = model.exchangeRates.containsKey(currentAppCurrency);
-
-    // --- CONFIGURAZIONE COLORI (RIPRISTINATA) ---
-    // Usiamo sempre AppColors.primary, indipendentemente dall'errore.
-    final Color baseColor = AppColors.primary; 
-
+    final Color baseColor = AppColors.primary;
     final Color iconColor = isHovered ? AppColors.textLight : baseColor;
-
     final Color titleColor = isHovered
         ? AppColors.textLight
         : (isDark ? AppColors.greyLight : AppColors.greyDark);
-
     final Color textColor = isHovered
         ? AppColors.textLight
         : (isDark ? AppColors.textLight : AppColors.textDark);
-
     final Color highlightColor = isHovered ? AppColors.textLight : baseColor;
-
     final Color boxBgColor = isHovered
         ? AppColors.textLight.withValues(alpha: 0.1)
         : baseColor.withValues(alpha: 0.08);
-
     final Color boxBorderColor = isHovered
         ? AppColors.textLight.withValues(alpha: 0.3)
         : baseColor.withValues(alpha: 0.2);
@@ -130,10 +114,8 @@ class _EditExpensePageState extends State<EditExpensePage>
                     ),
                   ),
                 ] else ...[
-                   SizedBox(height: 2.h),
+                  SizedBox(height: 2.h),
                 ],
-
-                // --- CONTENUTO VARIABILE ---
                 if (hasRate) ...[
                   _buildSuccessContent(
                     context,
@@ -155,11 +137,10 @@ class _EditExpensePageState extends State<EditExpensePage>
     );
   }
 
-  // Helper per il contenuto di successo (RichText esistente)
   Widget _buildSuccessContent(
     BuildContext context,
     ExpenseModel model,
-    String targetCurrency,
+    ExpenseCurrency  targetCurrency,
     CurrencyProvider cp,
     AppLocalizations loc,
     Color textColor,
@@ -190,8 +171,11 @@ class _EditExpensePageState extends State<EditExpensePage>
     );
   }
 
-  // Helper per il contenuto di errore 
-  Widget _buildErrorContent(Color textColor, Color highlightColor, AppLocalizations loc) {
+  Widget _buildErrorContent(
+    Color textColor,
+    Color highlightColor,
+    AppLocalizations loc,
+  ) {
     return Padding(
       padding: EdgeInsets.only(top: 2.h),
       child: Column(
@@ -202,32 +186,29 @@ class _EditExpensePageState extends State<EditExpensePage>
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w600,
-              color: highlightColor, // Colore arancione
+              color: highlightColor,
             ),
           ),
           Text(
-            loc.retryWhenOnline, 
-            style: TextStyle(
-              fontSize: 12.sp,
-              color: textColor,
-            ),
-          )
+            loc.retryWhenOnline,
+            style: TextStyle(fontSize: 12.sp, color: textColor),
+          ),
         ],
       ),
     );
   }
 
   // --- SALVATAGGIO MODIFICHE ---
-  // Invia i dati aggiornati al provider per la modifica nel database.
+  // Ora include il parametro category per aggiornare anche la categoria su Firestore.
   Future<void> onSubmit({
     required double value,
     required String? description,
     required DateTime date,
-    required String currencyCode,
+    required ExpenseCurrency currencyCode,
+    required ExpenseCategory category, // NUOVO
     required AppLocalizations l10n,
   }) async {
     final provider = context.read<ExpenseProvider>();
-    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     await provider.editExpense(
       widget.expenseModel,
@@ -235,13 +216,12 @@ class _EditExpensePageState extends State<EditExpensePage>
       description: description,
       date: date,
       currencyCode: currencyCode,
+      category: category, // NUOVO
       l10n: l10n,
-      currencySymbol: currencySymbol,
     );
   }
 
   // --- ELIMINAZIONE SPESA ---
-  // Gestisce la cancellazione della spesa corrente tramite il provider.
   Future<ExpenseModel?> onDelete() async {
     final provider = context.read<ExpenseProvider>();
     final modelToDelete = widget.expenseModel;
@@ -249,17 +229,13 @@ class _EditExpensePageState extends State<EditExpensePage>
     await provider.deleteExpenses([modelToDelete]);
 
     if (!mounted) return null;
-
-    if (provider.errorMessage != null) {
-      return null;
-    }
+    if (provider.errorMessage != null) return null;
 
     return modelToDelete;
   }
 
   // --- COSTRUZIONE UI ---
-  // Configura il componente generico ExpenseEdit passando i valori iniziali della spesa.
-  // Inietta il banner di conversione valuta tramite il parametro headerBuilder.
+  // Passa initialCategory pre-popolata con la categoria della spesa esistente.
   @override
   Widget build(BuildContext context) {
     return buildWithFadeAnimation(
@@ -267,8 +243,8 @@ class _EditExpensePageState extends State<EditExpensePage>
         initialValue: widget.expenseModel.value,
         initialDescription: widget.expenseModel.description,
         initialDate: widget.expenseModel.createdOn,
-
-        initialCurrencyCode: widget.expenseModel.currency,
+        initialCurrencyCode: widget.expenseModel.currency.code,
+        initialCategory: widget.expenseModel.category, // NUOVO
 
         headerBuilder: (isHovered) =>
             _buildExchangeRateBanner(context, isHovered),

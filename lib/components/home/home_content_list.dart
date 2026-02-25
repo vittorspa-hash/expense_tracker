@@ -223,7 +223,6 @@ class HomeContentList extends StatelessWidget {
                       itemBuilder: (context, index) {
                         final expense = filteredExpenses[index];
                         final isSelected = multiSelect.isSelected(expense.uuid);
-                        final currencySymbol = currencyProvider.currencySymbol;
 
                         return Dismissible(
                           key: Key(expense.uuid),
@@ -265,7 +264,7 @@ class HomeContentList extends StatelessWidget {
                                 deletedItem: expense,
                                 onDelete: (_) {},
                                 onRestore: (exp) =>
-                                    expenseProvider.restoreExpenses([exp], loc, currencySymbol),
+                                    expenseProvider.restoreExpenses([exp], loc),
                               );
                             }
 

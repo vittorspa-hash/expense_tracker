@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:expense_tracker/models/currency_model.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,12 +30,12 @@ class CurrencyService {
   static const String _apiBaseUrl = 'https://api.frankfurter.app/latest';
   
   // Lista dei codici valuta supportati dall'applicazione.
-  static List<String> get _supportedCodes => Currency.values.map((c) => c.code).toList();
+  static List<String> get _supportedCodes => ExpenseCurrency.values.map((c) => c.code).toList();
 
   // --- PERSISTENZA PREFERENZA UTENTE ---
   // Salva la valuta selezionata dall'utente nelle preferenze locali.
   // Lancia un'eccezione se il salvataggio fallisce.
-  Future<void> saveCurrency(Currency currency) async {
+  Future<void> saveCurrency(ExpenseCurrency currency) async {
     try {
       await _prefs.setString(_currencyKey, currency.code);
     } catch (e) {
@@ -46,13 +46,13 @@ class CurrencyService {
   // Recupera la valuta salvata dalle preferenze.
   // Restituisce Euro come fallback se non è presente alcuna preferenza salvata
   // o se si verifica un errore durante il recupero.
-  Currency getCurrency() {
+  ExpenseCurrency getCurrency() {
     try {
       final currencyCode = _prefs.getString(_currencyKey);
-      if (currencyCode == null) return Currency.euro;
-      return Currency.fromCode(currencyCode);
+      if (currencyCode == null) return ExpenseCurrency.euro;
+      return ExpenseCurrency.fromCode(currencyCode);
     } catch (e) {
-      return Currency.euro;
+      return ExpenseCurrency.euro;
     }
   }
 

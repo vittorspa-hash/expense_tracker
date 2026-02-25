@@ -254,5 +254,14 @@
     "warningOfflineCurrencyEdit": "Gasto modificado con éxito. Conversión de moneda no disponible.",
     "warningTitle": "¡Atención!",
     "conversionUnavailable": "Conversión no disponible",
-    "retryWhenOnline": "Modifica el gasto cuando estés en línea para actualizar."
+    "retryWhenOnline": "Modifica el gasto cuando estés en línea para actualizar.",
+    "categoryFood": "Comida",
+    "categoryTransport": "Transporte",
+    "categoryHome": "Casa",
+    "categoryHealth": "Salud",
+    "categoryEntertainment": "Entretenimiento",
+    "categoryShopping": "Compras",
+    "categoryEducation": "Educación",
+    "categoryTravel": "Viajes",
+    "categoryOther": "Otro"
 }

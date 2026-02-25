@@ -1,18 +1,19 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/models/currency_model.dart';
-import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
+import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
+import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
+import 'package:expense_tracker/utils/snackbar_utils.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// FILE: expense_edit.dart
 /// DESCRIZIONE: Schermata generica per la creazione o la modifica di una spesa.
@@ -25,8 +26,8 @@ class ExpenseEdit extends StatefulWidget {
   final double? initialValue;
   final String? initialDescription;
   final DateTime? initialDate;
-
   final String? initialCurrencyCode;
+  final ExpenseCategory? initialCategory; // NUOVO
 
   final Widget? Function(bool isHovered)? headerBuilder;
 
@@ -37,10 +38,10 @@ class ExpenseEdit extends StatefulWidget {
     required double value,
     required String? description,
     required DateTime date,
-    required String currencyCode,
+    required ExpenseCurrency currencyCode,
+    required ExpenseCategory category, // NUOVO
     required AppLocalizations l10n,
-  })
-  onSubmit;
+  }) onSubmit;
 
   const ExpenseEdit({
     super.key,
@@ -48,6 +49,7 @@ class ExpenseEdit extends StatefulWidget {
     this.initialDescription,
     this.initialDate,
     this.initialCurrencyCode,
+    this.initialCategory, // NUOVO
     this.headerBuilder,
     this.floatingActionButtonIcon,
     this.onFloatingActionButtonPressed,
@@ -63,12 +65,10 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   final descriptionController = TextEditingController();
   bool isTappedDown = false;
   late DateTime selectedDate;
-
-  late Currency _selectedCurrency;
+  late ExpenseCurrency _selectedCurrency;
+  late ExpenseCategory _selectedCategory; // NUOVO
 
   // --- INIZIALIZZAZIONE ---
-  // Configura i controller e imposta la valuta iniziale.
-  // Gestisce anche la visualizzazione "una tantum" del tutorial gestures.
   @override
   void initState() {
     super.initState();
@@ -77,10 +77,13 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     selectedDate = widget.initialDate ?? DateTime.now();
 
     if (widget.initialCurrencyCode != null) {
-      _selectedCurrency = Currency.fromCode(widget.initialCurrencyCode!);
+      _selectedCurrency = ExpenseCurrency.fromCode(widget.initialCurrencyCode!);
     } else {
       _selectedCurrency = context.read<CurrencyProvider>().currentCurrency;
     }
+
+    // Categoria: usa quella passata oppure default a "other"
+    _selectedCategory = widget.initialCategory ?? ExpenseCategory.other;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showInstructionDialogIfNeeded();
@@ -88,8 +91,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- COSTRUZIONE UI ---
-  // Layout principale con GestureDetector globale per le interazioni.
-  // Sovrappone un indicatore di caricamento quando il Provider è occupato.
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -126,6 +127,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                 inputDescription(),
                 SizedBox(height: 20.h),
                 inputDate(),
+                SizedBox(height: 24.h),
+                inputCategory(isDark), // NUOVO
               ],
             ),
           ),
@@ -142,18 +145,17 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
       floatingActionButton:
           (widget.floatingActionButtonIcon == null || isLoading)
-          ? null
-          : floatingActionButton(context, isDark),
+              ? null
+              : floatingActionButton(context, isDark),
     );
   }
 
   // --- INPUT PREZZO E VALUTA ---
-  // Gestisce l'inserimento dell'importo e la selezione della valuta tramite modale.
   Widget inputPrice(bool isDark) {
-    final String hintText = _selectedCurrency == Currency.jpy ? "0" : "0.00";
-    final textColor = isTappedDown
-        ? AppColors.textLight
-        : AppColors.textTappedDown;
+    final String hintText =
+        _selectedCurrency == ExpenseCurrency.jpy ? "0" : "0.00";
+    final textColor =
+        isTappedDown ? AppColors.textLight : AppColors.textTappedDown;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -175,9 +177,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               ),
             ),
           ),
-
           SizedBox(width: 10.w),
-
           Flexible(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -223,7 +223,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
   // --- SELETTORE VALUTA ---
   Future<void> _showCurrencyPicker(bool isDark) async {
-    final options = Currency.values
+    final options = ExpenseCurrency.values
         .map((c) => {"title": "${c.name} (${c.symbol})", "criteria": c.code})
         .toList();
 
@@ -236,40 +236,46 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
     if (result != null) {
       setState(() {
-        _selectedCurrency = Currency.fromCode(result);
+        _selectedCurrency = ExpenseCurrency.fromCode(result);
       });
     }
   }
 
   // --- INPUT DESCRIZIONE ---
   Widget inputDescription() => Padding(
-    padding: EdgeInsets.symmetric(horizontal: 24.w),
-    child: TextField(
-      keyboardType: TextInputType.text,
-      maxLines: null,
-      controller: descriptionController,
-      cursorColor: isTappedDown
-          ? AppColors.textLight
-          : AppColors.textTappedDown,
-      textAlign: TextAlign.center,
-      textCapitalization: TextCapitalization.sentences,
-      style: TextStyle(
-        fontSize: 20.sp,
-        color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-        fontWeight: FontWeight.w600,
-      ),
-      decoration: InputDecoration(
-        hintText: AppLocalizations.of(context)!.descriptionHint,
-        border: InputBorder.none,
-        hintStyle: TextStyle(color: AppColors.secondaryDark, fontSize: 18.sp),
-      ),
-    ),
-  );
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: TextField(
+          keyboardType: TextInputType.text,
+          maxLines: null,
+          controller: descriptionController,
+          cursorColor: isTappedDown
+              ? AppColors.textLight
+              : AppColors.textTappedDown,
+          textAlign: TextAlign.center,
+          textCapitalization: TextCapitalization.sentences,
+          style: TextStyle(
+            fontSize: 20.sp,
+            color: isTappedDown
+                ? AppColors.textLight
+                : AppColors.textTappedDown,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.descriptionHint,
+            border: InputBorder.none,
+            hintStyle: TextStyle(
+              color: AppColors.secondaryDark,
+              fontSize: 18.sp,
+            ),
+          ),
+        ),
+      );
 
   // --- INPUT DATA ---
   Widget inputDate() {
     final locale = Localizations.localeOf(context).toString();
-    final formattedDate = DateFormat("d MMMM y", locale).format(selectedDate);
+    final formattedDate =
+        DateFormat("d MMMM y", locale).format(selectedDate);
     final displayDate = capitalizeMonth(formattedDate);
 
     return GestureDetector(
@@ -300,13 +306,107 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
+  // --- SELETTORE CATEGORIA (NUOVO) ---
+  // Mostra una griglia scrollabile di chip per selezionare la categoria.
+  // Il chip selezionato è evidenziato con il colore primario dell'app.
+  Widget inputCategory(bool isDark) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 24.w),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 8.w,
+        runSpacing: 8.h,
+        children: ExpenseCategory.values.map((category) {
+          final isSelected = _selectedCategory == category;
+          final loc = AppLocalizations.of(context)!;
+
+          // Recupera la label localizzata dalla chiave l10n della categoria.
+          // Usa un metodo helper per non dipendere da generated code direttamente.
+          final label = _localizedCategoryLabel(loc, category);
+
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = category),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : AppColors.primary.withValues(alpha: 0.07)),
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.primary.withValues(alpha: 0.25),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    category.icon,
+                    size: 16.sp,
+                    color: isSelected
+                        ? Colors.white
+                        : (isTappedDown
+                            ? AppColors.textLight
+                            : AppColors.textTappedDown),
+                  ),
+                  SizedBox(width: 6.w),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected
+                          ? Colors.white
+                          : (isTappedDown
+                              ? AppColors.textLight
+                              : AppColors.textTappedDown),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  // --- HELPER: LABEL LOCALIZZATA CATEGORIA ---
+  // Mappa il labelKey dell'enum alla stringa tradotta corrispondente nel file l10n.
+  // Centralizzato qui per non duplicare la logica in più widget.
+  String _localizedCategoryLabel(AppLocalizations loc, ExpenseCategory cat) {
+    switch (cat) {
+      case ExpenseCategory.food:
+        return loc.categoryFood;
+      case ExpenseCategory.transport:
+        return loc.categoryTransport;
+      case ExpenseCategory.home:
+        return loc.categoryHome;
+      case ExpenseCategory.health:
+        return loc.categoryHealth;
+      case ExpenseCategory.entertainment:
+        return loc.categoryEntertainment;
+      case ExpenseCategory.shopping:
+        return loc.categoryShopping;
+      case ExpenseCategory.education:
+        return loc.categoryEducation;
+      case ExpenseCategory.travel:
+        return loc.categoryTravel;
+      case ExpenseCategory.other:
+        return loc.categoryOther;
+    }
+  }
+
   // --- GESTIONE ELIMINAZIONE ---
-  // FloatingActionButton per l'eliminazione.
-  // Gestisce il flusso completo: Dialog Conferma -> Chiamata Provider -> Snackbar Feedback.
   Widget floatingActionButton(BuildContext context, bool isDark) {
     final expenseProvider = context.read<ExpenseProvider>();
     final loc = AppLocalizations.of(context)!;
-    final currencySymbol = context.read<CurrencyProvider>().currencySymbol;
 
     return FloatingActionButton(
       heroTag: null,
@@ -322,12 +422,12 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         );
 
         if (confirm == true && widget.onFloatingActionButtonPressed != null) {
-          final deletedExpense = await widget.onFloatingActionButtonPressed!();
+          final deletedExpense =
+              await widget.onFloatingActionButtonPressed!();
 
           if (!context.mounted) return;
-          
-          // Se c'è un errore bloccante, lo mostriamo e ci fermiamo.
-          if (expenseProvider.errorMessage != null){
+
+          if (expenseProvider.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(expenseProvider.errorMessage!),
@@ -348,7 +448,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                 await expenseProvider.restoreExpenses(
                   [exp],
                   loc,
-                  currencySymbol,
                 );
               },
             );
@@ -361,12 +460,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   }
 
   // --- SALVATAGGIO (ON SUBMIT) ---
-  // Punto cruciale per la gestione del feedback utente.
-  // 1. Valida e chiama la funzione di salvataggio (delegata al genitore/provider).
-  // 2. Controlla lo stato del Provider per decidere quale Snackbar mostrare:
-  //    - ERRORE: Operazione fallita (es. DB rotto). Non chiude la pagina.
-  //    - WARNING: "Soft Fail" (es. salvataggio OK ma tassi mancanti). Chiude la pagina.
-  //    - SUCCESSO: Operazione completata perfettamente. Chiude la pagina.
   Future<void> onSubmit() async {
     final loc = AppLocalizations.of(context)!;
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
@@ -387,44 +480,42 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       value: value,
       description: description.isEmpty ? null : description,
       date: selectedDate,
-      currencyCode: _selectedCurrency.code,
+      currencyCode: _selectedCurrency,
+      category: _selectedCategory, // NUOVO
       l10n: loc,
     );
 
     if (!mounted) return;
 
     // 1. GESTIONE ERRORE BLOCCANTE
-    if (expenseProvider.errorMessage != null){
+    if (expenseProvider.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(expenseProvider.errorMessage!),
           backgroundColor: AppColors.snackBar,
         ),
       );
-      return; // Stop, l'utente deve poter riprovare
+      return;
     }
 
     // 2. GESTIONE WARNING vs SUCCESSO
-    // Se c'è un warningMessage (es. tassi non scaricati in creazione o riparazione fallita),
-    // mostriamo quello. Altrimenti, successo standard.
     if (expenseProvider.warningMessage != null) {
       SnackbarUtils.show(
         context: context,
         title: loc.warningTitle,
         message: expenseProvider.warningMessage!,
       );
-    } 
-    else {
+    } else {
       SnackbarUtils.show(
         context: context,
-        title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
+        title:
+            widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
         message: widget.initialValue == null
             ? loc.expenseCreated
             : loc.expenseEdited,
       );
     }
-    
-    // Chiudiamo la pagina in caso di Successo o Warning
+
     Navigator.pop(context);
   }
 

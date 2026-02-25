@@ -1,8 +1,8 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/models/currency_model.dart';
+import 'package:expense_tracker/models/expense_category.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart'; 
+import 'package:provider/provider.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/pages/edit_expense_page.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
@@ -11,17 +11,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: expense_tile.dart
 /// DESCRIZIONE: Componente UI che rappresenta una singola voce di spesa nella lista.
-/// Visualizza i dettagli principali (importo, data, descrizione).
+/// Visualizza i dettagli principali (importo, data, categoria, descrizione).
 /// Gestisce la logica multi-valuta: se la spesa è in una valuta diversa da quella dell'app,
 /// mostra il controvalore convertito oppure un'icona di warning se i tassi non sono disponibili
 /// (es. spesa creata offline con strategia "Soft Fail").
 
 class ExpenseTile extends StatefulWidget {
-  final ExpenseModel expenseModel; 
-  final bool isSelectionMode; 
-  final bool isSelected; 
-  final VoidCallback? onLongPress; 
-  final VoidCallback? onSelectToggle; 
+  final ExpenseModel expenseModel;
+  final bool isSelectionMode;
+  final bool isSelected;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onSelectToggle;
 
   const ExpenseTile(
     this.expenseModel, {
@@ -37,29 +37,52 @@ class ExpenseTile extends StatefulWidget {
 }
 
 class _ExpenseTileState extends State<ExpenseTile> {
-  bool _isPressed = false; 
+  bool _isPressed = false;
 
   // --- FORMATTAZIONE DATI ---
   // Helper locale per formattare la data (es. "12 Gennaio 2024").
   // Gestisce la capitalizzazione del mese per coerenza stilistica.
   String _formatDate(BuildContext context, DateTime date) {
     final locale = Localizations.localeOf(context).toString();
-    
+
     final giorno = DateFormat("d", locale).format(date);
     final mese = DateFormat("MMMM", locale).format(date);
     final anno = DateFormat("y", locale).format(date);
-    
-    final meseCapitalizzato = mese.isNotEmpty 
-        ? mese[0].toUpperCase() + mese.substring(1) 
+
+    final meseCapitalizzato = mese.isNotEmpty
+        ? mese[0].toUpperCase() + mese.substring(1)
         : mese;
-        
+
     return "$giorno $meseCapitalizzato $anno";
   }
 
   // Restituisce la stringa dell'importo formattata secondo la valuta originale della spesa.
   String _getOriginalAmount() {
-    final currency = Currency.fromCode(widget.expenseModel.currency);
-    return currency.format(widget.expenseModel.value);
+    return widget.expenseModel.currency.format(widget.expenseModel.value);
+  }
+
+  // --- HELPER: LABEL LOCALIZZATA CATEGORIA ---
+  String _localizedCategoryLabel(AppLocalizations loc, ExpenseCategory cat) {
+    switch (cat) {
+      case ExpenseCategory.food:
+        return loc.categoryFood;
+      case ExpenseCategory.transport:
+        return loc.categoryTransport;
+      case ExpenseCategory.home:
+        return loc.categoryHome;
+      case ExpenseCategory.health:
+        return loc.categoryHealth;
+      case ExpenseCategory.entertainment:
+        return loc.categoryEntertainment;
+      case ExpenseCategory.shopping:
+        return loc.categoryShopping;
+      case ExpenseCategory.education:
+        return loc.categoryEducation;
+      case ExpenseCategory.travel:
+        return loc.categoryTravel;
+      case ExpenseCategory.other:
+        return loc.categoryOther;
+    }
   }
 
   // --- COSTRUZIONE UI ---
@@ -67,28 +90,29 @@ class _ExpenseTileState extends State<ExpenseTile> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
-    
+
     return Consumer<CurrencyProvider>(
       builder: (context, currencyProvider, child) {
-        
         // --- 1. LOGICA DI CONVERSIONE E FEEDBACK ---
-        final currentCurrencyCode = currencyProvider.currencyCode;
-        final originalCurrencyCode = widget.expenseModel.currency;
-        
-        // Determiniamo se è necessario mostrare informazioni aggiuntive (valute diverse)
-        final bool showConversion = currentCurrencyCode != originalCurrencyCode;
-        
+        final currentCurrency = currencyProvider.currentCurrency;
+final bool showConversion = widget.expenseModel.currency != currentCurrency;
+
         String? convertedAmountString;
         bool hasRate = false;
 
         if (showConversion) {
           // Verifica integrità dati: controlliamo se il tasso necessario esiste.
           // Se manca, significa che la spesa è stata salvata offline ("Soft Fail").
-          hasRate = widget.expenseModel.exchangeRates.containsKey(currentCurrencyCode);
+          hasRate = widget.expenseModel.exchangeRates.containsKey(
+            currentCurrency.code,
+          );
 
           if (hasRate) {
-             final convertedValue = widget.expenseModel.getValueIn(currentCurrencyCode);
-             convertedAmountString = "≈ ${currencyProvider.formatAmount(convertedValue)}";
+            final convertedValue = widget.expenseModel.getValueIn(
+              currentCurrency,
+            );
+            convertedAmountString =
+                "≈ ${currencyProvider.formatAmount(convertedValue)}";
           }
         }
 
@@ -124,14 +148,18 @@ class _ExpenseTileState extends State<ExpenseTile> {
                 border: Border.all(
                   color: widget.isSelected
                       ? AppColors.primary
-                      : (isDark ? AppColors.borderDark : AppColors.backgroundLight),
+                      : (isDark
+                            ? AppColors.borderDark
+                            : AppColors.backgroundLight),
                   width: widget.isSelected ? 2 : 1,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: widget.isSelected
                         ? AppColors.primary.withValues(alpha: 0.15)
-                        : AppColors.shadow.withValues(alpha: isDark ? 0.2 : 0.05),
+                        : AppColors.shadow.withValues(
+                            alpha: isDark ? 0.2 : 0.05,
+                          ),
                     blurRadius: widget.isSelected ? 12 : 8,
                     offset: Offset(0, widget.isSelected ? 6 : 3),
                   ),
@@ -147,7 +175,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                     Container(
                       width: 90.w,
                       padding: EdgeInsets.symmetric(
-                        horizontal: 12.w, 
+                        horizontal: 12.w,
                         vertical: 10.h,
                       ),
                       alignment: Alignment.center,
@@ -164,7 +192,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                           ),
                         ],
                       ),
-                      child: Column( 
+                      child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           // A) Valore Originale (Sempre visibile)
@@ -174,46 +202,52 @@ class _ExpenseTileState extends State<ExpenseTile> {
                             child: Text(
                               _getOriginalAmount(),
                               style: TextStyle(
-                                color: isDark ? AppColors.textDark : AppColors.primary,
+                                color: isDark
+                                    ? AppColors.textDark
+                                    : AppColors.primary,
                                 fontWeight: FontWeight.w700,
-                                fontSize: 13.sp, 
+                                fontSize: 13.sp,
                                 letterSpacing: -0.3,
                               ),
                             ),
                           ),
-                          
+
                           // B) Riga Sottostante (Conversione o Icona Errore)
                           if (showConversion) ...[
-                             SizedBox(height: 2.h), 
-                             
-                             if (!hasRate) 
-                               // CASO ERRORE (Soft Fail):
-                               // La mappa dei tassi è incompleta. Mostriamo icona discreta.
-                               Icon(
-                                 Icons.warning_amber_rounded,
-                                 color: AppColors.primary, 
-                                 size: 14.sp,
-                               )
-                             else if (convertedAmountString != null)
-                               // CASO SUCCESSO:
-                               // Mostriamo il controvalore calcolato.
-                               SingleChildScrollView(
+                            SizedBox(height: 2.h),
+
+                            if (!hasRate)
+                              // CASO ERRORE (Soft Fail):
+                              // La mappa dei tassi è incompleta. Mostriamo icona discreta.
+                              Icon(
+                                Icons.warning_amber_rounded,
+                                color: AppColors.primary,
+                                size: 14.sp,
+                              )
+                            else if (convertedAmountString != null)
+                              // CASO SUCCESSO:
+                              // Mostriamo il controvalore calcolato.
+                              SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 physics: const BouncingScrollPhysics(),
-                                 child: Text(
+                                child: Text(
                                   convertedAmountString,
                                   style: TextStyle(
-                                    color: isDark 
-                                      ? AppColors.textDark.withValues(alpha: 0.8) 
-                                      : AppColors.primary.withValues(alpha: 0.8),
+                                    color: isDark
+                                        ? AppColors.textDark.withValues(
+                                            alpha: 0.8,
+                                          )
+                                        : AppColors.primary.withValues(
+                                            alpha: 0.8,
+                                          ),
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 10.sp, 
+                                    fontSize: 10.sp,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                 ),
-                               ),
-                          ]
+                                ),
+                              ),
+                          ],
                         ],
                       ),
                     ),
@@ -225,6 +259,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // 1. DATA (invariata)
                           Text(
                             _formatDate(context, widget.expenseModel.createdOn),
                             style: TextStyle(
@@ -237,12 +272,43 @@ class _ExpenseTileState extends State<ExpenseTile> {
                             ),
                           ),
                           SizedBox(height: 4.h),
+
+                          // 2. CATEGORIA (NUOVO) — icona + label, tra data e descrizione
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                widget.expenseModel.category.icon,
+                                size: 12.sp,
+                                color: isDark
+                                    ? AppColors.greyDark
+                                    : AppColors.greyLight,
+                              ),
+                              SizedBox(width: 4.w),
+                              Text(
+                                _localizedCategoryLabel(
+                                  loc,
+                                  widget.expenseModel.category,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: isDark
+                                      ? AppColors.greyDark
+                                      : AppColors.greyLight,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 4.h),
+
+                          // 3. DESCRIZIONE (invariata)
                           Text(
                             widget.expenseModel.description ??
                                 loc.noDescription,
                             style: TextStyle(
                               fontSize: 12.sp,
-                                  color: isDark
+                              color: isDark
                                   ? AppColors.greyDark
                                   : AppColors.greyLight,
                               fontWeight: FontWeight.w400,
@@ -263,12 +329,14 @@ class _ExpenseTileState extends State<ExpenseTile> {
                       child: Icon(
                         widget.isSelectionMode
                             ? (widget.isSelected
-                                ? Icons.check_circle_rounded
-                                : Icons.radio_button_unchecked_rounded)
+                                  ? Icons.check_circle_rounded
+                                  : Icons.radio_button_unchecked_rounded)
                             : Icons.chevron_right_rounded,
                         color: widget.isSelected
                             ? AppColors.primary
-                            : (isDark ? AppColors.greyDark : AppColors.greyLight),
+                            : (isDark
+                                  ? AppColors.greyDark
+                                  : AppColors.greyLight),
                         size: 24.sp,
                       ),
                     ),
@@ -278,7 +346,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
             ),
           ),
         );
-      }
+      },
     );
   }
 }

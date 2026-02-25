@@ -1,4 +1,4 @@
-import 'package:expense_tracker/models/currency_model.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:flutter/foundation.dart';
 import 'package:expense_tracker/services/currency_service.dart';
 
@@ -13,7 +13,7 @@ class CurrencyProvider with ChangeNotifier {
   // della valuta correntemente selezionata dall'utente.
   
   final CurrencyService _currencyService;
-  Currency _currentCurrency = Currency.euro;
+  ExpenseCurrency _currentCurrency = ExpenseCurrency.euro;
 
   CurrencyProvider({required CurrencyService currencyService})
       : _currencyService = currencyService;
@@ -22,7 +22,7 @@ class CurrencyProvider with ChangeNotifier {
   // Espongono lo stato della valuta corrente e le sue proprietà
   // per l'accesso dalla UI senza esporre direttamente l'oggetto interno.
   
-  Currency get currentCurrency => _currentCurrency;
+  ExpenseCurrency get currentCurrency => _currentCurrency;
 
   // Shortcuts di convenienza per accesso rapido alle proprietà della valuta
   // senza dover accedere all'oggetto Currency completo.
@@ -37,7 +37,7 @@ class CurrencyProvider with ChangeNotifier {
     try {
       _currentCurrency = _currencyService.getCurrency();
     } catch (e) {
-      _currentCurrency = Currency.euro; // Fallback esplicito
+      _currentCurrency = ExpenseCurrency.euro; // Fallback esplicito
     } finally {
       notifyListeners();
     }
@@ -46,7 +46,7 @@ class CurrencyProvider with ChangeNotifier {
   // --- AGGIORNAMENTO VALUTA ---
   // Aggiorna la valuta corrente e persiste la modifica nelle preferenze.
   // Evita notifiche superflue se la valuta selezionata è già quella corrente.
-  Future<void> setCurrency(Currency currency) async {
+  Future<void> setCurrency(ExpenseCurrency currency) async {
     if (_currentCurrency == currency) return;
     
     _currentCurrency = currency;

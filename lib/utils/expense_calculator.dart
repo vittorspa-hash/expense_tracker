@@ -1,3 +1,4 @@
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 
 /// FILE: expense_calculator.dart
@@ -12,7 +13,7 @@ class ExpenseCalculator {
   // Richiedono [targetCurrency] per normalizzare le spese (che potrebbero essere in valute diverse)
   // in un unico valore comparabile prima della somma.
   
-  static double totalExpenseToday(List<ExpenseModel> expenses, String targetCurrency) {
+  static double totalExpenseToday(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
     final currentDate = DateTime.now();
     final startOfDay = DateTime(
       currentDate.year,
@@ -25,7 +26,7 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
-  static double totalExpenseWeek(List<ExpenseModel> expenses, String targetCurrency) {
+  static double totalExpenseWeek(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
     final currentDate = DateTime.now();
     final startOfWeek = currentDate.subtract(
       Duration(days: currentDate.weekday - 1),
@@ -41,7 +42,7 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
-  static double totalExpenseMonth(List<ExpenseModel> expenses, String targetCurrency) {
+  static double totalExpenseMonth(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
     final currentDate = DateTime.now();
     final startOfMonth = DateTime(currentDate.year, currentDate.month, 1);
 
@@ -50,7 +51,7 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
-  static double totalExpenseYear(List<ExpenseModel> expenses, String targetCurrency) {
+  static double totalExpenseYear(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
     final currentDate = DateTime.now();
     final startOfYear = DateTime(currentDate.year, 1, 1);
 
@@ -65,7 +66,7 @@ class ExpenseCalculator {
   // nella valuta target per garantire coerenza nei totali raggruppati.
 
   // Raggruppa per mese (formato chiave "YYYY-MM").
-  static Map<String, double> expensesByMonth(List<ExpenseModel> expenses, String targetCurrency) {
+  static Map<String, double> expensesByMonth(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
     final Map<String, double> grouped = {};
 
     for (var expense in expenses) {
@@ -85,7 +86,7 @@ class ExpenseCalculator {
     List<ExpenseModel> expenses,
     int year,
     int month,
-    String targetCurrency, 
+    ExpenseCurrency targetCurrency, 
   ) {
     final Map<String, double> grouped = {};
 
@@ -134,7 +135,7 @@ class ExpenseCalculator {
   // Ordina la lista in-place. Se il criterio riguarda l'importo ("amount"),
   // è possibile passare [targetCurrency] per ordinare in base al valore reale convertito
   // (potere d'acquisto) invece che al semplice valore numerico.
-  static void sortInPlace(List<ExpenseModel> expenses, String criteria, {String? targetCurrency}) {
+  static void sortInPlace(List<ExpenseModel> expenses, String criteria, {ExpenseCurrency? targetCurrency}) {
     switch (criteria) {
       case "date_desc":
         expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
