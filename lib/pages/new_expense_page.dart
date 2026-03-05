@@ -50,7 +50,7 @@ class _NewExpensePageState extends State<NewExpensePage>
     required String? description,
     required DateTime date,
     required ExpenseCurrency currencyCode,
-    required ExpenseCategory category, // NUOVO
+    required ExpenseCategory category, 
     required AppLocalizations l10n,
   }) async {
     final provider = context.read<ExpenseProvider>();
@@ -61,7 +61,7 @@ class _NewExpensePageState extends State<NewExpensePage>
       date: date,
       l10n: l10n,
       currencyCode: currencyCode,
-      category: category, // NUOVO
+      category: category, 
     );
   }
 

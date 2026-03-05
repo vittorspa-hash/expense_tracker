@@ -216,7 +216,7 @@ class _EditExpensePageState extends State<EditExpensePage>
       description: description,
       date: date,
       currencyCode: currencyCode,
-      category: category, // NUOVO
+      category: category, 
       l10n: l10n,
     );
   }
@@ -244,7 +244,7 @@ class _EditExpensePageState extends State<EditExpensePage>
         initialDescription: widget.expenseModel.description,
         initialDate: widget.expenseModel.createdOn,
         initialCurrencyCode: widget.expenseModel.currency.code,
-        initialCategory: widget.expenseModel.category, // NUOVO
+        initialCategory: widget.expenseModel.category, 
 
         headerBuilder: (isHovered) =>
             _buildExchangeRateBanner(context, isHovered),

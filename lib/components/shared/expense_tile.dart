@@ -1,5 +1,4 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/models/expense_category.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -61,30 +60,6 @@ class _ExpenseTileState extends State<ExpenseTile> {
     return widget.expenseModel.currency.format(widget.expenseModel.value);
   }
 
-  // --- HELPER: LABEL LOCALIZZATA CATEGORIA ---
-  String _localizedCategoryLabel(AppLocalizations loc, ExpenseCategory cat) {
-    switch (cat) {
-      case ExpenseCategory.food:
-        return loc.categoryFood;
-      case ExpenseCategory.transport:
-        return loc.categoryTransport;
-      case ExpenseCategory.home:
-        return loc.categoryHome;
-      case ExpenseCategory.health:
-        return loc.categoryHealth;
-      case ExpenseCategory.entertainment:
-        return loc.categoryEntertainment;
-      case ExpenseCategory.shopping:
-        return loc.categoryShopping;
-      case ExpenseCategory.education:
-        return loc.categoryEducation;
-      case ExpenseCategory.travel:
-        return loc.categoryTravel;
-      case ExpenseCategory.other:
-        return loc.categoryOther;
-    }
-  }
-
   // --- COSTRUZIONE UI ---
   @override
   Widget build(BuildContext context) {
@@ -95,7 +70,8 @@ class _ExpenseTileState extends State<ExpenseTile> {
       builder: (context, currencyProvider, child) {
         // --- 1. LOGICA DI CONVERSIONE E FEEDBACK ---
         final currentCurrency = currencyProvider.currentCurrency;
-final bool showConversion = widget.expenseModel.currency != currentCurrency;
+        final bool showConversion =
+            widget.expenseModel.currency != currentCurrency;
 
         String? convertedAmountString;
         bool hasRate = false;
@@ -286,10 +262,7 @@ final bool showConversion = widget.expenseModel.currency != currentCurrency;
                               ),
                               SizedBox(width: 4.w),
                               Text(
-                                _localizedCategoryLabel(
-                                  loc,
-                                  widget.expenseModel.category,
-                                ),
+                                widget.expenseModel.category.label(loc),
                                 style: TextStyle(
                                   fontSize: 12.sp,
                                   color: isDark

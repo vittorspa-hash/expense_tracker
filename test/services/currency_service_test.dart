@@ -31,7 +31,7 @@ void main() {
       // Ricrea i mock prima di ogni test per garantire test isolation
       mockPrefs = MockSharedPreferences();
       mockHttpClient = MockClient();
-      
+
       currencyService = CurrencyService(
         sharedPreferences: mockPrefs,
         httpClient: mockHttpClient,
@@ -166,7 +166,7 @@ void main() {
       // ASSERT
       // Deve restituire fallback 1:1 senza chiamare l'API
       expect(rates, {'XYZ': 1.0});
-      
+
       // Verifica che NON abbia tentato di salvare in cache
       verifyNever(mockPrefs.setString(any, any));
     });
@@ -361,7 +361,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 13: Multiple Currency Codes - EUR
+    // TEST 14: Multiple Currency Codes - EUR
     // =================================================================
     test('Should handle EUR currency correctly', () {
       // ARRANGE
@@ -378,7 +378,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 14: Multiple Currency Codes - USD
+    // TEST 15: Multiple Currency Codes - USD
     // =================================================================
     test('Should handle USD currency correctly', () {
       // ARRANGE
@@ -395,7 +395,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 15: Multiple Currency Codes - GBP
+    // TEST 16: Multiple Currency Codes - GBP
     // =================================================================
     test('Should handle GBP currency correctly', () {
       // ARRANGE
@@ -412,7 +412,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 16: Multiple Currency Codes - JPY
+    // TEST 17: Multiple Currency Codes - JPY
     // =================================================================
     test('Should handle JPY currency correctly', () {
       // ARRANGE

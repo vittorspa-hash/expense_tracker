@@ -77,7 +77,7 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 ![Auth Page](assets/screenshots/auth_page2.png)
 
 **Home Page**  
-![Home Page](assets/screenshots/home_page3.png)
+![Home Page](assets/screenshots/home_page4.png)
 
 **Years Page**  
 ![Years Page Graph](assets/screenshots/years_page2.png)
@@ -119,13 +119,13 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 
 ## 🧪 Testing
 
-Il progetto include una test suite  di **69 unit test** con **~95% di coverage** sui componenti core.
+Il progetto include una test suite  di **73 unit test** con **~96% di coverage** sui componenti core.
 
 ### 📊 Coverage Breakdown
 
 | Componente | Test | Coverage | Descrizione |
 |------------|------|----------|-------------|
-| **ExpenseModel** | 11 | 100% | Serializzazione, conversione multi-valuta, copyWith, edge cases |
+| **ExpenseModel** | 15 | 100% | Serializzazione, conversione multi-valuta, copyWith, edge cases |
 | **ExpenseCalculator** | 18 | 100% | Calcoli temporali, aggregazioni per grafici, ordinamento |
 | **ExpenseService** | 23 | 92.8% | CRUD operations, soft-fail strategy, smart-update logic, budget checks |
 | **CurrencyService** | 17 | 91.2% | Persistenza, HTTP mocking, network-cache strategy, multi-valuta |

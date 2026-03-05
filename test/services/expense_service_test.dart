@@ -74,7 +74,7 @@ void main() {
         userId: 'test-user-123',
         currency: ExpenseCurrency.euro,
         exchangeRates: testRates,
-        category: ExpenseCategory.food, // NUOVO: categoria esplicita nel campione base
+        category: ExpenseCategory.food, // categoria esplicita nel campione base
       );
     });
 
@@ -135,7 +135,7 @@ void main() {
         description: 'Grocery',
         date: DateTime(2024, 1, 15),
         currency: ExpenseCurrency.usd,
-        category: ExpenseCategory.food, // NUOVO
+        category: ExpenseCategory.food,
       );
 
       // ASSERT
@@ -144,7 +144,7 @@ void main() {
       expect(result.expense.description, 'Grocery');
       expect(result.expense.currency, ExpenseCurrency.usd);
       expect(result.expense.exchangeRates, testRates);
-      expect(result.expense.category, ExpenseCategory.food); // NUOVO
+      expect(result.expense.category, ExpenseCategory.food);
       verify(mockRepository.createExpense(any)).called(1);
       verify(mockCurrencyService.getExchangeRates('USD')).called(1);
     });
@@ -165,13 +165,13 @@ void main() {
         description: 'Offline expense',
         date: DateTime(2024, 1, 15),
         currency: ExpenseCurrency.euro,
-        category: ExpenseCategory.other, // NUOVO
+        category: ExpenseCategory.other,
       );
 
       // ASSERT
       expect(result.warning, 'offline_currency_create');
       expect(result.expense.exchangeRates, {'EUR': 1.0});
-      expect(result.expense.category, ExpenseCategory.other); // NUOVO
+      expect(result.expense.category, ExpenseCategory.other);
       verify(mockRepository.createExpense(any)).called(1);
     });
 
@@ -189,7 +189,7 @@ void main() {
           description: 'Test',
           date: DateTime.now(),
           currency: ExpenseCurrency.euro,
-          category: ExpenseCategory.other, // NUOVO
+          category: ExpenseCategory.other,
         ),
         throwsA(isA<RepositoryFailure>()),
       );
@@ -212,7 +212,7 @@ void main() {
         description: 'Updated',
         date: DateTime(2024, 1, 16),
         currency: ExpenseCurrency.euro,
-        category: ExpenseCategory.transport, // NUOVO
+        category: ExpenseCategory.transport,
       );
 
       // ASSERT
@@ -220,7 +220,7 @@ void main() {
       expect(result.expense.value, 150.0);
       expect(result.expense.description, 'Updated');
       expect(result.expense.exchangeRates, testRates);
-      expect(result.expense.category, ExpenseCategory.transport); // NUOVO
+      expect(result.expense.category, ExpenseCategory.transport);
       verifyNever(mockCurrencyService.getExchangeRates(any));
       verify(mockRepository.updateExpense(any)).called(1);
     });
@@ -246,14 +246,14 @@ void main() {
         description: 'Repaired',
         date: DateTime(2024, 1, 17),
         currency: ExpenseCurrency.usd,
-        category: ExpenseCategory.shopping, // NUOVO
+        category: ExpenseCategory.shopping,
       );
 
       // ASSERT
       expect(result.warning, isNull);
       expect(result.expense.exchangeRates, testRates);
       expect(result.expense.exchangeRates.length, 3);
-      expect(result.expense.category, ExpenseCategory.shopping); // NUOVO
+      expect(result.expense.category, ExpenseCategory.shopping);
       verify(mockCurrencyService.getExchangeRates('USD')).called(1);
     });
 
@@ -278,13 +278,13 @@ void main() {
         description: 'Still broken',
         date: DateTime(2024, 1, 18),
         currency: ExpenseCurrency.gbp,
-        category: ExpenseCategory.health, // NUOVO
+        category: ExpenseCategory.health,
       );
 
       // ASSERT
       expect(result.warning, 'offline_currency_edit');
       expect(result.expense.exchangeRates, {'GBP': 1.0});
-      expect(result.expense.category, ExpenseCategory.health); // NUOVO
+      expect(result.expense.category, ExpenseCategory.health);
       verify(mockRepository.updateExpense(any)).called(1);
     });
 
@@ -485,7 +485,7 @@ void main() {
       // ASSERT
       expect(restored.uuid, sampleExpense.uuid);
       expect(restored.value, sampleExpense.value);
-      expect(restored.category, sampleExpense.category); // NUOVO
+      expect(restored.category, sampleExpense.category);
       verify(mockRepository.createExpense(sampleExpense)).called(1);
     });
 
@@ -538,7 +538,7 @@ void main() {
           description: 'Try to edit',
           date: DateTime.now(),
           currency: ExpenseCurrency.euro,
-          category: ExpenseCategory.other, // NUOVO
+          category: ExpenseCategory.other,
         ),
         throwsA(isA<RepositoryFailure>()),
       );

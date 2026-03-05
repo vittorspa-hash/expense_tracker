@@ -27,7 +27,7 @@ class ExpenseEdit extends StatefulWidget {
   final String? initialDescription;
   final DateTime? initialDate;
   final String? initialCurrencyCode;
-  final ExpenseCategory? initialCategory; // NUOVO
+  final ExpenseCategory? initialCategory;
 
   final Widget? Function(bool isHovered)? headerBuilder;
 
@@ -39,7 +39,7 @@ class ExpenseEdit extends StatefulWidget {
     required String? description,
     required DateTime date,
     required ExpenseCurrency currencyCode,
-    required ExpenseCategory category, // NUOVO
+    required ExpenseCategory category, 
     required AppLocalizations l10n,
   }) onSubmit;
 
@@ -49,7 +49,7 @@ class ExpenseEdit extends StatefulWidget {
     this.initialDescription,
     this.initialDate,
     this.initialCurrencyCode,
-    this.initialCategory, // NUOVO
+    this.initialCategory, 
     this.headerBuilder,
     this.floatingActionButtonIcon,
     this.onFloatingActionButtonPressed,
@@ -306,7 +306,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     );
   }
 
-  // --- SELETTORE CATEGORIA (NUOVO) ---
+  // --- SELETTORE CATEGORIA ---
   // Mostra una griglia scrollabile di chip per selezionare la categoria.
   // Il chip selezionato è evidenziato con il colore primario dell'app.
   Widget inputCategory(bool isDark) {
@@ -320,9 +320,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           final isSelected = _selectedCategory == category;
           final loc = AppLocalizations.of(context)!;
 
-          // Recupera la label localizzata dalla chiave l10n della categoria.
-          // Usa un metodo helper per non dipendere da generated code direttamente.
-          final label = _localizedCategoryLabel(loc, category);
+          // Recupero il nome localizzato della categoria
+          final label = category.label(loc);
 
           return GestureDetector(
             onTap: () => setState(() => _selectedCategory = category),
@@ -350,7 +349,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                     category.icon,
                     size: 16.sp,
                     color: isSelected
-                        ? Colors.white
+                        ? AppColors.textLight
                         : (isTappedDown
                             ? AppColors.textLight
                             : AppColors.textTappedDown),
@@ -362,7 +361,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
                       color: isSelected
-                          ? Colors.white
+                          ? AppColors.textLight
                           : (isTappedDown
                               ? AppColors.textLight
                               : AppColors.textTappedDown),
@@ -375,32 +374,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         }).toList(),
       ),
     );
-  }
-
-  // --- HELPER: LABEL LOCALIZZATA CATEGORIA ---
-  // Mappa il labelKey dell'enum alla stringa tradotta corrispondente nel file l10n.
-  // Centralizzato qui per non duplicare la logica in più widget.
-  String _localizedCategoryLabel(AppLocalizations loc, ExpenseCategory cat) {
-    switch (cat) {
-      case ExpenseCategory.food:
-        return loc.categoryFood;
-      case ExpenseCategory.transport:
-        return loc.categoryTransport;
-      case ExpenseCategory.home:
-        return loc.categoryHome;
-      case ExpenseCategory.health:
-        return loc.categoryHealth;
-      case ExpenseCategory.entertainment:
-        return loc.categoryEntertainment;
-      case ExpenseCategory.shopping:
-        return loc.categoryShopping;
-      case ExpenseCategory.education:
-        return loc.categoryEducation;
-      case ExpenseCategory.travel:
-        return loc.categoryTravel;
-      case ExpenseCategory.other:
-        return loc.categoryOther;
-    }
   }
 
   // --- GESTIONE ELIMINAZIONE ---

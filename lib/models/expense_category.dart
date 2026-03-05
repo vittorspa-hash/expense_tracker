@@ -1,13 +1,10 @@
+import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
-// ---------------------------------------------------------------------------
-// ENUM: ExpenseCategory
-// ---------------------------------------------------------------------------
-// Ogni variante espone due proprietà calcolate:
-//   • icon      → IconData Material da mostrare nell'UI
-//   • labelKey  → Chiave stringa per la localizzazione (l10n)
-// ---------------------------------------------------------------------------
-
+/// FILE: expense_category.dart
+/// DESCRIZIONE: Enum di dominio per le categorie di spesa supportate dall'applicazione.
+/// Ogni variante espone un'icona Material e una label localizzata tramite AppLocalizations,
+/// e fornisce logica di serializzazione per il salvataggio e il recupero da Firestore.
 enum ExpenseCategory {
   food,
   transport,
@@ -43,41 +40,41 @@ enum ExpenseCategory {
     }
   }
 
-  // --- CHIAVE L10N per la traduzione nell'UI ---
-  String get labelKey {
+  // --- LABEL LOCALIZZATA ---
+  // Restituisce la stringa tradotta corrispondente alla categoria.
+  // Centralizzato nell'enum per evitare duplicazione nei widget che mostrano la categoria.
+  String label(AppLocalizations loc) {
     switch (this) {
       case ExpenseCategory.food:
-        return 'categoryFood';
+        return loc.categoryFood;
       case ExpenseCategory.transport:
-        return 'categoryTransport';
+        return loc.categoryTransport;
       case ExpenseCategory.home:
-        return 'categoryHome';
+        return loc.categoryHome;
       case ExpenseCategory.health:
-        return 'categoryHealth';
+        return loc.categoryHealth;
       case ExpenseCategory.entertainment:
-        return 'categoryEntertainment';
+        return loc.categoryEntertainment;
       case ExpenseCategory.shopping:
-        return 'categoryShopping';
+        return loc.categoryShopping;
       case ExpenseCategory.education:
-        return 'categoryEducation';
+        return loc.categoryEducation;
       case ExpenseCategory.travel:
-        return 'categoryTravel';
+        return loc.categoryTravel;
       case ExpenseCategory.other:
-        return 'categoryOther';
+        return loc.categoryOther;
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // SERIALIZZAZIONE: enum <-> String (per Firestore)
-  // ---------------------------------------------------------------------------
+  // --- SERIALIZZAZIONE: enum <-> String (per Firestore) ---
 
-  /// Converte la categoria in stringa leggibile per il salvataggio su DB.
-  /// Es: ExpenseCategory.food → "food"
+  // Converte la categoria in stringa leggibile per il salvataggio su DB.
+  // Es: ExpenseCategory.food → "food"
   String toJson() => name;
 
-  /// Ricrea la categoria da una stringa proveniente dal DB.
-  /// Se la stringa è sconosciuta (dati corrotti o categoria deprecata),
-  /// restituisce [ExpenseCategory.other] come fallback sicuro.
+  // Ricrea la categoria da una stringa proveniente dal DB.
+  // Se la stringa è sconosciuta (dati corrotti o categoria deprecata),
+  // restituisce [ExpenseCategory.other] come fallback sicuro.
   static ExpenseCategory fromJson(String? value) {
     if (value == null) return ExpenseCategory.other;
     return ExpenseCategory.values.firstWhere(

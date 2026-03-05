@@ -1,10 +1,8 @@
-// ignore: dangling_library_doc_comments
-/// FILE: currency_model.dart
-/// DESCRIZIONE: Model di dominio per le valute supportate dall'applicazione.
+/// FILE: expense_currency.dart
+/// DESCRIZIONE: Enum di dominio per le valute supportate dall'applicazione.
 /// Definisce le valute disponibili (Euro, USD, GBP, JPY) con le loro proprietà
 /// (codice ISO, nome completo, simbolo) e fornisce logica di formattazione
 /// per visualizzare correttamente gli importi secondo le convenzioni di ogni valuta.
-
 enum ExpenseCurrency {
   euro('EUR', 'Euro', '€'),
   usd('USD', 'US Dollar', '\$'),
@@ -13,7 +11,6 @@ enum ExpenseCurrency {
 
   // --- PROPRIETÀ ---
   // Proprietà immutabili che identificano ciascuna valuta.
-  
   final String code;   // Codice ISO 4217 (es. EUR, USD)
   final String name;   // Nome completo della valuta
   final String symbol; // Simbolo grafico della valuta
@@ -27,24 +24,25 @@ enum ExpenseCurrency {
   String format(double amount, {bool showSymbol = true}) {
     final formattedAmount = amount.toStringAsFixed(2);
     if (!showSymbol) return formattedAmount;
-    
-    // Yen giapponese: niente decimali
+
+    // Yen giapponese: nessun decimale per convenzione
     if (this == ExpenseCurrency.jpy) {
       return '$symbol${amount.toStringAsFixed(0)}';
     }
-    
-    // USD e GBP: simbolo prima dell'importo
+
+    // USD e GBP: simbolo anteposto all'importo
     if (this == ExpenseCurrency.usd || this == ExpenseCurrency.gbp) {
       return '$symbol$formattedAmount';
     }
-    
+
     // Euro e altre: simbolo dopo l'importo
     return '$formattedAmount$symbol';
   }
 
   // --- FACTORY METHOD ---
-  // Crea un'istanza Currency a partire dal codice ISO.
-  // Restituisce Euro come fallback se il codice non è riconosciuto.
+  // Crea un'istanza ExpenseCurrency a partire dal codice ISO.
+  // Restituisce Euro come fallback se il codice non è riconosciuto,
+  // garantendo retrocompatibilità con spese salvate senza valuta.
   static ExpenseCurrency fromCode(String code) {
     return ExpenseCurrency.values.firstWhere(
       (c) => c.code == code,

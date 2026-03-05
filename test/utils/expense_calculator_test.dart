@@ -126,7 +126,13 @@ void main() {
     // TEST 1: Total Expense Today
     // =================================================================
     test('Should calculate total expenses for today only', () {
-      final total = ExpenseCalculator.totalExpenseToday(testExpenses, ExpenseCurrency.euro,);
+      // ARRANGE
+      // Dati già preparati nel setUp()
+
+      // ACT
+      final total = ExpenseCalculator.totalExpenseToday(testExpenses, ExpenseCurrency.euro);
+
+      // ASSERT
       // Solo today-1 (50) + today-2 (30) = 80
       expect(total, 80.0);
     });
@@ -135,8 +141,13 @@ void main() {
     // TEST 2: Total Expense Week
     // =================================================================
     test('Should calculate total expenses for current week', () {
-      final total = ExpenseCalculator.totalExpenseWeek(testExpenses, ExpenseCurrency.euro,);
+      // ARRANGE
+      // Dati già preparati nel setUp()
 
+      // ACT
+      final total = ExpenseCalculator.totalExpenseWeek(testExpenses, ExpenseCurrency.euro);
+
+      // ASSERT
       // Oggi (80) + week-1 (100) = almeno 180.
       // week-1 è sempre nella settimana corrente per costruzione (vedi setUp).
       expect(total, greaterThanOrEqualTo(180.0));
@@ -146,8 +157,13 @@ void main() {
     // TEST 3: Total Expense Month
     // =================================================================
     test('Should calculate total expenses for current month', () {
-      final total = ExpenseCalculator.totalExpenseMonth(testExpenses, ExpenseCurrency.euro,);
+      // ARRANGE
+      // Dati già preparati nel setUp()
 
+      // ACT
+      final total = ExpenseCalculator.totalExpenseMonth(testExpenses, ExpenseCurrency.euro);
+
+      // ASSERT
       // totalExpenseMonth usa .isAfter(startOfMonth) — stretto, non >=.
       // month-1 è impostata a DateTime(now.year, now.month, 1, 0, 1) quindi
       // è sempre inclusa (00:01 > 00:00).
@@ -165,8 +181,13 @@ void main() {
     // TEST 4: Total Expense Year
     // =================================================================
     test('Should calculate total expenses for current year', () {
-      final total = ExpenseCalculator.totalExpenseYear(testExpenses, ExpenseCurrency.euro,);
+      // ARRANGE
+      // Dati già preparati nel setUp()
 
+      // ACT
+      final total = ExpenseCalculator.totalExpenseYear(testExpenses, ExpenseCurrency.euro);
+
+      // ASSERT
       // Include tutte le spese dell'anno corrente, esclude anno passato (1000€).
       // Minimo: oggi (80) + week (100) + month (200) = 380
       expect(total, greaterThanOrEqualTo(380.0));
@@ -177,6 +198,7 @@ void main() {
     // TEST 5: Total with Multi-Currency Conversion
     // =================================================================
     test('Should convert expenses to target currency before summing', () {
+      // ARRANGE
       final multiCurrencyExpenses = [
         ExpenseModel(
           uuid: 'eur-expense',
@@ -198,11 +220,13 @@ void main() {
         ),
       ];
 
+      // ACT
       final totalInEUR = ExpenseCalculator.totalExpenseToday(
         multiCurrencyExpenses,
         ExpenseCurrency.euro,
       );
 
+      // ASSERT
       // 100 EUR + (110 USD → 100 EUR) = 200 EUR
       expect(totalInEUR, closeTo(200.0, 0.01));
     });
@@ -211,7 +235,9 @@ void main() {
     // TEST 6: Empty Expenses List
     // =================================================================
     test('Should return 0 for empty expenses list', () {
-      final total = ExpenseCalculator.totalExpenseToday([], ExpenseCurrency.euro,);
+      // ARRANGE + ACT + ASSERT
+      // Lista vuota: nessun calcolo da effettuare, risultato atteso = 0
+      final total = ExpenseCalculator.totalExpenseToday([], ExpenseCurrency.euro);
       expect(total, 0.0);
     });
 
@@ -219,6 +245,7 @@ void main() {
     // TEST 7: Expenses by Month - Aggregation
     // =================================================================
     test('Should aggregate expenses by month with correct format', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -249,8 +276,10 @@ void main() {
         ),
       ];
 
-      final byMonth = ExpenseCalculator.expensesByMonth(expenses, ExpenseCurrency.euro,);
+      // ACT
+      final byMonth = ExpenseCalculator.expensesByMonth(expenses, ExpenseCurrency.euro);
 
+      // ASSERT
       expect(byMonth.containsKey('2024-01'), true);
       expect(byMonth.containsKey('2024-02'), true);
       expect(byMonth['2024-01'], 150.0); // 100 + 50
@@ -261,6 +290,7 @@ void main() {
     // TEST 8: Expenses by Month - Sorted Descending
     // =================================================================
     test('Should return months sorted in descending order', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -291,9 +321,11 @@ void main() {
         ),
       ];
 
-      final byMonth = ExpenseCalculator.expensesByMonth(expenses, ExpenseCurrency.euro,);
+      // ACT
+      final byMonth = ExpenseCalculator.expensesByMonth(expenses, ExpenseCurrency.euro);
       final keys = byMonth.keys.toList();
 
+      // ASSERT
       expect(keys[0], '2024-03');
       expect(keys[1], '2024-02');
       expect(keys[2], '2024-01');
@@ -303,6 +335,7 @@ void main() {
     // TEST 9: Expenses by Day - Specific Month
     // =================================================================
     test('Should aggregate expenses by day for specific month', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -342,11 +375,13 @@ void main() {
         ),
       ];
 
-      final byDay = ExpenseCalculator.expensesByDay(expenses, 2024, 1, ExpenseCurrency.euro,);
+      // ACT
+      final byDay = ExpenseCalculator.expensesByDay(expenses, 2024, 1, ExpenseCurrency.euro);
 
+      // ASSERT
       expect(byDay.containsKey('15/01/2024'), true);
       expect(byDay.containsKey('20/01/2024'), true);
-      expect(byDay.containsKey('15/02/2024'), false);
+      expect(byDay.containsKey('15/02/2024'), false); // mese diverso escluso
       expect(byDay['15/01/2024'], 80.0); // 50 + 30
       expect(byDay['20/01/2024'], 100.0);
     });
@@ -355,6 +390,7 @@ void main() {
     // TEST 10: Expenses of Specific Day - Raw List
     // =================================================================
     test('Should return raw expense list for specific day', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -385,8 +421,10 @@ void main() {
         ),
       ];
 
+      // ACT
       final dayExpenses = ExpenseCalculator.expensesOfDay(expenses, 2024, 1, 15);
 
+      // ASSERT
       expect(dayExpenses.length, 2);
       expect(dayExpenses[0].uuid, '2'); // Più recente prima (14:00)
       expect(dayExpenses[1].uuid, '1'); // Meno recente dopo (09:00)
@@ -396,6 +434,7 @@ void main() {
     // TEST 11: Sort by Date Descending
     // =================================================================
     test('Should sort expenses by date in descending order', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -426,8 +465,10 @@ void main() {
         ),
       ];
 
+      // ACT
       ExpenseCalculator.sortInPlace(expenses, 'date_desc');
 
+      // ASSERT
       expect(expenses[0].uuid, '2');
       expect(expenses[1].uuid, '3');
       expect(expenses[2].uuid, '1');
@@ -437,6 +478,7 @@ void main() {
     // TEST 12: Sort by Date Ascending
     // =================================================================
     test('Should sort expenses by date in ascending order', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -458,8 +500,10 @@ void main() {
         ),
       ];
 
+      // ACT
       ExpenseCalculator.sortInPlace(expenses, 'date_asc');
 
+      // ASSERT
       expect(expenses[0].uuid, '2');
       expect(expenses[1].uuid, '1');
     });
@@ -468,6 +512,7 @@ void main() {
     // TEST 13: Sort by Amount Descending (No Currency Conversion)
     // =================================================================
     test('Should sort by raw amount when no target currency provided', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -498,8 +543,10 @@ void main() {
         ),
       ];
 
+      // ACT
       ExpenseCalculator.sortInPlace(expenses, 'amount_desc');
 
+      // ASSERT
       expect(expenses[0].value, 200.0);
       expect(expenses[1].value, 100.0);
       expect(expenses[2].value, 50.0);
@@ -509,6 +556,7 @@ void main() {
     // TEST 14: Sort by Amount with Currency Conversion
     // =================================================================
     test('Should sort by converted amount when target currency provided', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -516,7 +564,7 @@ void main() {
           description: 'EUR expense',
           createdOn: DateTime.now(),
           userId: 'user-123',
-          currency:ExpenseCurrency.euro,
+          currency: ExpenseCurrency.euro,
           exchangeRates: testRates,
         ),
         ExpenseModel(
@@ -539,8 +587,10 @@ void main() {
         ),
       ];
 
-      ExpenseCalculator.sortInPlace(expenses, 'amount_desc', targetCurrency: ExpenseCurrency.euro,);
+      // ACT
+      ExpenseCalculator.sortInPlace(expenses, 'amount_desc', targetCurrency: ExpenseCurrency.euro);
 
+      // ASSERT
       expect(expenses[0].uuid, '3'); // 220 USD = 200 EUR (largest)
     });
 
@@ -548,6 +598,7 @@ void main() {
     // TEST 15: Sort by Amount Ascending
     // =================================================================
     test('Should sort by amount in ascending order', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -569,8 +620,10 @@ void main() {
         ),
       ];
 
+      // ACT
       ExpenseCalculator.sortInPlace(expenses, 'amount_asc');
 
+      // ASSERT
       expect(expenses[0].value, 50.0);
       expect(expenses[1].value, 200.0);
     });
@@ -579,6 +632,8 @@ void main() {
     // TEST 16: Aggregation with Empty List
     // =================================================================
     test('Should return empty map when aggregating empty list', () {
+      // ARRANGE + ACT + ASSERT
+      // Lista vuota: nessuna aggregazione possibile, mappe attese vuote
       final byMonth = ExpenseCalculator.expensesByMonth([], ExpenseCurrency.euro);
       final byDay = ExpenseCalculator.expensesByDay([], 2024, 1, ExpenseCurrency.euro);
 
@@ -590,6 +645,7 @@ void main() {
     // TEST 17: Expenses of Day - No Matches
     // =================================================================
     test('Should return empty list when no expenses match the day', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -602,8 +658,10 @@ void main() {
         ),
       ];
 
+      // ACT
       final dayExpenses = ExpenseCalculator.expensesOfDay(expenses, 2024, 1, 15);
 
+      // ASSERT
       expect(dayExpenses, isEmpty);
     });
 
@@ -611,6 +669,7 @@ void main() {
     // TEST 18: Sort by Amount Ascending with Currency Conversion
     // =================================================================
     test('Should sort by converted amount in ascending order when target currency provided', () {
+      // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
@@ -641,8 +700,10 @@ void main() {
         ),
       ];
 
-      ExpenseCalculator.sortInPlace(expenses, 'amount_asc', targetCurrency: ExpenseCurrency.euro,);
+      // ACT
+      ExpenseCalculator.sortInPlace(expenses, 'amount_asc', targetCurrency: ExpenseCurrency.euro);
 
+      // ASSERT
       expect(expenses[0].uuid, '3'); // 50 EUR (smallest)
       expect(expenses[1].uuid, '2'); // 85 GBP = 100 EUR (medium)
       expect(expenses[2].uuid, '1'); // 220 USD = 200 EUR (largest)
