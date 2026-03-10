@@ -10,7 +10,7 @@ import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/pages/new_expense_page.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -118,6 +118,8 @@ class _HomePageState extends State<HomePage>
         return Scaffold(
           appBar: isSelectionMode
               ? CustomAppBar(
+                  appBarBackgroundColor: AppColors.primary,
+                  appBarTextColor: isDark ? AppColors.textDark : AppColors.textLight,
                   title: "",
                   isDark: isDark,
                   isSelectionMode: true,
@@ -140,6 +142,8 @@ class _HomePageState extends State<HomePage>
                     isDark: isDark,
                     onTapProfile: () => _showProfileSheet(context),
                   ),
+
+                  SizedBox(height: 6.h),
 
                   Expanded(
                     child: HomeContentList(

@@ -3,15 +3,15 @@ import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/clipboard_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; 
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
-import 'package:expense_tracker/providers/auth_provider.dart'; 
+import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: profile_page.dart
@@ -30,7 +30,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- INIZIALIZZAZIONE ---
   // Configura il picker immagini, le animazioni e richiede il caricamento
   // dei dati locali del profilo all'avvio del widget.
@@ -61,7 +60,7 @@ class _ProfilePageState extends State<ProfilePage>
   // Costruisce la lista scrollabile delle impostazioni.
   // Include un RefreshIndicator per sincronizzare i dati con il server
   // e sezioni distinte per Avatar, Dati Anagrafici e Azioni Critiche.
-  // 
+  //
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -86,7 +85,9 @@ class _ProfilePageState extends State<ProfilePage>
             await provider.refreshUser();
             if (mounted) _showSnack(loc.dataUpdated);
           } catch (e) {
-            if (mounted) _showSnack(loc.refreshError(e.toString()), isError: true);
+            if (mounted) {
+              _showSnack(loc.refreshError(e.toString()), isError: true);
+            }
           }
         },
 
@@ -108,13 +109,6 @@ class _ProfilePageState extends State<ProfilePage>
                         ? AppColors.cardDark.withValues(alpha: 0.3)
                         : AppColors.cardLight.withValues(alpha: 0.7),
                     borderRadius: BorderRadius.circular(24.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
                   ),
                   child: ProfileAvatar(
                     key: ObjectKey(provider.localImage),
@@ -291,7 +285,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   // --- GESTIONE AVATAR ---
   // Logica per selezionare una nuova immagine dalla galleria o rimuovere quella esistente.
-  // 
+  //
   Future<void> _handleChangePicture() async {
     final provider = context.read<ProfileProvider>();
     final loc = AppLocalizations.of(context)!;
@@ -337,7 +331,7 @@ class _ProfilePageState extends State<ProfilePage>
   // --- MODIFICA DATI UTENTE ---
   // Serie di metodi che aprono dialoghi di input specifici (Nome, Email, Password),
   // validano i dati inseriti e invocano i metodi di aggiornamento del Provider.
-  // 
+  //
   Future<void> _handleChangeDisplayName() async {
     final provider = context.read<ProfileProvider>();
     final loc = AppLocalizations.of(context)!;
@@ -473,14 +467,27 @@ class _ProfilePageState extends State<ProfilePage>
       cancelText: loc.cancel,
     );
 
+   
     if (confirm == true) {
-      try {
-        await provider.deleteAccount();
+      if (!mounted) return;
+      final confirm2 = await DialogUtils.showConfirmDialog(
+        context,
+        title: loc.warningTitle,
+        content: loc.deleteAccountMessageConfirm,
+        confirmText: loc.delete,
+        cancelText: loc.cancel
+      );
+
+      if (confirm2 == true) {
         if (!mounted) return;
-        _showSnack(loc.accountDeleted);
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      } catch (e) {
-        _showSnack(e.toString(), isError: true);
+        try {
+          await provider.deleteAccount();
+          if (!mounted) return;
+          _showSnack(loc.accountDeleted);
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        } catch (e) {
+          _showSnack(e.toString(), isError: true);
+        }
       }
     }
   }

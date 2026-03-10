@@ -95,7 +95,6 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 - `lib/providers/` → **State Management Layer**: Gestiscono lo stato UI e orchestrano chiamate ai service. Estendono ChangeNotifier per notificare la UI delle modifiche
 - `lib/repositories/` → **Data Access Layer**: Accesso diretto ai dati (Firestore CRUD operations)
 - `lib/services/` → **Business Logic Layer**: Contengono tutta la logica applicativa iniettata tramite GetIt
-- `lib/theme/` → Theming: Definizione palette colori
 - `lib/utils/` → Utilities: Motore di calcolo, sistema dialoghi adattivi, gestione snackbar e animazioni
 
 ---

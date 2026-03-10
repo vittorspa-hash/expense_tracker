@@ -263,5 +263,6 @@
     "categoryShopping": "Shopping",
     "categoryEducation": "Education",
     "categoryTravel": "Travel", 
-    "categoryOther": "Other"
+    "categoryOther": "Other",
+    "deleteAccountMessageConfirm": "This action is irreversible and cannot be undone."
 }

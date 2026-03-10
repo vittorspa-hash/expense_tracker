@@ -4,7 +4,7 @@ import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';

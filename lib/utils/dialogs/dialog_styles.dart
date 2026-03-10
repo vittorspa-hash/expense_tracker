@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: dialog_styles.dart

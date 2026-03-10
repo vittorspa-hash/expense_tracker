@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: profile_avatar.dart

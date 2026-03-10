@@ -1,5 +1,5 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -25,6 +25,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onDeselectAll;
   final Widget? leading;
   final List<Widget>? actions;
+  final Color? appBarBackgroundColor;
+  final Color? appBarTextColor;
 
   const CustomAppBar({
     super.key,
@@ -41,6 +43,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onDeselectAll,
     this.leading,
     this.actions,
+    this.appBarBackgroundColor,
+    this.appBarTextColor,
   });
 
   @override
@@ -53,7 +57,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       elevation: 0,
       iconTheme: IconThemeData(
-        color: isDark ? AppColors.textDark : AppColors.textLight,
+        color: AppColors.primary,
       ),
 
       // --- LEADING ACTION ---
@@ -65,7 +69,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: IconButton(
                 icon: Icon(
                   Icons.close_rounded,
-                  color: isDark ? AppColors.textDark : AppColors.textLight,
+                  color: appBarTextColor,
                   size: 26.sp,
                 ),
                 onPressed: onCancelSelection,
@@ -79,7 +83,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           ? Text(
               loc.selectedCountLabel(selectedCount),
               style: TextStyle(
-                color: isDark ? AppColors.textDark : AppColors.textLight,
+                color: appBarTextColor,
                 fontWeight: FontWeight.w700,
                 fontSize: 20.sp,
                 letterSpacing: 0.5,
@@ -101,7 +105,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ? Icons.remove_done_rounded
                       : Icons.done_all_rounded,
                   size: 28.sp,
-                  color: isDark ? AppColors.textDark : AppColors.textLight,
+                  color: appBarTextColor,
                 ),
                 tooltip: (totalCount != null && selectedCount == totalCount)
                     ? loc.deselectAll
@@ -131,7 +135,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           : actions,
 
       flexibleSpace: Container(
-        decoration: BoxDecoration(color: AppColors.primary),
+        decoration: BoxDecoration(
+          color: isSelectionMode ? appBarBackgroundColor : isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        ),
       ),
     );
   }
@@ -150,7 +156,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               Text(
                 title,
                 style: TextStyle(
-                  color: isDark ? AppColors.textDark : AppColors.textLight,
+                  color: AppColors.primary,
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5,
@@ -161,7 +167,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 Icon(
                   icon,
                   size: 22.r,
-                  color: isDark ? AppColors.textDark : AppColors.textLight,
+                  color: AppColors.primary,
                 ),
               ],
             ],
@@ -170,8 +176,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             subtitle!,
             style: TextStyle(
               color: isDark
-                  ? AppColors.textDark.withValues(alpha: 0.85)
-                  : AppColors.textLight.withValues(alpha: 0.85),
+                  ? AppColors.textLight.withValues(alpha: 0.85)
+                  : AppColors.textDark.withValues(alpha: 0.85),
               fontSize: 12.sp,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.3,
@@ -188,7 +194,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         Text(
           title,
           style: TextStyle(
-            color: isDark ? AppColors.textDark : AppColors.textLight,
+            color: AppColors.primary,
             fontSize: 22.sp,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.5,
@@ -199,7 +205,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           Icon(
             icon,
             size: 26.r,
-            color: isDark ? AppColors.textDark : AppColors.textLight,
+            color: AppColors.primary,
           ),
         ],
       ],

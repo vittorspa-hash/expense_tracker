@@ -263,5 +263,6 @@
     "categoryShopping": "Compras",
     "categoryEducation": "Educação",
     "categoryTravel": "Viagens",
-    "categoryOther": "Outro"
+    "categoryOther": "Outro",
+    "deleteAccountMessageConfirm": "Esta ação é irreversível e não pode ser desfeita."
 }

@@ -263,5 +263,6 @@
     "categoryShopping": "Einkaufen",
     "categoryEducation": "Bildung",
     "categoryTravel": "Reisen", 
-    "categoryOther": "Andere"
+    "categoryOther": "Andere",
+    "deleteAccountMessageConfirm": "Diese Aktion ist unwiderruflich und kann nicht rückgängig gemacht werden."
 }

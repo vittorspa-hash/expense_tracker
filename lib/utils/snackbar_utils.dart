@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 
 /// FILE: snackbar_utils.dart
 /// DESCRIZIONE: Utility centralizzata per mostrare notifiche temporanee (Snackbar).

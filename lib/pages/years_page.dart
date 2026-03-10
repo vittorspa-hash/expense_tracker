@@ -12,7 +12,7 @@ import 'package:expense_tracker/utils/report_date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: years_page.dart

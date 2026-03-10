@@ -9,7 +9,7 @@ import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/report_date_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
@@ -114,6 +114,8 @@ class _DaysPageState extends State<DaysPage>
         return Scaffold(
           appBar: isSelectionMode
               ? CustomAppBar(
+                  appBarBackgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight, 
+                  appBarTextColor: AppColors.primary,
                   title: "",
                   isDark: isDark,
                   isSelectionMode: true,

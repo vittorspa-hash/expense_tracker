@@ -3,7 +3,7 @@ import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/pages/years_page.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
@@ -32,7 +32,7 @@ class HomeHeader extends StatelessWidget {
     // Ascolta simultaneamente ExpenseProvider (per i totali), ProfileProvider (per l'avatar)
     // e CurrencyProvider (per la formattazione degli importi).
     // Questo evita rebuild inutili dell'intera pagina se cambiano solo questi dati.
-    // 
+    //
     return Consumer3<ExpenseProvider, ProfileProvider, CurrencyProvider>(
       builder: (context, expenseProvider, profileProvider, currencyProvider, child) {
         // Recupero dati profilo per visualizzazione avatar
@@ -45,14 +45,11 @@ class HomeHeader extends StatelessWidget {
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(32.r),
+                bottomRight: Radius.circular(32.r),
+              ),
               color: AppColors.primary,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
             ),
             child: SafeArea(
               child: Padding(
@@ -62,7 +59,7 @@ class HomeHeader extends StatelessWidget {
                   children: [
                     // --- BARRA NAVIGAZIONE SUPERIORE ---
                     // Include il pulsante per il resoconto annuale e l'avatar cliccabile.
-                    // 
+                    //
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -116,7 +113,7 @@ class HomeHeader extends StatelessWidget {
 
                         // Avatar Utente con Fallback Logic
                         // Priorità: Immagine Locale > URL Network (Firebase) > Icona Default
-                        // 
+                        //
                         GestureDetector(
                           onTap: onTapProfile,
                           child: Container(

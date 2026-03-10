@@ -7,7 +7,7 @@ import 'package:expense_tracker/providers/multi_select_provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:expense_tracker/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/components/shared/expense_tile.dart';
 
 /// FILE: home_content_list.dart
@@ -49,7 +49,7 @@ class HomeContentList extends StatelessWidget {
 
         final isSelectionMode = multiSelect.isSelectionMode;
 
-        return Container(
+        return Container(    
           decoration: BoxDecoration(
             color: isDark
                 ? AppColors.backgroundDark
@@ -79,13 +79,6 @@ class HomeContentList extends StatelessWidget {
                           color: isDark
                               ? AppColors.backgroundDark
                               : AppColors.backgroundLight,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.shadow.withValues(alpha: 0.05),
-                              blurRadius: 10,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
                         ),
                         padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 16.h),
 
