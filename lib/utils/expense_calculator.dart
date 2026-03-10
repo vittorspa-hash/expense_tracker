@@ -1,3 +1,4 @@
+import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 
@@ -7,13 +8,15 @@ import 'package:expense_tracker/models/expense_model.dart';
 /// supportando la normalizzazione multi-valuta tramite una valuta target.
 
 class ExpenseCalculator {
-  
   // --- CALCOLO TOTALI TEMPORALI ---
   // Metodi per sommare le spese in intervalli specifici (Oggi, Settimana, Mese, Anno).
   // Richiedono [targetCurrency] per normalizzare le spese (che potrebbero essere in valute diverse)
   // in un unico valore comparabile prima della somma.
-  
-  static double totalExpenseToday(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
+
+  static double totalExpenseToday(
+    List<ExpenseModel> expenses,
+    ExpenseCurrency targetCurrency,
+  ) {
     final currentDate = DateTime.now();
     final startOfDay = DateTime(
       currentDate.year,
@@ -26,15 +29,18 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
-  static double totalExpenseWeek(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
+  static double totalExpenseWeek(
+    List<ExpenseModel> expenses,
+    ExpenseCurrency targetCurrency,
+  ) {
     final currentDate = DateTime.now();
     final startOfWeek = currentDate.subtract(
       Duration(days: currentDate.weekday - 1),
     );
     final startOfWeekMidnight = DateTime(
-      startOfWeek.year, 
-      startOfWeek.month, 
-      startOfWeek.day
+      startOfWeek.year,
+      startOfWeek.month,
+      startOfWeek.day,
     );
 
     return expenses
@@ -42,7 +48,10 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
-  static double totalExpenseMonth(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
+  static double totalExpenseMonth(
+    List<ExpenseModel> expenses,
+    ExpenseCurrency targetCurrency,
+  ) {
     final currentDate = DateTime.now();
     final startOfMonth = DateTime(currentDate.year, currentDate.month, 1);
 
@@ -51,7 +60,10 @@ class ExpenseCalculator {
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
-  static double totalExpenseYear(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
+  static double totalExpenseYear(
+    List<ExpenseModel> expenses,
+    ExpenseCurrency targetCurrency,
+  ) {
     final currentDate = DateTime.now();
     final startOfYear = DateTime(currentDate.year, 1, 1);
 
@@ -66,13 +78,16 @@ class ExpenseCalculator {
   // nella valuta target per garantire coerenza nei totali raggruppati.
 
   // Raggruppa per mese (formato chiave "YYYY-MM").
-  static Map<String, double> expensesByMonth(List<ExpenseModel> expenses, ExpenseCurrency targetCurrency) {
+  static Map<String, double> expensesByMonth(
+    List<ExpenseModel> expenses,
+    ExpenseCurrency targetCurrency,
+  ) {
     final Map<String, double> grouped = {};
 
     for (var expense in expenses) {
       final date = expense.createdOn;
       final key = "${date.year}-${date.month.toString().padLeft(2, '0')}";
-      
+
       double convertedValue = expense.getValueIn(targetCurrency);
       grouped[key] = (grouped[key] ?? 0) + convertedValue;
     }
@@ -86,7 +101,7 @@ class ExpenseCalculator {
     List<ExpenseModel> expenses,
     int year,
     int month,
-    ExpenseCurrency targetCurrency, 
+    ExpenseCurrency targetCurrency,
   ) {
     final Map<String, double> grouped = {};
 
@@ -97,7 +112,7 @@ class ExpenseCalculator {
             "${date.day.toString().padLeft(2, '0')}/"
             "${date.month.toString().padLeft(2, '0')}/"
             "${date.year}";
-            
+
         double convertedValue = expense.getValueIn(targetCurrency);
         grouped[key] = (grouped[key] ?? 0) + convertedValue;
       }
@@ -111,6 +126,25 @@ class ExpenseCalculator {
       });
 
     return {for (var k in sortedKeys) k: grouped[k]!};
+  }
+
+  // Raggruppa per categoria filtrando per anno specifico.
+  // Restituisce una mappa ExpenseCategory -> totale convertito nella valuta target.
+  static Map<ExpenseCategory, double> expensesByCategoryForYear(
+    List<ExpenseModel> expenses,
+    String year,
+    ExpenseCurrency targetCurrency,
+  ) {
+    final Map<ExpenseCategory, double> grouped = {};
+
+    for (var expense in expenses) {
+      if (expense.createdOn.year.toString() != year) continue;
+
+      final converted = expense.getValueIn(targetCurrency);
+      grouped[expense.category] = (grouped[expense.category] ?? 0) + converted;
+    }
+
+    return grouped;
   }
 
   // --- FILTRAGGIO SPECIFICO ---
@@ -135,7 +169,11 @@ class ExpenseCalculator {
   // Ordina la lista in-place. Se il criterio riguarda l'importo ("amount"),
   // è possibile passare [targetCurrency] per ordinare in base al valore reale convertito
   // (potere d'acquisto) invece che al semplice valore numerico.
-  static void sortInPlace(List<ExpenseModel> expenses, String criteria, {ExpenseCurrency? targetCurrency}) {
+  static void sortInPlace(
+    List<ExpenseModel> expenses,
+    String criteria, {
+    ExpenseCurrency? targetCurrency,
+  }) {
     switch (criteria) {
       case "date_desc":
         expenses.sort((a, b) => b.createdOn.compareTo(a.createdOn));
@@ -145,14 +183,22 @@ class ExpenseCalculator {
         break;
       case "amount_desc":
         if (targetCurrency != null) {
-          expenses.sort((a, b) => b.getValueIn(targetCurrency).compareTo(a.getValueIn(targetCurrency)));
+          expenses.sort(
+            (a, b) => b
+                .getValueIn(targetCurrency)
+                .compareTo(a.getValueIn(targetCurrency)),
+          );
         } else {
           expenses.sort((a, b) => b.value.compareTo(a.value));
         }
         break;
       case "amount_asc":
         if (targetCurrency != null) {
-          expenses.sort((a, b) => a.getValueIn(targetCurrency).compareTo(b.getValueIn(targetCurrency)));
+          expenses.sort(
+            (a, b) => a
+                .getValueIn(targetCurrency)
+                .compareTo(b.getValueIn(targetCurrency)),
+          );
         } else {
           expenses.sort((a, b) => a.value.compareTo(b.value));
         }

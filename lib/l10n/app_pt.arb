@@ -264,5 +264,7 @@
     "categoryEducation": "Educação",
     "categoryTravel": "Viagens",
     "categoryOther": "Outro",
-    "deleteAccountMessageConfirm": "Esta ação é irreversível e não pode ser desfeita."
+    "deleteAccountMessageConfirm": "Esta ação é irreversível e não pode ser desfeita.",
+    "monthlyTrend": "Tendência mensal",
+    "categoryBreakdown": "Despesas por categoria"
 }

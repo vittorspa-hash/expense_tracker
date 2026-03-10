@@ -66,6 +66,32 @@ enum ExpenseCategory {
     }
   }
 
+  // --- COLORE SEMANTICO associato alla categoria ---
+  // Source of truth centralizzata per la rappresentazione visiva della categoria.
+  // Usato in grafici, badge e qualsiasi widget che necessiti di un colore per categoria.
+  Color get color {
+    switch (this) {
+      case ExpenseCategory.food:
+        return const Color(0xFFFF6B6B);
+      case ExpenseCategory.transport:
+        return const Color(0xFF4ECDC4);
+      case ExpenseCategory.home:
+        return const Color(0xFF45B7D1);
+      case ExpenseCategory.health:
+        return const Color(0xFF06D6A0);
+      case ExpenseCategory.entertainment:
+        return const Color(0xFFFFBE0B);
+      case ExpenseCategory.shopping:
+        return const Color(0xFFFF9F1C);
+      case ExpenseCategory.education:
+        return const Color(0xFF7B2FBE);
+      case ExpenseCategory.travel:
+        return const Color(0xFFE76F51);
+      case ExpenseCategory.other:
+        return const Color(0xFF8D99AE);
+    }
+  }
+
   // --- SERIALIZZAZIONE: enum <-> String (per Firestore) ---
 
   // Converte la categoria in stringa leggibile per il salvataggio su DB.

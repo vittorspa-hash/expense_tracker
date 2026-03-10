@@ -1,4 +1,4 @@
-import 'package:expense_tracker/components/report/report_bar_chart.dart';
+import 'package:expense_tracker/components/report/report_charts_carousel.dart';
 import 'package:expense_tracker/components/report/report_empty_state.dart';
 import 'package:expense_tracker/components/report/report_period_list_item.dart';
 import 'package:expense_tracker/components/report/report_section_header.dart';
@@ -20,7 +20,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// Visualizza:
 /// 1. Un selettore per cambiare l'anno di riferimento.
 /// 2. Un grafico a barre con l'andamento mensile.
-/// 3. Una lista dettagliata dei mesi, navigabile verso il dettaglio mensile.
+/// 3. Un grafico a torta con la ripartizione per categoria.
+/// 4. Una lista dettagliata dei mesi, navigabile verso il dettaglio mensile.
 
 class YearsPage extends StatefulWidget {
   static const route = "/years";
@@ -33,7 +34,6 @@ class YearsPage extends StatefulWidget {
 
 class _YearsPageState extends State<YearsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- STATO LOCALE ---
   // Anno attualmente selezionato per il filtro.
   String? selectedYear;
@@ -74,11 +74,12 @@ class _YearsPageState extends State<YearsPage>
           // --- RECUPERO DATI (CONSUMER) ---
           // Ascolta ExpenseProvider per ottenere i dati aggregati.
           // Filtra le spese per anno e calcola i totali dinamici.
-          // 
+          //
           child: Consumer<ExpenseProvider>(
             builder: (context, expenseProvider, child) {
               // Recupera mappa grezza { "YYYY-MM": totale }
-              final Map<String, double> monthlyExpenses = expenseProvider.expensesByMonth;
+              final Map<String, double> monthlyExpenses =
+                  expenseProvider.expensesByMonth;
 
               // Estrae anni unici disponibili e li ordina
               final years =
@@ -94,14 +95,14 @@ class _YearsPageState extends State<YearsPage>
                   title: loc.noExpensesTitle,
                   subtitle: loc.noExpensesSubtitle,
                   icon: Icons.analytics_outlined,
-                  useCircleBackground: false, 
+                  useCircleBackground: false,
                 );
               }
 
               // Inizializzazione anno corrente (ultimo disponibile di default)
               selectedYear ??= years.last;
 
-              // Generazione dati per il grafico (lista di 12 double)
+              // Generazione dati per il grafico a barre (lista di 12 double)
               final List<double> values = List.generate(12, (i) {
                 final monthKey =
                     "$selectedYear-${(i + 1).toString().padLeft(2, '0')}";
@@ -109,6 +110,11 @@ class _YearsPageState extends State<YearsPage>
               });
 
               final double totalYear = values.reduce((a, b) => a + b);
+
+              // Recupera aggregazione per categoria dell'anno selezionato <- aggiunto
+              final categoryData = expenseProvider.expensesByCategoryForYear(
+                selectedYear!,
+              );
 
               return buildWithFadeAnimation(
                 SingleChildScrollView(
@@ -119,7 +125,7 @@ class _YearsPageState extends State<YearsPage>
 
                       // --- SELETTORE ANNO ---
                       // Apre un dialog per scegliere l'anno tra quelli disponibili.
-                      // 
+                      //
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
                         child: InkWell(
@@ -197,8 +203,8 @@ class _YearsPageState extends State<YearsPage>
                         ),
                       ),
 
-                      // --- RIEPILOGO E GRAFICO ---
-                      // Card con totale annuo e grafico a barre mensile.
+                      // --- TOTALE ANNUO ---
+                      // Card con totale annuo.
                       //
                       ReportTotalCard(
                         label: loc.totalYearLabel(selectedYear!),
@@ -206,7 +212,14 @@ class _YearsPageState extends State<YearsPage>
                         icon: Icons.bar_chart_rounded,
                       ),
 
-                      ReportBarChart(values: values, monthNames: ReportDateUtils.getMonthNames(context)),
+                      // --- CAROUSEL GRAFICI ---
+                      // Raggruppa bar chart e pie chart in un PageView navigabile con swipe.
+                      //
+                      ReportChartsCarousel(
+                        barValues: values,
+                        monthNames: ReportDateUtils.getMonthNames(context),
+                        categoryData: categoryData,
+                      ),
 
                       SizedBox(height: 12.h),
 
@@ -217,7 +230,7 @@ class _YearsPageState extends State<YearsPage>
 
                       // --- LISTA MESI ---
                       // Genera 12 tile, una per mese. Cliccando si naviga al dettaglio (MonthsPage).
-                      // 
+                      //
                       Column(
                         key: monthListKey,
                         children: List.generate(12, (index) {
@@ -225,7 +238,8 @@ class _YearsPageState extends State<YearsPage>
                           final total = values[index];
 
                           // Uso di ReportDateUtils per il nome del mese corrente
-                          final currentMonthName = ReportDateUtils.getMonthNames(context)[index];
+                          final currentMonthName =
+                              ReportDateUtils.getMonthNames(context)[index];
 
                           return Padding(
                             padding: EdgeInsets.only(

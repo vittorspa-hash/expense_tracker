@@ -264,5 +264,7 @@
     "categoryEducation": "Education",
     "categoryTravel": "Travel", 
     "categoryOther": "Other",
-    "deleteAccountMessageConfirm": "This action is irreversible and cannot be undone."
+    "deleteAccountMessageConfirm": "This action is irreversible and cannot be undone.",
+    "monthlyTrend": "Monthly trend",
+    "categoryBreakdown": "Expenses by category"
 }

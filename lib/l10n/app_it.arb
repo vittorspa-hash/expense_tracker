@@ -273,5 +273,7 @@
     "categoryEducation": "Educazione",
     "categoryTravel": "Viaggi",
     "categoryOther": "Altro",
-    "deleteAccountMessageConfirm": "Questa azione è irreversibile e non può essere annullata."
+    "deleteAccountMessageConfirm": "Questa azione è irreversibile e non può essere annullata.",
+    "monthlyTrend": "Andamento mensile",
+    "categoryBreakdown": "Spese per categoria"
 }

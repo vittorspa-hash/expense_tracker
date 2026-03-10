@@ -264,5 +264,7 @@
     "categoryEducation": "Bildung",
     "categoryTravel": "Reisen", 
     "categoryOther": "Andere",
-    "deleteAccountMessageConfirm": "Diese Aktion ist unwiderruflich und kann nicht rückgängig gemacht werden."
+    "deleteAccountMessageConfirm": "Diese Aktion ist unwiderruflich und kann nicht rückgängig gemacht werden.",
+    "monthlyTrend": "Monatstrend",
+    "categoryBreakdown": "Ausgaben nach Kategorie"
 }

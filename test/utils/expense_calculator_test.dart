@@ -3,6 +3,7 @@
 // Testa calcoli temporali (oggi, settimana, mese, anno), aggregazioni per grafici,
 // ordinamento, e gestione conversioni multi-valuta.
 
+import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/utils/expense_calculator.dart';
@@ -18,12 +19,7 @@ void main() {
     setUp(() {
       now = DateTime.now();
 
-      testRates = {
-        'EUR': 1.0,
-        'USD': 1.10,
-        'GBP': 0.85,
-        'JPY': 130.0,
-      };
+      testRates = {'EUR': 1.0, 'USD': 1.10, 'GBP': 0.85, 'JPY': 130.0};
 
       // --- DATE ROBUSTE ---
       // week-1: deve stare nella settimana corrente ma NON oggi.
@@ -40,8 +36,10 @@ void main() {
       // usiamo "oggi ma 1 ora fa" come spesa settimanale non-today.
       // Altrimenti usiamo "ieri".
       final DateTime weekDate = daysFromMonday == 0
-          ? now.subtract(const Duration(hours: 1))   // lunedì: 1 ora fa (stesso giorno, ma diverso da "adesso")
-          : now.subtract(const Duration(days: 1));    // altri giorni: ieri
+          ? now.subtract(
+              const Duration(hours: 1),
+            ) // lunedì: 1 ora fa (stesso giorno, ma diverso da "adesso")
+          : now.subtract(const Duration(days: 1)); // altri giorni: ieri
 
       // month-1: deve stare nel mese corrente ma NON in questa settimana.
       // PROBLEMA NOTO: totalExpenseMonth usa .isAfter(startOfMonth) — stretto.
@@ -51,8 +49,20 @@ void main() {
       // Inoltre: se siamo nei primi 7 giorni del mese il 1° potrebbe cadere
       // nella settimana corrente → il lower bound del test scende a ≥180.
       final DateTime monthDate = now.day > 7
-          ? DateTime(now.year, now.month, 1, 0, 1)   // 1° del mese ore 00:01 (fuori settimana, dentro mese)
-          : DateTime(now.year, now.month, 1, 0, 1);  // stesso, ma in questo caso potrebbe essere in settimana
+          ? DateTime(
+              now.year,
+              now.month,
+              1,
+              0,
+              1,
+            ) // 1° del mese ore 00:01 (fuori settimana, dentro mese)
+          : DateTime(
+              now.year,
+              now.month,
+              1,
+              0,
+              1,
+            ); // stesso, ma in questo caso potrebbe essere in settimana
 
       // Dataset di test con spese distribuite temporalmente
       testExpenses = [
@@ -130,7 +140,10 @@ void main() {
       // Dati già preparati nel setUp()
 
       // ACT
-      final total = ExpenseCalculator.totalExpenseToday(testExpenses, ExpenseCurrency.euro);
+      final total = ExpenseCalculator.totalExpenseToday(
+        testExpenses,
+        ExpenseCurrency.euro,
+      );
 
       // ASSERT
       // Solo today-1 (50) + today-2 (30) = 80
@@ -145,7 +158,10 @@ void main() {
       // Dati già preparati nel setUp()
 
       // ACT
-      final total = ExpenseCalculator.totalExpenseWeek(testExpenses, ExpenseCurrency.euro);
+      final total = ExpenseCalculator.totalExpenseWeek(
+        testExpenses,
+        ExpenseCurrency.euro,
+      );
 
       // ASSERT
       // Oggi (80) + week-1 (100) = almeno 180.
@@ -161,7 +177,10 @@ void main() {
       // Dati già preparati nel setUp()
 
       // ACT
-      final total = ExpenseCalculator.totalExpenseMonth(testExpenses, ExpenseCurrency.euro);
+      final total = ExpenseCalculator.totalExpenseMonth(
+        testExpenses,
+        ExpenseCurrency.euro,
+      );
 
       // ASSERT
       // totalExpenseMonth usa .isAfter(startOfMonth) — stretto, non >=.
@@ -185,7 +204,10 @@ void main() {
       // Dati già preparati nel setUp()
 
       // ACT
-      final total = ExpenseCalculator.totalExpenseYear(testExpenses, ExpenseCurrency.euro);
+      final total = ExpenseCalculator.totalExpenseYear(
+        testExpenses,
+        ExpenseCurrency.euro,
+      );
 
       // ASSERT
       // Include tutte le spese dell'anno corrente, esclude anno passato (1000€).
@@ -237,7 +259,10 @@ void main() {
     test('Should return 0 for empty expenses list', () {
       // ARRANGE + ACT + ASSERT
       // Lista vuota: nessun calcolo da effettuare, risultato atteso = 0
-      final total = ExpenseCalculator.totalExpenseToday([], ExpenseCurrency.euro);
+      final total = ExpenseCalculator.totalExpenseToday(
+        [],
+        ExpenseCurrency.euro,
+      );
       expect(total, 0.0);
     });
 
@@ -277,7 +302,10 @@ void main() {
       ];
 
       // ACT
-      final byMonth = ExpenseCalculator.expensesByMonth(expenses, ExpenseCurrency.euro);
+      final byMonth = ExpenseCalculator.expensesByMonth(
+        expenses,
+        ExpenseCurrency.euro,
+      );
 
       // ASSERT
       expect(byMonth.containsKey('2024-01'), true);
@@ -322,7 +350,10 @@ void main() {
       ];
 
       // ACT
-      final byMonth = ExpenseCalculator.expensesByMonth(expenses, ExpenseCurrency.euro);
+      final byMonth = ExpenseCalculator.expensesByMonth(
+        expenses,
+        ExpenseCurrency.euro,
+      );
       final keys = byMonth.keys.toList();
 
       // ASSERT
@@ -376,7 +407,12 @@ void main() {
       ];
 
       // ACT
-      final byDay = ExpenseCalculator.expensesByDay(expenses, 2024, 1, ExpenseCurrency.euro);
+      final byDay = ExpenseCalculator.expensesByDay(
+        expenses,
+        2024,
+        1,
+        ExpenseCurrency.euro,
+      );
 
       // ASSERT
       expect(byDay.containsKey('15/01/2024'), true);
@@ -422,7 +458,12 @@ void main() {
       ];
 
       // ACT
-      final dayExpenses = ExpenseCalculator.expensesOfDay(expenses, 2024, 1, 15);
+      final dayExpenses = ExpenseCalculator.expensesOfDay(
+        expenses,
+        2024,
+        1,
+        15,
+      );
 
       // ASSERT
       expect(dayExpenses.length, 2);
@@ -588,7 +629,11 @@ void main() {
       ];
 
       // ACT
-      ExpenseCalculator.sortInPlace(expenses, 'amount_desc', targetCurrency: ExpenseCurrency.euro);
+      ExpenseCalculator.sortInPlace(
+        expenses,
+        'amount_desc',
+        targetCurrency: ExpenseCurrency.euro,
+      );
 
       // ASSERT
       expect(expenses[0].uuid, '3'); // 220 USD = 200 EUR (largest)
@@ -634,8 +679,16 @@ void main() {
     test('Should return empty map when aggregating empty list', () {
       // ARRANGE + ACT + ASSERT
       // Lista vuota: nessuna aggregazione possibile, mappe attese vuote
-      final byMonth = ExpenseCalculator.expensesByMonth([], ExpenseCurrency.euro);
-      final byDay = ExpenseCalculator.expensesByDay([], 2024, 1, ExpenseCurrency.euro);
+      final byMonth = ExpenseCalculator.expensesByMonth(
+        [],
+        ExpenseCurrency.euro,
+      );
+      final byDay = ExpenseCalculator.expensesByDay(
+        [],
+        2024,
+        1,
+        ExpenseCurrency.euro,
+      );
 
       expect(byMonth, isEmpty);
       expect(byDay, isEmpty);
@@ -659,7 +712,12 @@ void main() {
       ];
 
       // ACT
-      final dayExpenses = ExpenseCalculator.expensesOfDay(expenses, 2024, 1, 15);
+      final dayExpenses = ExpenseCalculator.expensesOfDay(
+        expenses,
+        2024,
+        1,
+        15,
+      );
 
       // ASSERT
       expect(dayExpenses, isEmpty);
@@ -668,45 +726,296 @@ void main() {
     // =================================================================
     // TEST 18: Sort by Amount Ascending with Currency Conversion
     // =================================================================
-    test('Should sort by converted amount in ascending order when target currency provided', () {
+    test(
+      'Should sort by converted amount in ascending order when target currency provided',
+      () {
+        // ARRANGE
+        final expenses = [
+          ExpenseModel(
+            uuid: '1',
+            value: 220.0, // 220 USD = 200 EUR (largest)
+            description: 'USD expense',
+            createdOn: DateTime.now(),
+            userId: 'user-123',
+            currency: ExpenseCurrency.usd,
+            exchangeRates: testRates,
+          ),
+          ExpenseModel(
+            uuid: '2',
+            value: 85.0, // 85 GBP = 100 EUR (medium)
+            description: 'GBP expense',
+            createdOn: DateTime.now(),
+            userId: 'user-123',
+            currency: ExpenseCurrency.gbp,
+            exchangeRates: testRates,
+          ),
+          ExpenseModel(
+            uuid: '3',
+            value: 50.0, // 50 EUR (smallest)
+            description: 'EUR expense',
+            createdOn: DateTime.now(),
+            userId: 'user-123',
+            currency: ExpenseCurrency.euro,
+            exchangeRates: testRates,
+          ),
+        ];
+
+        // ACT
+        ExpenseCalculator.sortInPlace(
+          expenses,
+          'amount_asc',
+          targetCurrency: ExpenseCurrency.euro,
+        );
+
+        // ASSERT
+        expect(expenses[0].uuid, '3'); // 50 EUR (smallest)
+        expect(expenses[1].uuid, '2'); // 85 GBP = 100 EUR (medium)
+        expect(expenses[2].uuid, '1'); // 220 USD = 200 EUR (largest)
+      },
+    );
+
+    // =================================================================
+    // TEST 19: Expenses by Category For Year - Aggregazione base
+    // =================================================================
+    test('Should aggregate expenses by category for a specific year', () {
       // ARRANGE
       final expenses = [
         ExpenseModel(
           uuid: '1',
-          value: 220.0, // 220 USD = 200 EUR (largest)
-          description: 'USD expense',
-          createdOn: DateTime.now(),
-          userId: 'user-123',
-          currency: ExpenseCurrency.usd,
-          exchangeRates: testRates,
-        ),
-        ExpenseModel(
-          uuid: '2',
-          value: 85.0, // 85 GBP = 100 EUR (medium)
-          description: 'GBP expense',
-          createdOn: DateTime.now(),
-          userId: 'user-123',
-          currency: ExpenseCurrency.gbp,
-          exchangeRates: testRates,
-        ),
-        ExpenseModel(
-          uuid: '3',
-          value: 50.0, // 50 EUR (smallest)
-          description: 'EUR expense',
-          createdOn: DateTime.now(),
+          value: 100.0,
+          description: 'Food Jan',
+          createdOn: DateTime(2024, 1, 15),
           userId: 'user-123',
           currency: ExpenseCurrency.euro,
           exchangeRates: testRates,
+          category: ExpenseCategory.food,
+        ),
+        ExpenseModel(
+          uuid: '2',
+          value: 50.0,
+          description: 'Food Mar',
+          createdOn: DateTime(2024, 3, 10),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.food,
+        ),
+        ExpenseModel(
+          uuid: '3',
+          value: 200.0,
+          description: 'Transport',
+          createdOn: DateTime(2024, 2, 5),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.transport,
         ),
       ];
 
       // ACT
-      ExpenseCalculator.sortInPlace(expenses, 'amount_asc', targetCurrency: ExpenseCurrency.euro);
+      final byCategory = ExpenseCalculator.expensesByCategoryForYear(
+        expenses,
+        '2024',
+        ExpenseCurrency.euro,
+      );
 
       // ASSERT
-      expect(expenses[0].uuid, '3'); // 50 EUR (smallest)
-      expect(expenses[1].uuid, '2'); // 85 GBP = 100 EUR (medium)
-      expect(expenses[2].uuid, '1'); // 220 USD = 200 EUR (largest)
+      expect(byCategory.containsKey(ExpenseCategory.food), true);
+      expect(byCategory.containsKey(ExpenseCategory.transport), true);
+      expect(byCategory[ExpenseCategory.food], 150.0); // 100 + 50
+      expect(byCategory[ExpenseCategory.transport], 200.0);
+    });
+
+    // =================================================================
+    // TEST 20: Expenses by Category For Year - Filtro anno corretto
+    // =================================================================
+    test('Should exclude expenses from other years', () {
+      // ARRANGE
+      final expenses = [
+        ExpenseModel(
+          uuid: '1',
+          value: 100.0,
+          description: 'Food 2024',
+          createdOn: DateTime(2024, 6, 1),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.food,
+        ),
+        ExpenseModel(
+          uuid: '2',
+          value: 999.0,
+          description: 'Food 2023 - deve essere esclusa',
+          createdOn: DateTime(2023, 12, 31),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.food,
+        ),
+        ExpenseModel(
+          uuid: '3',
+          value: 999.0,
+          description: 'Food 2025 - deve essere esclusa',
+          createdOn: DateTime(2025, 1, 1),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.food,
+        ),
+      ];
+
+      // ACT
+      final byCategory = ExpenseCalculator.expensesByCategoryForYear(
+        expenses,
+        '2024',
+        ExpenseCurrency.euro,
+      );
+
+      // ASSERT
+      // Solo la spesa del 2024 deve essere inclusa
+      expect(byCategory[ExpenseCategory.food], 100.0);
+    });
+
+    // =================================================================
+    // TEST 21: Expenses by Category For Year - Multi-currency conversion
+    // =================================================================
+    test(
+      'Should convert expenses to target currency before aggregating by category',
+      () {
+        // ARRANGE
+        final expenses = [
+          ExpenseModel(
+            uuid: '1',
+            value: 100.0,
+            description: 'EUR food',
+            createdOn: DateTime(2024, 1, 15),
+            userId: 'user-123',
+            currency: ExpenseCurrency.euro,
+            exchangeRates: testRates,
+            category: ExpenseCategory.food,
+          ),
+          ExpenseModel(
+            uuid: '2',
+            value: 110.0, // 110 USD = 100 EUR
+            description: 'USD food',
+            createdOn: DateTime(2024, 2, 10),
+            userId: 'user-123',
+            currency: ExpenseCurrency.usd,
+            exchangeRates: testRates,
+            category: ExpenseCategory.food,
+          ),
+        ];
+
+        // ACT
+        final byCategory = ExpenseCalculator.expensesByCategoryForYear(
+          expenses,
+          '2024',
+          ExpenseCurrency.euro,
+        );
+
+        // ASSERT
+        // 100 EUR + (110 USD → 100 EUR) = 200 EUR
+        expect(byCategory[ExpenseCategory.food], closeTo(200.0, 0.01));
+      },
+    );
+
+    // =================================================================
+    // TEST 22: Expenses by Category For Year - Lista vuota
+    // =================================================================
+    test('Should return empty map when expenses list is empty', () {
+      // ARRANGE + ACT
+      final byCategory = ExpenseCalculator.expensesByCategoryForYear(
+        [],
+        '2024',
+        ExpenseCurrency.euro,
+      );
+
+      // ASSERT
+      expect(byCategory, isEmpty);
+    });
+
+    // =================================================================
+    // TEST 23: Expenses by Category For Year - Anno senza spese
+    // =================================================================
+    test(
+      'Should return empty map when no expenses match the requested year',
+      () {
+        // ARRANGE
+        final expenses = [
+          ExpenseModel(
+            uuid: '1',
+            value: 100.0,
+            description: 'Food 2023',
+            createdOn: DateTime(2023, 6, 1),
+            userId: 'user-123',
+            currency: ExpenseCurrency.euro,
+            exchangeRates: testRates,
+            category: ExpenseCategory.food,
+          ),
+        ];
+
+        // ACT
+        final byCategory = ExpenseCalculator.expensesByCategoryForYear(
+          expenses,
+          '2024',
+          ExpenseCurrency.euro,
+        );
+
+        // ASSERT
+        expect(byCategory, isEmpty);
+      },
+    );
+
+    // =================================================================
+    // TEST 24: Expenses by Category For Year - Tutte le categorie distinte
+    // =================================================================
+    test('Should produce one entry per distinct category', () {
+      // ARRANGE
+      final expenses = [
+        ExpenseModel(
+          uuid: '1',
+          value: 100.0,
+          description: 'Food',
+          createdOn: DateTime(2024, 1, 1),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.food,
+        ),
+        ExpenseModel(
+          uuid: '2',
+          value: 200.0,
+          description: 'Transport',
+          createdOn: DateTime(2024, 2, 1),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.transport,
+        ),
+        ExpenseModel(
+          uuid: '3',
+          value: 300.0,
+          description: 'Health',
+          createdOn: DateTime(2024, 3, 1),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+          category: ExpenseCategory.health,
+        ),
+      ];
+
+      // ACT
+      final byCategory = ExpenseCalculator.expensesByCategoryForYear(
+        expenses,
+        '2024',
+        ExpenseCurrency.euro,
+      );
+
+      // ASSERT
+      expect(byCategory.length, 3);
+      expect(byCategory[ExpenseCategory.food], 100.0);
+      expect(byCategory[ExpenseCategory.transport], 200.0);
+      expect(byCategory[ExpenseCategory.health], 300.0);
     });
   });
 }

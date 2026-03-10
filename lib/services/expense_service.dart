@@ -18,7 +18,7 @@ import 'package:uuid/uuid.dart';
 class ExpenseService {
   // --- STATO E DIPENDENZE ---
   // Iniezione delle dipendenze per accesso ai dati, autenticazione e gestione valute.
-  
+
   final FirebaseRepository _firebaseRepository;
   final FirebaseAuth _firebaseAuth;
   final CurrencyService _currencyService;
@@ -119,7 +119,8 @@ class ExpenseService {
       } on CurrencyFetchException {
         debugPrint("Repair failed. Still offline.");
         // Mantiene il fallback esistente se il repair fallisce
-        if (exchangeRates.isEmpty || !exchangeRates.containsKey(currency.code)) {
+        if (exchangeRates.isEmpty ||
+            !exchangeRates.containsKey(currency.code)) {
           exchangeRates = {currency.code: 1.0};
         }
         warning = 'offline_currency_edit';
@@ -324,6 +325,20 @@ class ExpenseService {
     int day,
   ) {
     return ExpenseCalculator.expensesOfDay(expenses, year, month, day);
+  }
+
+  // Aggregazione per grafico a torta annuale per categoria.
+  // Restituisce una mappa categoria -> totale spese convertite nella valuta target.
+  Map<ExpenseCategory, double> getExpensesByCategoryForYear(
+    List<ExpenseModel> expenses,
+    String year,
+    ExpenseCurrency targetCurrency,
+  ) {
+    return ExpenseCalculator.expensesByCategoryForYear(
+      expenses,
+      year,
+      targetCurrency,
+    );
   }
 }
 

@@ -367,4 +367,12 @@ class ExpenseProvider extends ChangeNotifier {
   // Restituisce tutte le spese di un giorno specifico.
   List<ExpenseModel> expensesOfDay(int year, int month, int day) =>
       _expenseService.getExpensesOfDay(_expenses, year, month, day);
+
+  // Restituisce le spese aggregate per categoria per un anno specifico.
+  Map<ExpenseCategory, double> expensesByCategoryForYear(String year) =>
+      _expenseService.getExpensesByCategoryForYear(
+        _expenses,
+        year,
+        _appCurrency,
+      );
 }
