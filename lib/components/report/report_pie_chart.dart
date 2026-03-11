@@ -3,7 +3,7 @@
 // delle spese per categoria in un anno. Segue lo stesso pattern di ReportBarChart:
 // Consumer<CurrencyProvider> per valuta, stile card coerente con il resto dei report.
 
-import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/config/theme/app_colors.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';

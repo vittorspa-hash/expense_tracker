@@ -4,7 +4,7 @@ import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/config/theme/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';

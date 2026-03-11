@@ -3,7 +3,7 @@ import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/pages/years_page.dart';
-import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/config/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';

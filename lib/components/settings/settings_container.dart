@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/config/theme/app_colors.dart';
 
 /// FILE: components/settings/settings_container.dart
 /// DESCRIZIONE: Wrapper riutilizzabile per le sezioni delle impostazioni.

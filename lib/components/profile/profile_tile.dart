@@ -1,7 +1,7 @@
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/config/theme/app_colors.dart';
 
 /// FILE: profile_tile.dart
 /// DESCRIZIONE: Componente UI riutilizzabile per visualizzare un singolo dato del profilo

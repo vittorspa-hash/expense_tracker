@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/config/theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
