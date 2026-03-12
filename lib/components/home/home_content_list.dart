@@ -23,6 +23,7 @@ class HomeContentList extends StatelessWidget {
   final String sortCriteria;
   final ValueChanged<String> onSortChanged;
   final Future<void> Function() onRefreshExpenses;
+  final VoidCallback onReturn;
 
   const HomeContentList({
     super.key,
@@ -32,6 +33,7 @@ class HomeContentList extends StatelessWidget {
     required this.sortCriteria,
     required this.onSortChanged,
     required this.onRefreshExpenses,
+    required this.onReturn,
   });
 
   @override
@@ -293,6 +295,7 @@ class HomeContentList extends StatelessWidget {
                             onLongPress: () => multiSelect.onLongPress(expense),
                             onSelectToggle: () =>
                                 multiSelect.onToggleSelect(expense),
+                            onReturn: onReturn,
                           ),
                         );
                       },

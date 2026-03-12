@@ -17,6 +17,7 @@ import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/single_child_widget.dart';
 
 /// FILE: config/di/app_providers.dart
 /// DESCRIZIONE: Gestione centralizzata dell'inizializzazione e dell'iniezione dei Provider.
@@ -86,7 +87,7 @@ Future<InitializedProviders> initProviders() async {
 // Assembla la lista completa dei ChangeNotifierProvider da passare al MultiProvider in main.dart.
 // I Provider pre-inizializzati vengono iniettati tramite .value() per preservare le istanze
 // già configurate. I Provider lazy vengono invece creati direttamente tramite GetIt.
-List<ChangeNotifierProvider> buildProviders(InitializedProviders initialized) {
+List<SingleChildWidget> buildProviders(InitializedProviders initialized) {
   final getIt = GetIt.instance;
 
   return [

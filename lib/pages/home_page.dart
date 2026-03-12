@@ -119,7 +119,9 @@ class _HomePageState extends State<HomePage>
           appBar: isSelectionMode
               ? CustomAppBar(
                   appBarBackgroundColor: AppColors.primary,
-                  appBarTextColor: isDark ? AppColors.textDark : AppColors.textLight,
+                  appBarTextColor: isDark
+                      ? AppColors.textDark
+                      : AppColors.textLight,
                   title: "",
                   isDark: isDark,
                   isSelectionMode: true,
@@ -141,6 +143,7 @@ class _HomePageState extends State<HomePage>
                     fadeAnimation: fadeAnimation,
                     isDark: isDark,
                     onTapProfile: () => _showProfileSheet(context),
+                    onReturn: _clearSearch,
                   ),
 
                   SizedBox(height: 6.h),
@@ -157,6 +160,7 @@ class _HomePageState extends State<HomePage>
                         });
                       },
                       onRefreshExpenses: _refreshExpenses,
+                      onReturn: _clearSearch,
                     ),
                   ),
                 ],
@@ -190,8 +194,12 @@ class _HomePageState extends State<HomePage>
                     heroTag: null,
                     elevation: 0,
                     backgroundColor: Colors.transparent,
-                    onPressed: () =>
-                        Navigator.pushNamed(context, NewExpensePage.route),
+                    onPressed: () async {
+                      await Navigator.pushNamed(context, NewExpensePage.route);
+                      if (mounted) {
+                        _clearSearch();
+                      }
+                    },
                     label: Text(
                       loc.newExpense,
                       style: TextStyle(
@@ -213,6 +221,14 @@ class _HomePageState extends State<HomePage>
   }
 
   // --- HELPER INTERNI ---
+
+  // Pulisce il campo di ricerca e il relativo stato.
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() {
+      _searchQuery = "";
+    });
+  }
 
   // Mostra feedback visivo in caso di errori critici (es. fallimento eliminazione).
   void _showErrorSnackBar(BuildContext context, String message) {
@@ -239,6 +255,8 @@ class _HomePageState extends State<HomePage>
 
     multiSelect.deselectAll();
 
+    _clearSearch();
+
     await expenseProvider.initialise();
 
     if (_sortCriteria.isNotEmpty) {
@@ -249,5 +267,6 @@ class _HomePageState extends State<HomePage>
   // Apre il bottom sheet per la gestione del profilo utente.
   Future<void> _showProfileSheet(BuildContext context) async {
     await DialogUtils.showProfileSheet(context);
+    _clearSearch();
   }
 }

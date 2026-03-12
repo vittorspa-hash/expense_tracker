@@ -291,6 +291,7 @@ class _DaysPageState extends State<DaysPage>
                       isSelected: isSelected,
                       onLongPress: () => multiSelect.onLongPress(expense),
                       onSelectToggle: () => multiSelect.onToggleSelect(expense),
+                      onReturn: () {}
                     ),
                   );
                 },

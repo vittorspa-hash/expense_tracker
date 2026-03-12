@@ -18,12 +18,14 @@ class HomeHeader extends StatelessWidget {
   final Animation<double> fadeAnimation;
   final bool isDark;
   final VoidCallback onTapProfile;
+  final VoidCallback onReturn;
 
   const HomeHeader({
     super.key,
     required this.fadeAnimation,
     required this.isDark,
     required this.onTapProfile,
+    required this.onReturn,
   });
 
   @override
@@ -65,8 +67,10 @@ class HomeHeader extends StatelessWidget {
                       children: [
                         // Pulsante Navigazione Anni
                         GestureDetector(
-                          onTap: () =>
-                              Navigator.pushNamed(context, YearsPage.route),
+                          onTap: () async {
+                            await Navigator.pushNamed(context, YearsPage.route);
+                            onReturn();
+                          },
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 16.w,

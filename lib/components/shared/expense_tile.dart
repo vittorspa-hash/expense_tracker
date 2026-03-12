@@ -21,6 +21,7 @@ class ExpenseTile extends StatefulWidget {
   final bool isSelected;
   final VoidCallback? onLongPress;
   final VoidCallback? onSelectToggle;
+  final VoidCallback onReturn;
 
   const ExpenseTile(
     this.expenseModel, {
@@ -29,6 +30,7 @@ class ExpenseTile extends StatefulWidget {
     this.isSelected = false,
     this.onLongPress,
     this.onSelectToggle,
+    required this.onReturn,
   });
 
   @override
@@ -98,16 +100,17 @@ class _ExpenseTileState extends State<ExpenseTile> {
           onTapDown: (_) => setState(() => _isPressed = true),
           onTapUp: (_) => setState(() => _isPressed = false),
           onTapCancel: () => setState(() => _isPressed = false),
-          onTap: () {
+          onTap: () async {
             setState(() => _isPressed = false);
             if (widget.isSelectionMode) {
               widget.onSelectToggle?.call();
             } else {
-              Navigator.pushNamed(
+              await Navigator.pushNamed(
                 context,
                 EditExpensePage.route,
                 arguments: widget.expenseModel,
               );
+              widget.onReturn();
             }
           },
 
