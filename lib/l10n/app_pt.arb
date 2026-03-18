@@ -266,5 +266,9 @@
     "categoryOther": "Outro",
     "deleteAccountMessageConfirm": "Esta ação é irreversível e não pode ser desfeita.",
     "monthlyTrend": "Tendência mensal",
-    "categoryBreakdown": "Despesas por categoria"
+    "categoryBreakdown": "Despesas por categoria",
+    "emptyExpensesTitle": "Nenhuma despesa registrada",
+    "emptyExpensesSubtitle": "As despesas que adicionar irão aparecer aqui. Adicione uma com o botão abaixo!",
+    "emptySearchTitle": "Nenhum resultado",
+    "emptySearchSubtitle": "Nenhuma despesa corresponde à sua pesquisa"
 }

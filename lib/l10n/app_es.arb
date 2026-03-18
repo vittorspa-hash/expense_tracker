@@ -266,5 +266,9 @@
     "categoryOther": "Otro",
     "deleteAccountMessageConfirm": "Esta acción es irreversible y no se puede deshacer.",
     "monthlyTrend": "Tendencia mensual",    
-    "categoryBreakdown": "Gastos por categoría"
+    "categoryBreakdown": "Gastos por categoría",
+    "emptyExpensesTitle": "No hay gastos registrados",
+    "emptyExpensesSubtitle": "Aquí aparecerán tus gastos. Agrega uno con el botón de abajo!",
+    "emptySearchTitle": "Sin resultados",
+    "emptySearchSubtitle": "No hay gastos que coincidan con tu búsqueda"
 }

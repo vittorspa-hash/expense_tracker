@@ -203,104 +203,157 @@ class HomeContentList extends StatelessWidget {
                     ),
                   ),
 
-                  // --- LISTA SPESE ---
-                  // Genera la lista degli elementi filtrati. Ogni elemento è avvolto
-                  // in un Dismissible per permettere l'eliminazione rapida.
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 8.h,
-                    ),
-                    sliver: SliverList.separated(
-                      itemCount: filteredExpenses.length,
-                      separatorBuilder: (_, _) => SizedBox(height: 4.h),
-
-                      itemBuilder: (context, index) {
-                        final expense = filteredExpenses[index];
-                        final isSelected = multiSelect.isSelected(expense.uuid);
-
-                        return Dismissible(
-                          key: Key(expense.uuid),
-                          direction: isSelectionMode
-                              ? DismissDirection.none
-                              : DismissDirection.endToStart,
-
-                          // --- LOGICA DISMISS ---
-                          // Gestisce il flusso di eliminazione: Conferma UI -> Chiamata Provider ->
-                          // Check Errori -> Feedback Visivo. Blocca l'animazione se c'è errore.
-                          confirmDismiss: (_) async {
-                            if (isSelectionMode) return false;
-
-                            // 1. Dialogo di conferma
-                            final confirm = await DialogUtils.showConfirmDialog(
-                              context,
-                              title: loc.deleteDialogTitleSingle,
-                              content: loc.deleteConfirmMessageSwipe,
-                              confirmText: loc.delete,
-                              cancelText: loc.cancel,
-                            );
-
-                            if (confirm != true) return false;
-
-                            // 2. Operazione asincrona
-                            await expenseProvider.deleteExpenses([expense]);
-
-                            // 3. Verifica errori
-                            if (expenseProvider.errorMessage != null) {
-                              return false;
-                            }
-
-                            // 4. Feedback successo (Snackbar)
-                            if (context.mounted) {
-                              SnackbarUtils.show(
-                                context: context,
-                                title: loc.deletedTitleSingle,
-                                message: loc.deleteSuccessMessageSwipe,
-                                deletedItem: expense,
-                                onDelete: (_) {},
-                                onRestore: (exp) =>
-                                    expenseProvider.restoreExpenses([exp], loc),
-                              );
-                            }
-
-                            return true;
-                          },
-
-                          background: Container(
-                            margin: EdgeInsets.symmetric(vertical: 4.h),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.delete.withValues(alpha: 0.8),
-                                  AppColors.delete,
-                                ],
+                  // --- LISTA SPESE / STATO VUOTO ---
+                  // Se la lista filtrata è vuota, mostra uno stato contestuale:
+                  // - nessuna spesa registrata (prima apertura o lista vuota)
+                  // - nessun risultato per la ricerca corrente
+                  if (filteredExpenses.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Center(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 40.w),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                searchQuery.isNotEmpty
+                                    ? Icons.search_off_rounded
+                                    : Icons.receipt_long_outlined,
+                                size: 56.sp,
+                                color: isDark
+                                    ? AppColors.greyDark
+                                    : AppColors.greyLight,
                               ),
-                              borderRadius: BorderRadius.circular(16.r),
-                            ),
-                            alignment: Alignment.centerRight,
-                            padding: EdgeInsets.symmetric(horizontal: 24.w),
-                            child: Icon(
-                              Icons.delete_rounded,
-                              color: AppColors.textLight,
-                              size: 28.sp,
-                            ),
+                              SizedBox(height: 16.h),
+                              Text(
+                                searchQuery.isNotEmpty
+                                    ? loc.emptySearchTitle
+                                    : loc.emptyExpensesTitle,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.greyDark
+                                      : AppColors.greyLight,
+                                ),
+                              ),
+                              SizedBox(height: 8.h),
+                              Text(
+                                searchQuery.isNotEmpty
+                                    ? loc.emptySearchSubtitle
+                                    : loc.emptyExpensesSubtitle,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: (isDark
+                                          ? AppColors.greyDark
+                                          : AppColors.greyLight)
+                                      .withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ],
                           ),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16.w,
+                        vertical: 8.h,
+                      ),
+                      sliver: SliverList.separated(
+                        itemCount: filteredExpenses.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 4.h),
 
-                          onDismissed: (_) {},
+                        itemBuilder: (context, index) {
+                          final expense = filteredExpenses[index];
+                          final isSelected = multiSelect.isSelected(expense.uuid);
 
-                          child: ExpenseTile(
-                            expense,
-                            isSelectionMode: isSelectionMode,
-                            isSelected: isSelected,
-                            onLongPress: () => multiSelect.onLongPress(expense),
-                            onSelectToggle: () =>
-                                multiSelect.onToggleSelect(expense),
-                            onReturn: onReturn,
-                          ),
-                        );
-                      },
+                          return Dismissible(
+                            key: Key(expense.uuid),
+                            direction: isSelectionMode
+                                ? DismissDirection.none
+                                : DismissDirection.endToStart,
+
+                            // --- LOGICA DISMISS ---
+                            // Gestisce il flusso di eliminazione: Conferma UI -> Chiamata Provider ->
+                            // Check Errori -> Feedback Visivo. Blocca l'animazione se c'è errore.
+                            confirmDismiss: (_) async {
+                              if (isSelectionMode) return false;
+
+                              // 1. Dialogo di conferma
+                              final confirm = await DialogUtils.showConfirmDialog(
+                                context,
+                                title: loc.deleteDialogTitleSingle,
+                                content: loc.deleteConfirmMessageSwipe,
+                                confirmText: loc.delete,
+                                cancelText: loc.cancel,
+                              );
+
+                              if (confirm != true) return false;
+
+                              // 2. Operazione asincrona
+                              await expenseProvider.deleteExpenses([expense]);
+
+                              // 3. Verifica errori
+                              if (expenseProvider.errorMessage != null) {
+                                return false;
+                              }
+
+                              // 4. Feedback successo (Snackbar)
+                              if (context.mounted) {
+                                SnackbarUtils.show(
+                                  context: context,
+                                  title: loc.deletedTitleSingle,
+                                  message: loc.deleteSuccessMessageSwipe,
+                                  deletedItem: expense,
+                                  onDelete: (_) {},
+                                  onRestore: (exp) =>
+                                      expenseProvider.restoreExpenses([exp], loc),
+                                );
+                              }
+
+                              return true;
+                            },
+
+                            background: Container(
+                              margin: EdgeInsets.symmetric(vertical: 4.h),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.delete.withValues(alpha: 0.8),
+                                    AppColors.delete,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(16.r),
+                              ),
+                              alignment: Alignment.centerRight,
+                              padding: EdgeInsets.symmetric(horizontal: 24.w),
+                              child: Icon(
+                                Icons.delete_rounded,
+                                color: AppColors.textLight,
+                                size: 28.sp,
+                              ),
+                            ),
+
+                            onDismissed: (_) {},
+
+                            child: ExpenseTile(
+                              expense,
+                              isSelectionMode: isSelectionMode,
+                              isSelected: isSelected,
+                              onLongPress: () => multiSelect.onLongPress(expense),
+                              onSelectToggle: () =>
+                                  multiSelect.onToggleSelect(expense),
+                              onReturn: onReturn,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

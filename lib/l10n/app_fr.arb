@@ -266,5 +266,9 @@
     "categoryOther": "Autre",
     "deleteAccountMessageConfirm": "Cette action est irréversible et ne peut pas être annulée.",
     "monthlyTrend": "Tendance mensuelle",
-    "categoryBreakdown": "Dépenses par catégorie"
+    "categoryBreakdown": "Dépenses par catégorie",
+    "emptyExpensesTitle": "Aucun dépense enregistrée",
+    "emptyExpensesSubtitle": "Vos dépenses apparaîtront ici. Ajoutez-en un avec le bouton ci-dessous !",
+    "emptySearchTitle": "Aucun résultat",
+    "emptySearchSubtitle": "Aucun dépense ne correspond à votre recherche"
 }
