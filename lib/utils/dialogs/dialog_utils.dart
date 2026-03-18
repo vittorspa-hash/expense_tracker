@@ -60,7 +60,7 @@ class DialogUtils {
     final effectiveConfirmText = confirmText ?? loc.confirm;
     final effectiveCancelText = cancelText ?? loc.cancel;
 
-    final isDestructive = DialogStyles.isDestructiveAction(effectiveConfirmText);
+    final isDestructive = DialogStyles.isDestructiveAction(context, effectiveConfirmText);
     final textColor = DialogStyles.textColor(context);
     final confirmColor = isDestructive ? AppColors.delete : textColor;
 
@@ -287,6 +287,7 @@ class DialogUtils {
       // Chiude il sheet del profilo per mostrare la conferma pulita
       Navigator.pop(context);
 
+      if (!context.mounted) return;
       final confirm = await showConfirmDialog(
         context,
         title: loc.logoutConfirmTitle,
@@ -323,19 +324,19 @@ class DialogUtils {
             title: ProfileHeader(user: user, localAvatar: localAvatar),
             actions: [
               DialogStyles.buildSheetAction(
-                context,
+                ctx,
                 text: loc.profileTitle,
                 isDark: isDark,
                 onPressed: () => handleNav(ProfilePage.route, reload),
               ),
               DialogStyles.buildSheetAction(
-                context,
+                ctx,
                 text: loc.settingsTitle,
                 isDark: isDark,
                 onPressed: () => handleNav(SettingsPage.route, null),
               ),
               DialogStyles.buildSheetAction(
-                context,
+                ctx,
                 text: loc.logout,
                 isDark: isDark,
                 isDestructive: true,
@@ -343,11 +344,11 @@ class DialogUtils {
               ),
             ],
             cancelButton: DialogStyles.buildSheetAction(
-              context,
+              ctx,
               text: loc.close,
               isDark: isDark,
               isCancel: true,
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(ctx),
             ),
           );
         } else {
@@ -378,7 +379,7 @@ class DialogUtils {
                     onTap: handleLogout,
                   ),
                   SizedBox(height: 12.h),
-                  DialogStyles.buildCloseButton(context),
+                  DialogStyles.buildCloseButton(ctx),
                 ],
               ),
             ),

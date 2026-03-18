@@ -180,7 +180,7 @@
     "noExpensesDayTitle": "Nenhuma despesa neste dia",
     "totalDayLabel": "Total do dia",
     "allExpenses": "Todas as despesas",
-    "expenseCountLabel": "{count, plural, =1{despesa} other{despesas}}" ,
+    "expenseCountLabel": "{count, plural, =1{despesa} other{despesas}}",
     "@expenseCountLabel": {
         "placeholders": {
             "count": {
@@ -270,5 +270,5 @@
     "emptyExpensesTitle": "Nenhuma despesa registrada",
     "emptyExpensesSubtitle": "As despesas que adicionar irão aparecer aqui. Adicione uma com o botão abaixo!",
     "emptySearchTitle": "Nenhum resultado",
-    "emptySearchSubtitle": "Nenhuma despesa corresponde à sua pesquisa"
+    "emptySearchSubtitle": "Nenhuma despesa corresponde à sua pesquisa."
 }

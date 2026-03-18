@@ -252,7 +252,7 @@
     "editExpenseExchangeRateDate": "Au {date}: ",
     "warningOfflineCurrencyCreate": "Dépense créée avec succès. Conversion de devise non disponible.",
     "warningOfflineCurrencyEdit": "Dépense modifiée avec succès. Conversion de devise non disponible.",
-    "warningTitle": "Attention!",
+    "warningTitle": "Attention !",
     "conversionUnavailable": "Conversion non disponible",
     "retryWhenOnline": "Modifiez la dépense lorsque vous êtes en ligne pour mettre à jour.",
     "categoryFood": "Nourriture",
@@ -267,8 +267,8 @@
     "deleteAccountMessageConfirm": "Cette action est irréversible et ne peut pas être annulée.",
     "monthlyTrend": "Tendance mensuelle",
     "categoryBreakdown": "Dépenses par catégorie",
-    "emptyExpensesTitle": "Aucun dépense enregistrée",
-    "emptyExpensesSubtitle": "Vos dépenses apparaîtront ici. Ajoutez-en un avec le bouton ci-dessous !",
+    "emptyExpensesTitle": "Aucune dépense enregistrée",
+    "emptyExpensesSubtitle": "Vos dépenses apparaîtront ici. Ajoutez-en une avec le bouton ci-dessous !",
     "emptySearchTitle": "Aucun résultat",
-    "emptySearchSubtitle": "Aucun dépense ne correspond à votre recherche"
+    "emptySearchSubtitle": "Aucune dépense ne correspond à votre recherche."
 }

@@ -270,5 +270,5 @@
     "emptyExpensesTitle": "Keine Ausgaben registriert",
     "emptyExpensesSubtitle": "Hier werden deine Ausgaben angezeigt. Füge eine mit dem unteren Button hinzu!",
     "emptySearchTitle": "Keine Ergebnisse", 
-    "emptySearchSubtitle": "Keine Ausgaben entsprechen deiner Suche"
+    "emptySearchSubtitle": "Keine Ausgaben entsprechen deiner Suche."
 }

@@ -270,5 +270,5 @@
     "emptyExpensesTitle": "No expenses registered",
     "emptyExpensesSubtitle": "Expenses you add will appear here. Add one with the button below!",
     "emptySearchTitle": "No results",
-    "emptySearchSubtitle": "No expenses match your search"
+    "emptySearchSubtitle": "No expenses match your search."
 }

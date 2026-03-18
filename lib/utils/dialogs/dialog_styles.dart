@@ -24,19 +24,14 @@ class DialogStyles {
       isDark(context) ? AppColors.textLight : AppColors.textDark;
 
   // Euristica per determinare se un'azione è distruttiva (Rosso) basandosi sul testo.
-  // Aggiornato per supportare sia Italiano che Inglese.
-  static bool isDestructiveAction(String text) {
+  // Aggiornato per supportare tutte le lingue.
+  static bool isDestructiveAction(BuildContext context, String text) {
+    final loc = AppLocalizations.of(context);
+    if (loc == null) return false;
     final t = text.toLowerCase();
-    return
-    // Cancellazione (Delete)
-        t.contains("elimina") || // IT, ES (Eliminar contiene elimina)
-        t.contains("delete") || // EN
-        t.contains("supprimer") || // FR
-        // Logout / Uscita
-        t.contains("logout") || // IT, EN
-        t.contains("log out") || // EN variation
-        t.contains("déconnexion") || // FR
-        t.contains("cerrar sesión"); // ES (Specifico per non confondere con "Cerrar/Chiudi")
+    return 
+      t == loc.delete.toLowerCase() ||
+      t == loc.logout.toLowerCase();
   }
 
   // --- STILI BASE ---
@@ -95,7 +90,7 @@ class DialogStyles {
         isDefaultAction: returnValue != false, // Grassetto se non è "Annulla"
         isDestructiveAction:
             returnValue == true &&
-            isDestructiveAction(text), // Rosso se distruttivo
+            isDestructiveAction(context, text), // Rosso se distruttivo
         onPressed: () => Navigator.pop(context, returnValue),
         child: Text(
           text,
