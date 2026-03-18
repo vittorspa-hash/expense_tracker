@@ -34,12 +34,14 @@ class InitializedProviders {
   final ThemeProvider themeProvider;
   final CurrencyProvider currencyProvider;
   final LanguageProvider languageProvider;
+  final AuthProvider authProvider;
 
   const InitializedProviders({
     required this.notificationProvider,
     required this.themeProvider,
     required this.currencyProvider,
     required this.languageProvider,
+    required this.authProvider,
   });
 }
 
@@ -75,11 +77,15 @@ Future<InitializedProviders> initProviders() async {
   Intl.defaultLocale = languageProvider.currentLocale.toString();
   await initializeDateFormatting(Intl.defaultLocale, null);
 
+  // Inizializzazione prima della lista per poterlo passare come dipendenza a ExpenseProvider
+  final authProvider = AuthProvider(authService: getIt<AuthService>());
+
   return InitializedProviders(
     notificationProvider: notificationProvider,
     themeProvider: themeProvider,
     currencyProvider: currencyProvider,
     languageProvider: languageProvider,
+    authProvider: authProvider,
   );
 }
 
@@ -96,17 +102,16 @@ List<SingleChildWidget> buildProviders(InitializedProviders initialized) {
     ChangeNotifierProvider.value(value: initialized.themeProvider),
     ChangeNotifierProvider.value(value: initialized.currencyProvider),
     ChangeNotifierProvider.value(value: initialized.languageProvider),
+    ChangeNotifierProvider.value(value: initialized.authProvider),
 
     // Provider lazy: istanziati al primo accesso tramite GetIt.
-    ChangeNotifierProvider(
-      create: (_) => AuthProvider(authService: getIt<AuthService>()),
-    ),
     ChangeNotifierProvider(
       create: (_) => ProfileProvider(profileService: getIt<ProfileService>()),
     ),
     ChangeNotifierProvider(
       create: (_) => ExpenseProvider(
         expenseService: getIt<ExpenseService>(),
+        authProvider: initialized.authProvider,
         notificationProvider: initialized.notificationProvider,
       ),
     ),

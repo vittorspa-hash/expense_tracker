@@ -18,7 +18,7 @@ import 'package:mockito/mockito.dart';
 
 // Questa annotazione genera i mock automaticamente
 // Esegui: flutter pub run build_runner build
-@GenerateMocks([FirebaseRepository, FirebaseAuth, User, CurrencyService])
+@GenerateMocks([FirebaseRepository, User, CurrencyService])
 import 'expense_service_test.mocks.dart';
 
 void main() {
@@ -26,7 +26,6 @@ void main() {
     // --- SETUP: Mock e dipendenze ---
     late ExpenseService expenseService;
     late MockFirebaseRepository mockRepository;
-    late MockFirebaseAuth mockAuth;
     late MockUser mockUser;
     late MockCurrencyService mockCurrencyService;
 
@@ -39,18 +38,15 @@ void main() {
       // Questo garantisce test isolation (nessun test inquina l'altro)
 
       mockRepository = MockFirebaseRepository();
-      mockAuth = MockFirebaseAuth();
       mockUser = MockUser();
       mockCurrencyService = MockCurrencyService();
 
       // Configurazione default: utente autenticato
-      when(mockAuth.currentUser).thenReturn(mockUser);
       when(mockUser.uid).thenReturn('test-user-123');
 
       // Inietta i MOCK invece delle dipendenze reali
       expenseService = ExpenseService(
         firebaseRepository: mockRepository,
-        firebaseAuth: mockAuth,
         currencyService: mockCurrencyService,
       );
 
@@ -85,7 +81,7 @@ void main() {
       ).thenAnswer((_) async => [expense1, expense2]);
 
       // ACT
-      final expenses = await expenseService.loadUserExpenses();
+      final expenses = await expenseService.loadUserExpenses(user: mockUser);
 
       // ASSERT
       verify(mockRepository.allExpensesForUser('test-user-123')).called(1);
@@ -99,10 +95,10 @@ void main() {
     // =================================================================
     test('Should return empty list when no user is authenticated', () async {
       // ARRANGE
-      when(mockAuth.currentUser).thenReturn(null);
+      // Nessun setup aggiuntivo: user null simulato direttamente nella chiamata
 
       // ACT
-      final expenses = await expenseService.loadUserExpenses();
+      final expenses = await expenseService.loadUserExpenses(user: null);
 
       // ASSERT
       expect(expenses, isEmpty);
@@ -128,6 +124,7 @@ void main() {
           date: DateTime(2024, 1, 15),
           currency: ExpenseCurrency.usd,
           category: ExpenseCategory.food,
+          user: mockUser,
         );
 
         // ASSERT
@@ -161,6 +158,7 @@ void main() {
           date: DateTime(2024, 1, 15),
           currency: ExpenseCurrency.euro,
           category: ExpenseCategory.other,
+          user: mockUser,
         );
 
         // ASSERT
@@ -178,7 +176,7 @@ void main() {
       'Should throw exception when creating expense without authentication',
       () async {
         // ARRANGE
-        when(mockAuth.currentUser).thenReturn(null);
+        // Nessun setup aggiuntivo: user null simulato direttamente nella chiamata
 
         // ACT & ASSERT
         expect(
@@ -188,6 +186,7 @@ void main() {
             date: DateTime.now(),
             currency: ExpenseCurrency.euro,
             category: ExpenseCategory.other,
+            user: null,
           ),
           throwsA(isA<RepositoryFailure>()),
         );
@@ -213,6 +212,7 @@ void main() {
           date: DateTime(2024, 1, 16),
           currency: ExpenseCurrency.euro,
           category: ExpenseCategory.transport,
+          user: mockUser,
         );
 
         // ASSERT
@@ -250,6 +250,7 @@ void main() {
           date: DateTime(2024, 1, 17),
           currency: ExpenseCurrency.usd,
           category: ExpenseCategory.shopping,
+          user: mockUser,
         );
 
         // ASSERT
@@ -285,6 +286,7 @@ void main() {
           date: DateTime(2024, 1, 18),
           currency: ExpenseCurrency.gbp,
           category: ExpenseCategory.health,
+          user: mockUser,
         );
 
         // ASSERT
@@ -305,7 +307,7 @@ void main() {
       ).thenAnswer((_) async => {});
 
       // ACT
-      await expenseService.deleteExpense(sampleExpense);
+      await expenseService.deleteExpense(sampleExpense, user: mockUser);
 
       // ASSERT
       verify(mockRepository.deleteExpense(sampleExpense)).called(1);
@@ -324,7 +326,7 @@ void main() {
 
         // ACT & ASSERT
         expect(
-          () => expenseService.deleteExpense(otherUserExpense),
+          () => expenseService.deleteExpense(otherUserExpense, user: mockUser),
           throwsA(isA<RepositoryFailure>()),
         );
         verifyNever(mockRepository.deleteExpense(any));
@@ -501,7 +503,7 @@ void main() {
       ).thenAnswer((_) async => {});
 
       // ACT
-      final restored = await expenseService.restoreExpense(sampleExpense);
+      final restored = await expenseService.restoreExpense(sampleExpense, user: mockUser);
 
       // ASSERT
       expect(restored.uuid, sampleExpense.uuid);
@@ -517,11 +519,11 @@ void main() {
       'Should throw when restoring expense without authentication',
       () async {
         // ARRANGE
-        when(mockAuth.currentUser).thenReturn(null);
+        // Nessun setup aggiuntivo: user null simulato direttamente nella chiamata
 
         // ACT & ASSERT
         expect(
-          () => expenseService.restoreExpense(sampleExpense),
+          () => expenseService.restoreExpense(sampleExpense, user: null),
           throwsA(isA<RepositoryFailure>()),
         );
         verifyNever(mockRepository.createExpense(any));
@@ -537,7 +539,7 @@ void main() {
 
       // ACT & ASSERT
       expect(
-        () => expenseService.restoreExpense(otherUserExpense),
+        () => expenseService.restoreExpense(otherUserExpense, user: mockUser),
         throwsA(isA<RepositoryFailure>()),
       );
       verifyNever(mockRepository.createExpense(any));
@@ -559,6 +561,7 @@ void main() {
           date: DateTime.now(),
           currency: ExpenseCurrency.euro,
           category: ExpenseCategory.other,
+          user: mockUser,
         ),
         throwsA(isA<RepositoryFailure>()),
       );

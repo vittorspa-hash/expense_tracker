@@ -20,22 +20,18 @@ class ExpenseService {
   // Iniezione delle dipendenze per accesso ai dati, autenticazione e gestione valute.
 
   final FirebaseRepository _firebaseRepository;
-  final FirebaseAuth _firebaseAuth;
   final CurrencyService _currencyService;
 
   ExpenseService({
     required FirebaseRepository firebaseRepository,
-    required FirebaseAuth firebaseAuth,
     required CurrencyService currencyService,
   }) : _firebaseRepository = firebaseRepository,
-       _firebaseAuth = firebaseAuth,
        _currencyService = currencyService;
 
   // --- LETTURA DATI ---
   // Carica tutte le spese dell'utente corrente dal repository.
   // Le spese vengono ordinate per data di creazione (più recenti prima).
-  Future<List<ExpenseModel>> loadUserExpenses() async {
-    final user = _firebaseAuth.currentUser;
+  Future<List<ExpenseModel>> loadUserExpenses({required User? user}) async {
     if (user == null) return [];
 
     final expenses = await _firebaseRepository.allExpensesForUser(user.uid);
@@ -54,8 +50,8 @@ class ExpenseService {
     required DateTime date,
     required ExpenseCurrency currency,
     required ExpenseCategory category,
+    required User? user,
   }) async {
-    final user = _firebaseAuth.currentUser;
     if (user == null) throw RepositoryFailure("User not authenticated.");
 
     Map<String, double> exchangeRates;
@@ -98,8 +94,8 @@ class ExpenseService {
     required DateTime date,
     required ExpenseCurrency currency,
     required ExpenseCategory category,
+    required User? user,
   }) async {
-    final user = _firebaseAuth.currentUser;
     if (user == null || expenseModel.userId != user.uid) {
       throw RepositoryFailure("Permission denied");
     }
@@ -144,8 +140,7 @@ class ExpenseService {
   // --- ELIMINAZIONE E RIPRISTINO ---
   // Ripristina una spesa precedentemente eliminata ricreandola nel repository.
   // Verifica i permessi per garantire che solo il proprietario possa ripristinare.
-  Future<ExpenseModel> restoreExpense(ExpenseModel expenseModel) async {
-    final user = _firebaseAuth.currentUser;
+  Future<ExpenseModel> restoreExpense(ExpenseModel expenseModel, {required User? user}) async {
     if (user == null) throw RepositoryFailure("User not authenticated.");
 
     if (expenseModel.userId != user.uid) {
@@ -158,8 +153,7 @@ class ExpenseService {
 
   // Elimina permanentemente una spesa dal repository.
   // Verifica i permessi per garantire che solo il proprietario possa eliminare.
-  Future<void> deleteExpense(ExpenseModel expenseModel) async {
-    final user = _firebaseAuth.currentUser;
+  Future<void> deleteExpense(ExpenseModel expenseModel, {required User? user}) async {
 
     if (user == null || expenseModel.userId != user.uid) {
       throw RepositoryFailure(

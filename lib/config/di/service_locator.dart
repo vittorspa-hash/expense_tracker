@@ -61,7 +61,6 @@ Future<void> setupGetIt() async {
     () => ExpenseService(
       currencyService: getIt<CurrencyService>(),
       firebaseRepository: getIt<FirebaseRepository>(),
-      firebaseAuth: getIt<FirebaseAuth>(),
     ),
   );
 }

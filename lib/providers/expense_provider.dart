@@ -2,6 +2,7 @@ import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
+import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/services/expense_service.dart';
 import 'package:expense_tracker/utils/repository_failure.dart';
@@ -18,13 +19,16 @@ class ExpenseProvider extends ChangeNotifier {
   // --- STATO E DIPENDENZE ---
   // Iniezione delle dipendenze per orchestrare operazioni tra expense e notifiche.
 
+  final AuthProvider _authProvider;
   final NotificationProvider _notificationProvider;
   final ExpenseService _expenseService;
 
   ExpenseProvider({
+    required AuthProvider authProvider,
     required NotificationProvider notificationProvider,
     required ExpenseService expenseService,
-  }) : _notificationProvider = notificationProvider,
+  }) : _authProvider = authProvider,
+       _notificationProvider = notificationProvider,
        _expenseService = expenseService;
 
   // --- STATO ---
@@ -84,9 +88,10 @@ class ExpenseProvider extends ChangeNotifier {
   // Gestisce errori di repository e generici, impostando messaggi appropriati.
   Future<void> initialise() async {
     _errorMessage = null;
+    final user = _authProvider.currentUser;
 
     try {
-      _expenses = await _expenseService.loadUserExpenses();
+      _expenses = await _expenseService.loadUserExpenses(user: user);
       _refreshTotals();
     } on RepositoryFailure catch (e) {
       _errorMessage = "Error loading data: ${e.message}";
@@ -124,6 +129,8 @@ class ExpenseProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    final user = _authProvider.currentUser;
+
     try {
       // DELEGA LA BUSINESS LOGIC AL SERVICE
       final result = await _expenseService.createExpense(
@@ -132,6 +139,7 @@ class ExpenseProvider extends ChangeNotifier {
         date: date,
         currency: currencyCode,
         category: category,
+        user: user,
       );
 
       // Gestisce eventuali warning (es. conversione offline)
@@ -174,6 +182,8 @@ class ExpenseProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
+    final user = _authProvider.currentUser;
+
     try {
       // DELEGA LA BUSINESS LOGIC AL SERVICE
       final result = await _expenseService.editExpense(
@@ -183,6 +193,7 @@ class ExpenseProvider extends ChangeNotifier {
         date: date,
         currency: currencyCode,
         category: category,
+        user: user,
       );
 
       if (result.warning != null) {
@@ -227,10 +238,12 @@ class ExpenseProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    final user = _authProvider.currentUser;
+
     try {
       // Elimina tutte le spese in parallelo per performance
       await Future.wait(
-        expensesToDelete.map((e) => _expenseService.deleteExpense(e)),
+        expensesToDelete.map((e) => _expenseService.deleteExpense(e, user: user)),
       );
 
       final idsToRemove = expensesToDelete.map((e) => e.uuid).toSet();
@@ -258,10 +271,12 @@ class ExpenseProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    final user = _authProvider.currentUser;
+
     try {
       // Ripristina tutte le spese in parallelo per performance
       await Future.wait(
-        expensesToRestore.map((e) => _expenseService.restoreExpense(e)),
+        expensesToRestore.map((e) => _expenseService.restoreExpense(e, user: user)),
       );
 
       _expenses.addAll(expensesToRestore);
