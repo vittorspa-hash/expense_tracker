@@ -137,33 +137,40 @@ class _HomePageState extends State<HomePage>
 
           body: Stack(
             children: [
-              Column(
-                children: [
-                  HomeHeader(
-                    fadeAnimation: fadeAnimation,
-                    isDark: isDark,
-                    onTapProfile: () => _showProfileSheet(context),
-                    onReturn: _clearSearch,
-                  ),
-
-                  SizedBox(height: 6.h),
-
-                  Expanded(
-                    child: HomeContentList(
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.backgroundDark
+                      : AppColors.backgroundLight,
+                ),
+                child: Column(
+                  children: [
+                    HomeHeader(
+                      fadeAnimation: fadeAnimation,
                       isDark: isDark,
-                      searchController: _searchController,
-                      searchQuery: _searchQuery,
-                      sortCriteria: _sortCriteria,
-                      onSortChanged: (newCriteria) {
-                        setState(() {
-                          _sortCriteria = newCriteria;
-                        });
-                      },
-                      onRefreshExpenses: _refreshExpenses,
+                      onTapProfile: () => _showProfileSheet(context),
                       onReturn: _clearSearch,
                     ),
-                  ),
-                ],
+
+                    SizedBox(height: 6.h),
+
+                    Expanded(
+                      child: HomeContentList(
+                        isDark: isDark,
+                        searchController: _searchController,
+                        searchQuery: _searchQuery,
+                        sortCriteria: _sortCriteria,
+                        onSortChanged: (newCriteria) {
+                          setState(() {
+                            _sortCriteria = newCriteria;
+                          });
+                        },
+                        onRefreshExpenses: _refreshExpenses,
+                        onReturn: _clearSearch,
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
               // Overlay per il loading durante operazioni asincrone
@@ -182,13 +189,6 @@ class _HomePageState extends State<HomePage>
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(20.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.4),
-                        blurRadius: 15,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
                   ),
                   child: FloatingActionButton.extended(
                     heroTag: null,

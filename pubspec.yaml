@@ -59,12 +59,23 @@ dev_dependencies:
     sdk: flutter
   mockito: ^5.6.3
   build_runner: ^2.10.5
+  flutter_native_splash: ^2.4.7
 
 flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icons/money2.png"
   remove_alpha_ios: true
+
+flutter_native_splash:
+  color: "#9575CD"
+  color_dark: "#9575CD"
+  image: assets/icons/money2.png
+  android_12:
+    color: "#9575CD"
+    color_dark: "#9575CD"
+    image: assets/icons/icon-1152x1152.png
+
 
 flutter:
   generate: true

@@ -79,13 +79,6 @@ class _AuthPageState extends State<AuthPage>
                       bottomLeft: Radius.circular(32.r),
                       bottomRight: Radius.circular(32.r),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
                   ),
                   child: Column(
                     children: [

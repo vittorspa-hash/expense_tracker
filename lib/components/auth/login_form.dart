@@ -67,15 +67,6 @@ class _LoginFormState extends State<LoginForm> {
               decoration: BoxDecoration(
                 color: isDark ? AppColors.cardDark : AppColors.cardLight,
                 borderRadius: BorderRadius.circular(20.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadow.withValues(
-                      alpha: isDark ? 0.3 : 0.08,
-                    ),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
