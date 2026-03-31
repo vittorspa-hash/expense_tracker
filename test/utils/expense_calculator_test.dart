@@ -12,65 +12,28 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ExpenseCalculator Tests', () {
     // --- SETUP: Dati di test ---
-    late List<ExpenseModel> testExpenses;
     late DateTime now;
     late Map<String, double> testRates;
 
     setUp(() {
+      // now e testRates sono condivisi tra tutti i test.
+      // I test 1-4 usano dataset dedicati per evitare ambiguità
+      // sui confini temporali (settimana/mese/anno).
+      // I test 5-26 costruiscono i propri dataset inline.
       now = DateTime.now();
-
       testRates = {'EUR': 1.0, 'USD': 1.10, 'GBP': 0.85, 'JPY': 130.0};
+    });
 
-      // --- DATE ROBUSTE ---
-      // week-1: deve stare nella settimana corrente ma NON oggi.
-      // Usiamo il giorno corrente della settimana per trovare un giorno sicuro:
-      // se siamo a mercoledì (weekday=3) usiamo "ieri" (-1), altrimenti "ieri" funziona
-      // sempre perché c'è sempre almeno 1 giorno prima nella settimana ISO (lun-dom).
-      // ECCEZIONE: se oggi è lunedì (weekday=1) "ieri" è domenica della settimana scorsa,
-      // quindi usiamo "stesso giorno" trick: forziamo la data a lunedì stesso ma con ora=00:01,
-      // oppure più semplicemente usiamo un giorno della settimana corrente calcolato.
-      final int todayWeekday = now.weekday; // 1=lun, 7=dom
-      // Giorni dall'inizio della settimana (lunedì): se oggi è lun→0, mar→1, ...
-      final int daysFromMonday = todayWeekday - 1;
-      // Se siamo a lunedì (daysFromMonday=0) non c'è ieri nella stessa settimana:
-      // usiamo "oggi ma 1 ora fa" come spesa settimanale non-today.
-      // Altrimenti usiamo "ieri".
-      final DateTime weekDate = daysFromMonday == 0
-          ? now.subtract(
-              const Duration(hours: 1),
-            ) // lunedì: 1 ora fa (stesso giorno, ma diverso da "adesso")
-          : now.subtract(const Duration(days: 1)); // altri giorni: ieri
-
-      // month-1: deve stare nel mese corrente ma NON in questa settimana.
-      // PROBLEMA NOTO: totalExpenseMonth usa .isAfter(startOfMonth) — stretto.
-      // Una spesa a mezzanotte esatta del 1° del mese viene ESCLUSA perché non è
-      // "dopo" startOfMonth, è "uguale". Quindi usiamo il 1° del mese con ora 00:01
-      // per essere sicuramente inclusi.
-      // Inoltre: se siamo nei primi 7 giorni del mese il 1° potrebbe cadere
-      // nella settimana corrente → il lower bound del test scende a ≥180.
-      final DateTime monthDate = now.day > 7
-          ? DateTime(
-              now.year,
-              now.month,
-              1,
-              0,
-              1,
-            ) // 1° del mese ore 00:01 (fuori settimana, dentro mese)
-          : DateTime(
-              now.year,
-              now.month,
-              1,
-              0,
-              1,
-            ); // stesso, ma in questo caso potrebbe essere in settimana
-
-      // Dataset di test con spese distribuite temporalmente
-      testExpenses = [
-        // OGGI
+    // =================================================================
+    // TEST 1: Total Expense Today
+    // =================================================================
+    test('Should calculate total expenses for today only', () {
+      // ARRANGE
+      final expenses = [
         ExpenseModel(
           uuid: 'today-1',
           value: 50.0,
-          description: 'Today expense 1',
+          description: null,
           createdOn: now,
           userId: 'user-123',
           currency: ExpenseCurrency.euro,
@@ -79,74 +42,30 @@ void main() {
         ExpenseModel(
           uuid: 'today-2',
           value: 30.0,
-          description: 'Today expense 2',
+          description: null,
           createdOn: now.subtract(const Duration(hours: 2)),
           userId: 'user-123',
           currency: ExpenseCurrency.euro,
           exchangeRates: testRates,
         ),
-
-        // QUESTA SETTIMANA (ma non oggi) — data calcolata dinamicamente
         ExpenseModel(
-          uuid: 'week-1',
-          value: 100.0,
-          description: 'Week expense',
-          createdOn: weekDate,
-          userId: 'user-123',
-          currency: ExpenseCurrency.euro,
-          exchangeRates: testRates,
-        ),
-
-        // QUESTO MESE (ma non questa settimana) — usato solo se day > 7
-        ExpenseModel(
-          uuid: 'month-1',
-          value: 200.0,
-          description: 'Month expense',
-          createdOn: monthDate,
-          userId: 'user-123',
-          currency: ExpenseCurrency.euro,
-          exchangeRates: testRates,
-        ),
-
-        // QUEST'ANNO (mese diverso da quello corrente)
-        ExpenseModel(
-          uuid: 'year-1',
-          value: 500.0,
-          description: 'Earlier this year',
-          createdOn: DateTime(now.year, 1, 15),
-          userId: 'user-123',
-          currency: ExpenseCurrency.euro,
-          exchangeRates: testRates,
-        ),
-
-        // ANNO PASSATO (escluso da tutti i totali)
-        ExpenseModel(
-          uuid: 'old-1',
+          uuid: 'old',
           value: 1000.0,
-          description: 'Old expense',
-          createdOn: DateTime(now.year - 1, 12, 31),
+          description: null,
+          createdOn: DateTime(now.year - 1, 6, 15),
           userId: 'user-123',
           currency: ExpenseCurrency.euro,
           exchangeRates: testRates,
         ),
       ];
-    });
-
-    // =================================================================
-    // TEST 1: Total Expense Today
-    // =================================================================
-    test('Should calculate total expenses for today only', () {
-      // ARRANGE
-      // Dati già preparati nel setUp()
 
       // ACT
       final total = ExpenseCalculator.totalExpenseToday(
-        testExpenses,
+        expenses,
         ExpenseCurrency.euro,
       );
 
       // ASSERT
-      // Solo today-1 (50) + today-2 (30) = 80
       expect(total, 80.0);
     });
 
@@ -155,18 +74,47 @@ void main() {
     // =================================================================
     test('Should calculate total expenses for current week', () {
       // ARRANGE
-      // Dati già preparati nel setUp()
+      final weekDate = now.weekday == 1
+          ? now.subtract(const Duration(hours: 1))
+          : now.subtract(const Duration(days: 1));
+      final expenses = [
+        ExpenseModel(
+          uuid: 'today',
+          value: 80.0,
+          description: null,
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: 'week',
+          value: 100.0,
+          description: null,
+          createdOn: weekDate,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: 'old',
+          value: 1000.0,
+          description: null,
+          createdOn: DateTime(now.year - 1, 6, 15),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
 
       // ACT
       final total = ExpenseCalculator.totalExpenseWeek(
-        testExpenses,
+        expenses,
         ExpenseCurrency.euro,
       );
 
       // ASSERT
-      // Oggi (80) + week-1 (100) = almeno 180.
-      // week-1 è sempre nella settimana corrente per costruzione (vedi setUp).
-      expect(total, greaterThanOrEqualTo(180.0));
+      expect(total, 180.0);
     });
 
     // =================================================================
@@ -174,26 +122,44 @@ void main() {
     // =================================================================
     test('Should calculate total expenses for current month', () {
       // ARRANGE
-      // Dati già preparati nel setUp()
+      final expenses = [
+        ExpenseModel(
+          uuid: 'today',
+          value: 80.0,
+          description: null,
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: 'month',
+          value: 200.0,
+          description: null,
+          createdOn: DateTime(now.year, now.month, 1),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: 'old',
+          value: 1000.0,
+          description: null,
+          createdOn: DateTime(now.year - 1, 6, 15),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
 
       // ACT
       final total = ExpenseCalculator.totalExpenseMonth(
-        testExpenses,
+        expenses,
         ExpenseCurrency.euro,
       );
 
       // ASSERT
-      // totalExpenseMonth usa .isAfter(startOfMonth) — stretto, non >=.
-      // month-1 è impostata a DateTime(now.year, now.month, 1, 0, 1) quindi
-      // è sempre inclusa (00:01 > 00:00).
-      //
-      // Caso A (now.day > 7): month-1 è fuori dalla settimana corrente.
-      //   Totale = oggi(80) + week-1(100) + month-1(200) = 380
-      // Caso B (now.day <= 7): month-1 (1° del mese ore 00:01) potrebbe
-      //   essere nella settimana corrente e già conteggiata in week.
-      //   Totale minimo garantito = oggi(80) + week-1(100) + month-1(200) = 380
-      //   perché month-1 ha data distinta da week-1 (week-1 = ieri o 1h fa).
-      expect(total, greaterThanOrEqualTo(380.0));
+      expect(total, 280.0);
     });
 
     // =================================================================
@@ -201,19 +167,45 @@ void main() {
     // =================================================================
     test('Should calculate total expenses for current year', () {
       // ARRANGE
-      // Dati già preparati nel setUp()
+      final differentMonth = now.month == 1 ? 2 : 1;
+      final expenses = [
+        ExpenseModel(
+          uuid: 'today',
+          value: 80.0,
+          description: null,
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: 'year',
+          value: 500.0,
+          description: null,
+          createdOn: DateTime(now.year, differentMonth, 15),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: 'old',
+          value: 1000.0,
+          description: null,
+          createdOn: DateTime(now.year - 1, 6, 15),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
 
       // ACT
       final total = ExpenseCalculator.totalExpenseYear(
-        testExpenses,
+        expenses,
         ExpenseCurrency.euro,
       );
 
       // ASSERT
-      // Include tutte le spese dell'anno corrente, esclude anno passato (1000€).
-      // Minimo: oggi (80) + week (100) + month (200) = 380
-      expect(total, greaterThanOrEqualTo(380.0));
-      expect(total, lessThan(2000.0)); // anno passato escluso
+      expect(total, 580.0);
     });
 
     // =================================================================
@@ -308,10 +300,7 @@ void main() {
       );
 
       // ASSERT
-      expect(byMonth.containsKey('2024-01'), true);
-      expect(byMonth.containsKey('2024-02'), true);
-      expect(byMonth['2024-01'], 150.0); // 100 + 50
-      expect(byMonth['2024-02'], 200.0);
+      expect(byMonth, {'2024-01': 150.0, '2024-02': 200.0});
     });
 
     // =================================================================
@@ -415,11 +404,8 @@ void main() {
       );
 
       // ASSERT
-      expect(byDay.containsKey('15/01/2024'), true);
-      expect(byDay.containsKey('20/01/2024'), true);
+      expect(byDay, {'15/01/2024': 80.0, '20/01/2024': 100.0});
       expect(byDay.containsKey('15/02/2024'), false); // mese diverso escluso
-      expect(byDay['15/01/2024'], 80.0); // 50 + 30
-      expect(byDay['20/01/2024'], 100.0);
     });
 
     // =================================================================
@@ -588,9 +574,9 @@ void main() {
       ExpenseCalculator.sortInPlace(expenses, 'amount_desc');
 
       // ASSERT
-      expect(expenses[0].value, 200.0);
-      expect(expenses[1].value, 100.0);
-      expect(expenses[2].value, 50.0);
+      expect(expenses[0].uuid, '2'); // 200.0
+      expect(expenses[1].uuid, '3'); // 100.0
+      expect(expenses[2].uuid, '1'); // 50.0
     });
 
     // =================================================================
@@ -636,7 +622,9 @@ void main() {
       );
 
       // ASSERT
-      expect(expenses[0].uuid, '3'); // 220 USD = 200 EUR (largest)
+      expect(expenses[0].uuid, '3'); // 220 USD = 200 EUR
+      expect(expenses[1].uuid, '1'); // 100 EUR
+      expect(expenses[2].uuid, '2'); // 85 GBP = 100 EUR
     });
 
     // =================================================================
@@ -669,8 +657,8 @@ void main() {
       ExpenseCalculator.sortInPlace(expenses, 'amount_asc');
 
       // ASSERT
-      expect(expenses[0].value, 50.0);
-      expect(expenses[1].value, 200.0);
+      expect(expenses[0].uuid, '2'); // 50.0
+      expect(expenses[1].uuid, '1'); // 200.0
     });
 
     // =================================================================
@@ -820,10 +808,10 @@ void main() {
       );
 
       // ASSERT
-      expect(byCategory.containsKey(ExpenseCategory.food), true);
-      expect(byCategory.containsKey(ExpenseCategory.transport), true);
-      expect(byCategory[ExpenseCategory.food], 150.0); // 100 + 50
-      expect(byCategory[ExpenseCategory.transport], 200.0);
+      expect(byCategory, {
+        ExpenseCategory.food: 150.0,
+        ExpenseCategory.transport: 200.0,
+      });
     });
 
     // =================================================================
@@ -1016,6 +1004,63 @@ void main() {
       expect(byCategory[ExpenseCategory.food], 100.0);
       expect(byCategory[ExpenseCategory.transport], 200.0);
       expect(byCategory[ExpenseCategory.health], 300.0);
+    });
+
+    // =================================================================
+    // TEST 25: Sort by unknown criteria - Lista non modificata
+    // =================================================================
+    test('Should not modify list for unknown sort criteria', () {
+      final expenses = [
+        ExpenseModel(
+          uuid: '1',
+          value: 100.0,
+          description: null,
+          createdOn: DateTime(2024, 1, 20),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: '2',
+          value: 50.0,
+          description: null,
+          createdOn: DateTime(2024, 1, 10),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
+
+      ExpenseCalculator.sortInPlace(expenses, 'unknown_criteria');
+
+      // Lista non modificata
+      expect(expenses[0].uuid, '1');
+      expect(expenses[1].uuid, '2');
+    });
+
+    // =================================================================
+    // TEST 26: Expense created exactly at midnight - inclusa
+    // =================================================================
+    test('Should include expense created exactly at midnight of today', () {
+      final midnight = DateTime(now.year, now.month, now.day, 0, 0, 0);
+      final expenses = [
+        ExpenseModel(
+          uuid: 'midnight',
+          value: 100.0,
+          description: null,
+          createdOn: midnight,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
+
+      final total = ExpenseCalculator.totalExpenseToday(
+        expenses,
+        ExpenseCurrency.euro,
+      );
+
+      expect(total, 100.0); // inclusa grazie a !isBefore
     });
   });
 }

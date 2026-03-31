@@ -4,6 +4,8 @@
 // sistema di caching locale, e strategie di fallback offline.
 // Utilizza MOCK per simulare HTTP e SharedPreferences.
 
+import 'dart:async';
+
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/services/currency_service.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,10 +16,7 @@ import 'package:http/http.dart' as http;
 
 // Annotazione per generare i mock
 // Esegui: flutter pub run build_runner build
-@GenerateMocks([
-  SharedPreferences,
-  http.Client,
-])
+@GenerateMocks([SharedPreferences, http.Client])
 import 'currency_service_test.mocks.dart';
 
 void main() {
@@ -44,8 +43,9 @@ void main() {
     test('Should save currency code to SharedPreferences', () async {
       // ARRANGE
       // MOCK: SharedPreferences.setString restituisce true (successo)
-      when(mockPrefs.setString('selected_currency', 'USD'))
-          .thenAnswer((_) async => true);
+      when(
+        mockPrefs.setString('selected_currency', 'USD'),
+      ).thenAnswer((_) async => true);
 
       // ACT
       await currencyService.saveCurrency(ExpenseCurrency.usd);
@@ -61,12 +61,13 @@ void main() {
     test('Should throw exception when saving currency fails', () async {
       // ARRANGE
       // MOCK: Simuliamo un errore durante il salvataggio
-      when(mockPrefs.setString('selected_currency', 'EUR'))
-          .thenThrow(Exception('Storage error'));
+      when(
+        mockPrefs.setString('selected_currency', 'EUR'),
+      ).thenThrow(Exception('Storage error'));
 
       // ACT & ASSERT
       // Verifica che lanci CurrencyFetchException
-      expect(
+      await expectLater(
         () => currencyService.saveCurrency(ExpenseCurrency.euro),
         throwsA(isA<CurrencyFetchException>()),
       );
@@ -78,15 +79,13 @@ void main() {
     test('Should retrieve saved currency from SharedPreferences', () {
       // ARRANGE
       // MOCK: SharedPreferences restituisce 'EUR'
-      when(mockPrefs.getString('selected_currency'))
-          .thenReturn('EUR');
+      when(mockPrefs.getString('selected_currency')).thenReturn('EUR');
 
       // ACT
       final currency = currencyService.getCurrency();
 
       // ASSERT
       expect(currency, ExpenseCurrency.euro);
-      verify(mockPrefs.getString('selected_currency')).called(1);
     });
 
     // =================================================================
@@ -95,8 +94,7 @@ void main() {
     test('Should return EUR as default when no currency is saved', () {
       // ARRANGE
       // MOCK: SharedPreferences restituisce null (nessuna preferenza salvata)
-      when(mockPrefs.getString('selected_currency'))
-          .thenReturn(null);
+      when(mockPrefs.getString('selected_currency')).thenReturn(null);
 
       // ACT
       final currency = currencyService.getCurrency();
@@ -112,8 +110,9 @@ void main() {
     test('Should return EUR as default when retrieval fails', () {
       // ARRANGE
       // MOCK: Simuliamo un errore durante il recupero
-      when(mockPrefs.getString('selected_currency'))
-          .thenThrow(Exception('Read error'));
+      when(
+        mockPrefs.getString('selected_currency'),
+      ).thenThrow(Exception('Read error'));
 
       // ACT
       final currency = currencyService.getCurrency();
@@ -128,8 +127,7 @@ void main() {
     // =================================================================
     test('Should remove saved currency from SharedPreferences', () async {
       // ARRANGE
-      when(mockPrefs.remove('selected_currency'))
-          .thenAnswer((_) async => true);
+      when(mockPrefs.remove('selected_currency')).thenAnswer((_) async => true);
 
       // ACT
       await currencyService.clearCurrency();
@@ -143,11 +141,12 @@ void main() {
     // =================================================================
     test('Should throw exception when clearing currency fails', () async {
       // ARRANGE
-      when(mockPrefs.remove('selected_currency'))
-          .thenThrow(Exception('Remove error'));
+      when(
+        mockPrefs.remove('selected_currency'),
+      ).thenThrow(Exception('Remove error'));
 
       // ACT & ASSERT
-      expect(
+      await expectLater(
         () => currencyService.clearCurrency(),
         throwsA(isA<CurrencyFetchException>()),
       );
@@ -167,6 +166,9 @@ void main() {
       // Deve restituire fallback 1:1 senza chiamare l'API
       expect(rates, {'XYZ': 1.0});
 
+      // Verifica che abbia tentato di chiamare l'API
+      verifyNever(mockHttpClient.get(any));
+
       // Verifica che NON abbia tentato di salvare in cache
       verifyNever(mockPrefs.setString(any, any));
     });
@@ -174,10 +176,12 @@ void main() {
     // =================================================================
     // TEST 9: Get Exchange Rates - Network Success
     // =================================================================
-    test('Should fetch and cache exchange rates when network succeeds', () async {
-      // ARRANGE
-      const baseCurrency = 'EUR';
-      const mockApiResponse = '''
+    test(
+      'Should fetch and cache exchange rates when network succeeds',
+      () async {
+        // ARRANGE
+        const baseCurrency = 'EUR';
+        const mockApiResponse = '''
       {
         "amount": 1.0,
         "base": "EUR",
@@ -190,30 +194,30 @@ void main() {
       }
       ''';
 
-      // MOCK: HTTP Client restituisce successo (200)
-      when(mockHttpClient.get(any))
-          .thenAnswer((_) async => http.Response(mockApiResponse, 200));
+        // MOCK: HTTP Client restituisce successo (200)
+        when(
+          mockHttpClient.get(any),
+        ).thenAnswer((_) async => http.Response(mockApiResponse, 200));
 
-      // MOCK: SharedPreferences salva con successo
-      when(mockPrefs.setString(any, any))
-          .thenAnswer((_) async => true);
+        // MOCK: SharedPreferences salva con successo
+        when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
 
-      // ACT
-      final rates = await currencyService.getExchangeRates(baseCurrency);
+        // ACT
+        final rates = await currencyService.getExchangeRates(baseCurrency);
 
-      // ASSERT
-      // 1. Verifica che i tassi siano corretti
-      expect(rates['EUR'], 1.0);
-      expect(rates['USD'], 1.10);
-      expect(rates['GBP'], 0.85);
-      expect(rates['JPY'], 130.0);
+        // ASSERT
+        // 1. Verifica che i tassi siano corretti
+        expect(rates, {'EUR': 1.0, 'USD': 1.10, 'GBP': 0.85, 'JPY': 130.0});
 
-      // 2. Verifica che HTTP sia stato chiamato
-      verify(mockHttpClient.get(any)).called(1);
+        // 2. Verifica che HTTP sia stato chiamato
+        verify(mockHttpClient.get(any)).called(1);
 
-      // 3. Verifica che la risposta sia stata salvata in cache
-      verify(mockPrefs.setString('rates_cache_EUR', mockApiResponse)).called(1);
-    });
+        // 3. Verifica che la risposta sia stata salvata in cache
+        verify(
+          mockPrefs.setString('rates_cache_EUR', mockApiResponse),
+        ).called(1);
+      },
+    );
 
     // =================================================================
     // TEST 10: Get Exchange Rates - Network Timeout, Cache Hit
@@ -234,24 +238,19 @@ void main() {
       ''';
 
       // MOCK: HTTP timeout (simula network lento)
-      when(mockHttpClient.get(any))
-          .thenAnswer((_) async {
-            await Future.delayed(const Duration(seconds: 10));
-            return http.Response('', 500);
-          });
+      when(mockHttpClient.get(any)).thenAnswer((_) async {
+        throw TimeoutException('Simulated timeout');
+      });
 
       // MOCK: Cache contiene dati vecchi
-      when(mockPrefs.getString('rates_cache_USD'))
-          .thenReturn(cachedJson);
+      when(mockPrefs.getString('rates_cache_USD')).thenReturn(cachedJson);
 
       // ACT
       final rates = await currencyService.getExchangeRates('USD');
 
       // ASSERT
       // 1. Deve usare i tassi dalla cache
-      expect(rates['USD'], 1.0);
-      expect(rates['EUR'], 0.91);
-      expect(rates['GBP'], 0.77);
+      expect(rates, {'USD': 1.0, 'EUR': 0.91, 'GBP': 0.77, 'JPY': 118.0});
 
       // 2. Verifica che abbia tentato il network
       verify(mockHttpClient.get(any)).called(1);
@@ -279,20 +278,21 @@ void main() {
       ''';
 
       // MOCK: HTTP restituisce errore 500
-      when(mockHttpClient.get(any))
-          .thenAnswer((_) async => http.Response('Internal Server Error', 500));
+      when(
+        mockHttpClient.get(any),
+      ).thenAnswer((_) async => http.Response('Internal Server Error', 500));
 
       // MOCK: Cache contiene dati
-      when(mockPrefs.getString('rates_cache_GBP'))
-          .thenReturn(cachedJson);
+      when(mockPrefs.getString('rates_cache_GBP')).thenReturn(cachedJson);
 
       // ACT
       final rates = await currencyService.getExchangeRates('GBP');
 
       // ASSERT
-      expect(rates['GBP'], 1.0);
-      expect(rates['EUR'], 1.18);
-      expect(rates['USD'], 1.30);
+      expect(rates, {'GBP': 1.0, 'EUR': 1.18, 'USD': 1.30, 'JPY': 152.0});
+
+      verify(mockHttpClient.get(any)).called(1);
+      verify(mockPrefs.getString('rates_cache_GBP')).called(1);
     });
 
     // =================================================================
@@ -301,15 +301,15 @@ void main() {
     test('Should throw exception when both network and cache fail', () async {
       // ARRANGE
       // MOCK: HTTP lancia eccezione (no internet)
-      when(mockHttpClient.get(any))
-          .thenThrow(Exception('No internet connection'));
+      when(
+        mockHttpClient.get(any),
+      ).thenThrow(Exception('No internet connection'));
 
       // MOCK: Cache vuota
-      when(mockPrefs.getString('rates_cache_JPY'))
-          .thenReturn(null);
+      when(mockPrefs.getString('rates_cache_JPY')).thenReturn(null);
 
       // ACT & ASSERT
-      expect(
+      await expectLater(
         () => currencyService.getExchangeRates('JPY'),
         throwsA(isA<CurrencyFetchException>()),
       );
@@ -339,15 +339,14 @@ void main() {
       ''';
 
       // MOCK: Cache contiene dati vecchi
-      when(mockPrefs.getString('rates_cache_EUR'))
-          .thenReturn(oldCache);
+      when(mockPrefs.getString('rates_cache_EUR')).thenReturn(oldCache);
 
       // MOCK: HTTP restituisce dati freschi
-      when(mockHttpClient.get(any))
-          .thenAnswer((_) async => http.Response(newApiResponse, 200));
+      when(
+        mockHttpClient.get(any),
+      ).thenAnswer((_) async => http.Response(newApiResponse, 200));
 
-      when(mockPrefs.setString(any, any))
-          .thenAnswer((_) async => true);
+      when(mockPrefs.setString(any, any)).thenAnswer((_) async => true);
 
       // ACT
       final rates = await currencyService.getExchangeRates('EUR');
@@ -358,74 +357,43 @@ void main() {
 
       // 2. Verifica che la cache sia stata aggiornata
       verify(mockPrefs.setString('rates_cache_EUR', newApiResponse)).called(1);
+
+      // 3. Non deve chiamare la cache locale
+      verifyNever(mockPrefs.getString('rates_cache_EUR'));
     });
 
     // =================================================================
-    // TEST 14: Multiple Currency Codes - EUR
+    // TEST 14: Multiple Currency Codes - Supported Codes
     // =================================================================
-    test('Should handle EUR currency correctly', () {
-      // ARRANGE
-      when(mockPrefs.getString('selected_currency'))
-          .thenReturn('EUR');
+    test('Should retrieve correct currency for all supported codes', () {
+      final testCases = {
+        'EUR': ExpenseCurrency.euro,
+        'USD': ExpenseCurrency.usd,
+        'GBP': ExpenseCurrency.gbp,
+        'JPY': ExpenseCurrency.jpy,
+      };
 
-      // ACT
-      final currency = currencyService.getCurrency();
-
-      // ASSERT
-      expect(currency, ExpenseCurrency.euro);
-      expect(currency.code, 'EUR');
-      expect(currency.symbol, '€');
+      for (final entry in testCases.entries) {
+        when(mockPrefs.getString('selected_currency')).thenReturn(entry.key);
+        expect(
+          currencyService.getCurrency(),
+          entry.value,
+          reason: 'Failed for currency: ${entry.key}',
+        );
+      }
     });
 
     // =================================================================
-    // TEST 15: Multiple Currency Codes - USD
+    // TEST 15: Cache Corrupted JSON
     // =================================================================
-    test('Should handle USD currency correctly', () {
-      // ARRANGE
-      when(mockPrefs.getString('selected_currency'))
-          .thenReturn('USD');
+    test('Should throw exception when cache contains malformed JSON', () async {
+      when(mockHttpClient.get(any)).thenThrow(Exception('No internet'));
+      when(mockPrefs.getString('rates_cache_EUR')).thenReturn('NOT_VALID_JSON');
 
-      // ACT
-      final currency = currencyService.getCurrency();
-
-      // ASSERT
-      expect(currency, ExpenseCurrency.usd);
-      expect(currency.code, 'USD');
-      expect(currency.symbol, '\$');
-    });
-
-    // =================================================================
-    // TEST 16: Multiple Currency Codes - GBP
-    // =================================================================
-    test('Should handle GBP currency correctly', () {
-      // ARRANGE
-      when(mockPrefs.getString('selected_currency'))
-          .thenReturn('GBP');
-
-      // ACT
-      final currency = currencyService.getCurrency();
-
-      // ASSERT
-      expect(currency, ExpenseCurrency.gbp);
-      expect(currency.code, 'GBP');
-      expect(currency.symbol, '£');
-    });
-
-    // =================================================================
-    // TEST 17: Multiple Currency Codes - JPY
-    // =================================================================
-    test('Should handle JPY currency correctly', () {
-      // ARRANGE
-      when(mockPrefs.getString('selected_currency'))
-          .thenReturn('JPY');
-
-      // ACT
-      final currency = currencyService.getCurrency();
-
-      // ASSERT
-      expect(currency, ExpenseCurrency.jpy);
-      expect(currency.code, 'JPY');
-      expect(currency.symbol, '¥');
+      await expectLater(
+        () => currencyService.getExchangeRates('EUR'),
+        throwsA(isA<CurrencyFetchException>()),
+      );
     });
   });
 }

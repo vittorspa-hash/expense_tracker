@@ -25,7 +25,7 @@ class ExpenseCalculator {
     );
 
     return expenses
-        .where((expense) => expense.createdOn.isAfter(startOfDay))
+        .where((expense) => !expense.createdOn.isBefore(startOfDay))
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
@@ -44,7 +44,7 @@ class ExpenseCalculator {
     );
 
     return expenses
-        .where((expense) => expense.createdOn.isAfter(startOfWeekMidnight))
+        .where((expense) => !expense.createdOn.isBefore(startOfWeekMidnight))
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
@@ -56,7 +56,7 @@ class ExpenseCalculator {
     final startOfMonth = DateTime(currentDate.year, currentDate.month, 1);
 
     return expenses
-        .where((expense) => expense.createdOn.isAfter(startOfMonth))
+        .where((expense) => !expense.createdOn.isBefore(startOfMonth))
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 
@@ -68,7 +68,7 @@ class ExpenseCalculator {
     final startOfYear = DateTime(currentDate.year, 1, 1);
 
     return expenses
-        .where((expense) => expense.createdOn.isAfter(startOfYear))
+        .where((expense) => !expense.createdOn.isBefore(startOfYear))
         .fold(0.0, (acc, expense) => acc + expense.getValueIn(targetCurrency));
   }
 

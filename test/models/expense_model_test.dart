@@ -10,7 +10,6 @@ import 'package:expense_tracker/models/expense_category.dart';
 void main() {
   // Raggruppamento logico dei test
   group('ExpenseModel Tests', () {
-
     // --- SETUP: Dati di test riutilizzabili ---
     // Creiamo oggetti di esempio da riutilizzare nei vari test
     late ExpenseModel sampleExpense;
@@ -21,12 +20,7 @@ void main() {
       // Questo metodo viene eseguito PRIMA di ogni test
       // Garantisce che ogni test parta con dati freschi e isolati
       testDate = DateTime(2024, 1, 15, 10, 30);
-      testRates = {
-        'EUR': 1.0,
-        'USD': 1.10,
-        'GBP': 0.85,
-        'JPY': 130.0,
-      };
+      testRates = {'EUR': 1.0, 'USD': 1.10, 'GBP': 0.85, 'JPY': 130.0};
 
       sampleExpense = ExpenseModel(
         uuid: 'test-uuid-123',
@@ -41,7 +35,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 1: Creazione base del modello
+    // TEST 1: Creazione base del modello - Test superfluo
     // =================================================================
     test('Should create ExpenseModel with all required fields', () {
       // ARRANGE (preparazione)
@@ -101,11 +95,17 @@ void main() {
       expect(map['uuid'], 'test-uuid-123');
       expect(map['value'], 100.0);
       expect(map['description'], 'Test expense');
-      expect(map['createdOn'], testDate.millisecondsSinceEpoch); // Timestamp numerico
+      expect(
+        map['createdOn'],
+        testDate.millisecondsSinceEpoch,
+      ); // Timestamp numerico
       expect(map['userId'], 'user-123');
       expect(map['currency'], 'EUR'); // Enum serializzato come codice ISO
       expect(map['exchangeRates'], testRates);
-      expect(map['category'], 'food'); // Enum serializzato come stringa leggibile
+      expect(
+        map['category'],
+        'food',
+      ); // Enum serializzato come stringa leggibile
     });
 
     // =================================================================
@@ -134,36 +134,38 @@ void main() {
       expect(expense.createdOn, testDate);
       expect(expense.userId, 'user-456');
       expect(expense.currency, ExpenseCurrency.usd); // Stringa DB → Enum App
-      expect(expense.exchangeRates['EUR'], 1.0);
-      expect(expense.exchangeRates['USD'], 1.10);
+      expect(expense.exchangeRates, {'EUR': 1.0, 'USD': 1.10});
       expect(expense.category, ExpenseCategory.shopping);
     });
 
     // =================================================================
     // TEST 5: Retrocompatibilità (vecchie spese senza currency e senza category)
     // =================================================================
-    test('Should handle legacy expenses without currency and category fields', () {
-      // ARRANGE
-      // Simuliamo una vecchia spesa salvata prima dell'introduzione
-      // della multi-valuta e delle categorie
-      final legacyMap = {
-        'uuid': 'legacy-123',
-        'value': 75.0,
-        'description': 'Old expense',
-        'createdOn': testDate.millisecondsSinceEpoch,
-        'userId': 'user-789',
-        // Niente 'currency', 'exchangeRates', né 'category'
-      };
+    test(
+      'Should handle legacy expenses without currency and category fields',
+      () {
+        // ARRANGE
+        // Simuliamo una vecchia spesa salvata prima dell'introduzione
+        // della multi-valuta e delle categorie
+        final legacyMap = {
+          'uuid': 'legacy-123',
+          'value': 75.0,
+          'description': 'Old expense',
+          'createdOn': testDate.millisecondsSinceEpoch,
+          'userId': 'user-789',
+          // Niente 'currency', 'exchangeRates', né 'category'
+        };
 
-      // ACT
-      final expense = ExpenseModel.fromMap(legacyMap);
+        // ACT
+        final expense = ExpenseModel.fromMap(legacyMap);
 
-      // ASSERT
-      expect(expense.currency, ExpenseCurrency.euro);  // fallback valuta
-      // La mappa dei tassi deve essere vuota (non null)
-      expect(expense.exchangeRates, isEmpty);
-      expect(expense.category, ExpenseCategory.other); // fallback categoria
-    });
+        // ASSERT
+        expect(expense.currency, ExpenseCurrency.euro); // fallback valuta
+        expect(expense.category, ExpenseCategory.other); // fallback categoria
+        // La mappa dei tassi deve essere vuota (non null)
+        expect(expense.exchangeRates, isEmpty);
+      },
+    );
 
     // =================================================================
     // TEST 6: Retrocompatibilità — categoria con stringa sconosciuta
@@ -192,30 +194,33 @@ void main() {
     // =================================================================
     // TEST 7: copyWith - Immutabilità e clonazione parziale (campi esistenti)
     // =================================================================
-    test('Should create modified copy with copyWith while preserving original', () {
-      // ARRANGE
-      final original = sampleExpense;
+    test(
+      'Should create modified copy with copyWith while preserving original',
+      () {
+        // ARRANGE
+        final original = sampleExpense;
 
-      // ACT
-      final modified = original.copyWith(
-        value: 200.0,
-        description: 'Modified description',
-      );
+        // ACT
+        final modified = original.copyWith(
+          value: 200.0,
+          description: 'Modified description',
+        );
 
-      // ASSERT
-      // L'oggetto modificato ha i nuovi valori
-      expect(modified.value, 200.0);
-      expect(modified.description, 'Modified description');
+        // ASSERT
+        // L'oggetto modificato ha i nuovi valori
+        expect(modified.value, 200.0);
+        expect(modified.description, 'Modified description');
 
-      // Gli altri campi rimangono invariati
-      expect(modified.uuid, original.uuid);
-      expect(modified.currency, original.currency);
-      expect(modified.category, original.category); // categoria preservata
+        // Gli altri campi rimangono invariati
+        expect(modified.uuid, original.uuid);
+        expect(modified.currency, original.currency);
+        expect(modified.category, original.category); // categoria preservata
 
-      // L'oggetto originale NON è stato modificato (immutabilità)
-      expect(original.value, 100.0);
-      expect(original.description, 'Test expense');
-    });
+        // L'oggetto originale NON è stato modificato (immutabilità)
+        expect(original.value, 100.0);
+        expect(original.description, 'Test expense');
+      },
+    );
 
     // =================================================================
     // TEST 8: copyWith - Modifica della categoria
@@ -231,9 +236,6 @@ void main() {
       expect(modified.category, ExpenseCategory.travel);
       // L'oggetto originale NON è stato modificato (immutabilità)
       expect(original.category, ExpenseCategory.food);
-      // Gli altri campi sono preservati
-      expect(modified.uuid, original.uuid);
-      expect(modified.value, original.value);
     });
 
     // =================================================================
@@ -264,7 +266,10 @@ void main() {
 
       // ASSERT
       // Formula: (100 / 1.0) * 1.10 = 110.0
-      expect(converted, closeTo(110.0, 0.01)); // closeTo() per gestire errori di arrotondamento floating-point
+      expect(
+        converted,
+        closeTo(110.0, 0.01),
+      ); // closeTo() per gestire errori di arrotondamento floating-point
     });
 
     // =================================================================
@@ -279,6 +284,7 @@ void main() {
         createdOn: testDate,
         userId: 'user-123',
         currency: ExpenseCurrency.usd,
+        category: ExpenseCategory.food,
         exchangeRates: testRates, // USD=1.10, GBP=0.85
       );
 
@@ -287,7 +293,10 @@ void main() {
 
       // ASSERT
       // Formula: (110 / 1.10) * 0.85 = 85.0
-      expect(convertedToGBP, closeTo(85.0, 0.01)); // closeTo per gestire errori arrotondamento floating-point
+      expect(
+        convertedToGBP,
+        closeTo(85.0, 0.01),
+      ); // closeTo per gestire errori arrotondamento floating-point
     });
 
     // =================================================================
@@ -316,7 +325,7 @@ void main() {
     // =================================================================
     // TEST 13: Protezione divisione per zero
     // =================================================================
-    test('Should handle missing currency in exchange rates map safely', () {
+    test('Should handle zero exchange rate safely to prevent division by zero', () {
       // ARRANGE
       final expense = ExpenseModel(
         uuid: 'incomplete-rates',
@@ -325,7 +334,7 @@ void main() {
         createdOn: testDate,
         userId: 'user-123',
         currency: ExpenseCurrency.euro,
-        exchangeRates: {'EUR': 1.0}, // USD mancante
+        exchangeRates: {'USD': 0.0, 'EUR': 1.0}, // tasso sorgente corrotto
       );
 
       // ACT

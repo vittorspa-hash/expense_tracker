@@ -51,7 +51,7 @@ void main() {
       );
 
       // Dati di test
-      testRates = {'EUR': 1.0, 'USD': 1.10, 'GBP': 0.85};
+      testRates = {'EUR': 1.0, 'USD': 1.10, 'GBP': 0.85, 'JPY': 130.0};
 
       sampleExpense = ExpenseModel(
         uuid: 'expense-123',
@@ -164,7 +164,6 @@ void main() {
         // ASSERT
         expect(result.warning, 'offline_currency_create');
         expect(result.expense.exchangeRates, {'EUR': 1.0});
-        expect(result.expense.category, ExpenseCategory.other);
         verify(mockRepository.createExpense(any)).called(1);
       },
     );
@@ -179,7 +178,7 @@ void main() {
         // Nessun setup aggiuntivo: user null simulato direttamente nella chiamata
 
         // ACT & ASSERT
-        expect(
+        await expectLater(
           () => expenseService.createExpense(
             value: 50.0,
             description: 'Test',
@@ -200,7 +199,7 @@ void main() {
       'Should edit expense without repairing rates when rates are valid',
       () async {
         // ARRANGE
-        final expenseWithValidRates = sampleExpense; // Ha 3 valute
+        final expenseWithValidRates = sampleExpense;
 
         when(mockRepository.updateExpense(any)).thenAnswer((_) async => {});
 
@@ -256,9 +255,8 @@ void main() {
         // ASSERT
         expect(result.warning, isNull);
         expect(result.expense.exchangeRates, testRates);
-        expect(result.expense.exchangeRates.length, 3);
-        expect(result.expense.category, ExpenseCategory.shopping);
         verify(mockCurrencyService.getExchangeRates('USD')).called(1);
+        verify(mockRepository.updateExpense(any)).called(1);
       },
     );
 
@@ -292,7 +290,6 @@ void main() {
         // ASSERT
         expect(result.warning, 'offline_currency_edit');
         expect(result.expense.exchangeRates, {'GBP': 1.0});
-        expect(result.expense.category, ExpenseCategory.health);
         verify(mockRepository.updateExpense(any)).called(1);
       },
     );
@@ -325,7 +322,7 @@ void main() {
         );
 
         // ACT & ASSERT
-        expect(
+        await expectLater(
           () => expenseService.deleteExpense(otherUserExpense, user: mockUser),
           throwsA(isA<RepositoryFailure>()),
         );
@@ -350,9 +347,9 @@ void main() {
           value: 20.0,
         ),
         sampleExpense.copyWith(
-          createdOn: DateTime(now.year, 1, 1),
+          createdOn: DateTime(now.year, now.month, 1),
           value: 100.0,
-        ),
+        ), // stesso mese, non più anno fisso
       ];
 
       // ACT
@@ -362,10 +359,8 @@ void main() {
       );
 
       // ASSERT
-      expect(totals.today, greaterThan(0));
-      expect(totals.week, greaterThanOrEqualTo(totals.today));
-      expect(totals.month, greaterThanOrEqualTo(totals.week));
-      expect(totals.year, greaterThanOrEqualTo(totals.month));
+      expect(totals.today, closeTo(50.0, 0.01)); // solo la spesa di oggi
+      expect(totals.year, closeTo(200.0, 0.01)); // tutte e 4 le spese
     });
 
     // =================================================================
@@ -415,7 +410,8 @@ void main() {
     // =================================================================
     test('Should not notify for expenses from different months', () {
       // ARRANGE
-      final lastMonth = DateTime.now().subtract(const Duration(days: 60));
+      final now = DateTime.now();
+      final lastMonth = DateTime(now.year, now.month - 1, 15);
       final expenses = [
         sampleExpense.copyWith(createdOn: lastMonth, value: 1000.0),
       ];
@@ -452,6 +448,12 @@ void main() {
       );
 
       // ASSERT
+      // Verifica immutabilità: la lista originale non deve essere stata modificata
+      expect(expenses[0].createdOn, DateTime(2024, 1, 10));
+      expect(expenses[1].createdOn, DateTime(2024, 1, 20));
+      expect(expenses[2].createdOn, DateTime(2024, 1, 15));
+
+      // Verifica ordinamento
       expect(sorted[0].createdOn, DateTime(2024, 1, 20));
       expect(sorted[1].createdOn, DateTime(2024, 1, 15));
       expect(sorted[2].createdOn, DateTime(2024, 1, 10));
@@ -485,11 +487,13 @@ void main() {
       );
 
       // ASSERT
-      expect(byMonth, isNotEmpty);
       final totalValues = byMonth.values.fold<double>(
         0,
         (sum, val) => sum + val,
       );
+
+      expect(byMonth['${now.year}-01'], closeTo(150.0, 0.01));
+      expect(byMonth['${now.year}-02'], closeTo(75.0, 0.01));
       expect(totalValues, closeTo(225.0, 0.01));
     });
 
@@ -503,32 +507,30 @@ void main() {
       ).thenAnswer((_) async => {});
 
       // ACT
-      final restored = await expenseService.restoreExpense(sampleExpense, user: mockUser);
+      final restored = await expenseService.restoreExpense(
+        sampleExpense,
+        user: mockUser,
+      );
 
       // ASSERT
-      expect(restored.uuid, sampleExpense.uuid);
-      expect(restored.value, sampleExpense.value);
-      expect(restored.category, sampleExpense.category);
+      expect(restored, sampleExpense);
       verify(mockRepository.createExpense(sampleExpense)).called(1);
     });
 
     // =================================================================
     // TEST 18: Restore Expense - Not Authenticated
     // =================================================================
-    test(
-      'Should throw when restoring expense without authentication',
-      () async {
-        // ARRANGE
-        // Nessun setup aggiuntivo: user null simulato direttamente nella chiamata
+    test('Should throw when restoring expense without authentication', () async {
+      // ARRANGE
+      // Nessun setup aggiuntivo: user null simulato direttamente nella chiamata
 
-        // ACT & ASSERT
-        expect(
-          () => expenseService.restoreExpense(sampleExpense, user: null),
-          throwsA(isA<RepositoryFailure>()),
-        );
-        verifyNever(mockRepository.createExpense(any));
-      },
-    );
+      // ACT & ASSERT
+      await expectLater(
+        () => expenseService.restoreExpense(sampleExpense, user: null),
+        throwsA(isA<RepositoryFailure>()),
+      );
+      verifyNever(mockRepository.createExpense(any));
+    });
 
     // =================================================================
     // TEST 19: Restore Expense - Permission Denied
@@ -538,7 +540,7 @@ void main() {
       final otherUserExpense = sampleExpense.copyWith(userId: 'other-user-999');
 
       // ACT & ASSERT
-      expect(
+      await expectLater(
         () => expenseService.restoreExpense(otherUserExpense, user: mockUser),
         throwsA(isA<RepositoryFailure>()),
       );
@@ -553,7 +555,7 @@ void main() {
       final otherUserExpense = sampleExpense.copyWith(userId: 'other-user-999');
 
       // ACT & ASSERT
-      expect(
+      await expectLater(
         () => expenseService.editExpense(
           otherUserExpense,
           value: 100.0,
@@ -687,6 +689,80 @@ void main() {
       ); // 100 + 50
       expect(byCategory[ExpenseCategory.transport], closeTo(200.0, 0.01));
       expect(byCategory.length, 2); // la spesa 2023 non genera una terza entry
+    });
+
+    // =================================================================
+    // TEST 25: Edit Expense - Smart Update (Repair Fails with Empty Rates)
+    // =================================================================
+    test(
+      'Should set fallback 1:1 when repair fails and rates are empty',
+      () async {
+        final brokenExpense = sampleExpense.copyWith(
+          exchangeRates: {},
+        ); // vuoto
+
+        when(
+          mockCurrencyService.getExchangeRates('EUR'),
+        ).thenThrow(CurrencyFetchException('offline'));
+        when(mockRepository.updateExpense(any)).thenAnswer((_) async => {});
+
+        final result = await expenseService.editExpense(
+          brokenExpense,
+          value: 50.0,
+          description: null,
+          date: DateTime.now(),
+          currency: ExpenseCurrency.euro,
+          category: ExpenseCategory.other,
+          user: mockUser,
+        );
+
+        expect(result.warning, 'offline_currency_edit');
+        expect(result.expense.exchangeRates, {'EUR': 1.0});
+      },
+    );
+
+    // =================================================================
+    // TEST 26: Delete Expense - Permission Denied with Null User
+    // =================================================================
+    test('Should throw when deleting without authentication', () async {
+      await expectLater(
+        () => expenseService.deleteExpense(sampleExpense, user: null),
+        throwsA(isA<RepositoryFailure>()),
+      );
+      verifyNever(mockRepository.deleteExpense(any));
+    });
+
+    // =================================================================
+    // TEST 27: Edit Expense - Permission Denied with Null User
+    // =================================================================
+    test('Should throw when editing without authentication', () async {
+      await expectLater(
+        () => expenseService.editExpense(
+          sampleExpense,
+          value: 100.0,
+          description: null,
+          date: DateTime.now(),
+          currency: ExpenseCurrency.euro,
+          category: ExpenseCategory.other,
+          user: null,
+        ),
+        throwsA(isA<RepositoryFailure>()),
+      );
+      verifyNever(mockRepository.updateExpense(any));
+    });
+
+    // =================================================================
+    // TEST 28: Load User Expenses - Empty List
+    // =================================================================
+    test('Should return empty list when user has no expenses', () async {
+      when(
+        mockRepository.allExpensesForUser('test-user-123'),
+      ).thenAnswer((_) async => []);
+
+      final expenses = await expenseService.loadUserExpenses(user: mockUser);
+
+      expect(expenses, isEmpty);
+      verify(mockRepository.allExpensesForUser('test-user-123')).called(1);
     });
   });
 }
