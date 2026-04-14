@@ -1,7 +1,7 @@
-import 'dart:ui' as ui;
-import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:expense_tracker/config/supported_locales.dart';
 import 'package:expense_tracker/services/language_service.dart';
+import 'package:flutter/foundation.dart';
 
 /// FILE: language_provider.dart
 /// DESCRIZIONE: Provider per la gestione dello stato globale della lingua.
@@ -29,7 +29,7 @@ class LanguageProvider extends ChangeNotifier {
       debugPrint('🌍 Loaded saved language: $savedCode');
     } else {
       // 2. Nessun salvataggio: rileviamo la lingua del dispositivo
-      final systemLocale = ui.PlatformDispatcher.instance.locale;
+      final systemLocale = PlatformDispatcher.instance.locale;
       
       // Se la lingua del sistema è supportata, la usiamo
       if (AppLocales.supportedCodes.contains(systemLocale.languageCode)) {

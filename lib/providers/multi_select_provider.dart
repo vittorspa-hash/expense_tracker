@@ -1,5 +1,6 @@
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+
 
 /// FILE: multi_select_provider.dart
 /// DESCRIZIONE: Gestore di stato per la funzionalità di selezione multipla.

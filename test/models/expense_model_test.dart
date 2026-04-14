@@ -35,29 +35,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 1: Creazione base del modello - Test superfluo
-    // =================================================================
-    test('Should create ExpenseModel with all required fields', () {
-      // ARRANGE (preparazione)
-      // Dati già preparati nel setUp()
-
-      // ACT (azione)
-      final expense = sampleExpense;
-
-      // ASSERT (verifica)
-      // Verifichiamo che tutti i campi siano stati assegnati correttamente
-      expect(expense.uuid, 'test-uuid-123');
-      expect(expense.value, 100.0);
-      expect(expense.description, 'Test expense');
-      expect(expense.createdOn, testDate);
-      expect(expense.userId, 'user-123');
-      expect(expense.currency, ExpenseCurrency.euro);
-      expect(expense.exchangeRates, testRates);
-      expect(expense.category, ExpenseCategory.food);
-    });
-
-    // =================================================================
-    // TEST 2: Categoria default (other) quando non specificata
+    // TEST 1: Categoria default (other) quando non specificata
     // =================================================================
     test('Should default category to other when not provided', () {
       // ARRANGE
@@ -81,7 +59,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 3: Serializzazione (toMap - da oggetto a database)
+    // TEST 2: Serializzazione (toMap - da oggetto a database)
     // =================================================================
     test('Should correctly serialize to Map for database storage', () {
       // ARRANGE
@@ -109,7 +87,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 4: Deserializzazione (fromMap - da database a oggetto)
+    // TEST 3: Deserializzazione (fromMap - da database a oggetto)
     // =================================================================
     test('Should correctly deserialize from Map retrieved from database', () {
       // ARRANGE
@@ -139,7 +117,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 5: Retrocompatibilità (vecchie spese senza currency e senza category)
+    // TEST 4: Retrocompatibilità (vecchie spese senza currency e senza category)
     // =================================================================
     test(
       'Should handle legacy expenses without currency and category fields',
@@ -168,7 +146,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 6: Retrocompatibilità — categoria con stringa sconosciuta
+    // TEST 5: Retrocompatibilità — categoria con stringa sconosciuta
     // =================================================================
     test('Should fallback to other for unknown category string from DB', () {
       // ARRANGE: simula un valore corrotto o deprecato nel DB
@@ -192,54 +170,39 @@ void main() {
     });
 
     // =================================================================
-    // TEST 7: copyWith - Immutabilità e clonazione parziale (campi esistenti)
+    // TEST 6: copyWith - Immutabilità e clonazione parziale
     // =================================================================
     test(
       'Should create modified copy with copyWith while preserving original',
       () {
         // ARRANGE
-        final original = sampleExpense;
+        final original = sampleExpense; // value: 100.0, category: food
 
         // ACT
         final modified = original.copyWith(
           value: 200.0,
           description: 'Modified description',
+          category: ExpenseCategory.travel,
         );
 
-        // ASSERT
-        // L'oggetto modificato ha i nuovi valori
+        // ASSERT - campi modificati
         expect(modified.value, 200.0);
         expect(modified.description, 'Modified description');
+        expect(modified.category, ExpenseCategory.travel);
 
-        // Gli altri campi rimangono invariati
+        // ASSERT - campi NON modificati preservati
         expect(modified.uuid, original.uuid);
         expect(modified.currency, original.currency);
-        expect(modified.category, original.category); // categoria preservata
 
-        // L'oggetto originale NON è stato modificato (immutabilità)
+        // ASSERT - originale immutato
         expect(original.value, 100.0);
         expect(original.description, 'Test expense');
+        expect(original.category, ExpenseCategory.food);
       },
     );
 
     // =================================================================
-    // TEST 8: copyWith - Modifica della categoria
-    // =================================================================
-    test('Should correctly update category via copyWith', () {
-      // ARRANGE
-      final original = sampleExpense; // category: food
-
-      // ACT
-      final modified = original.copyWith(category: ExpenseCategory.travel);
-
-      // ASSERT
-      expect(modified.category, ExpenseCategory.travel);
-      // L'oggetto originale NON è stato modificato (immutabilità)
-      expect(original.category, ExpenseCategory.food);
-    });
-
-    // =================================================================
-    // TEST 9: Conversione valuta - Stessa valuta
+    // TEST 7: Conversione valuta - Stessa valuta
     // =================================================================
     test('Should return original value when converting to same currency', () {
       // ARRANGE
@@ -254,7 +217,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 10: Conversione valuta - EUR to USD
+    // TEST 8: Conversione valuta - EUR to USD
     // =================================================================
     test('Should correctly convert EUR to USD using exchange rates', () {
       // ARRANGE
@@ -273,7 +236,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 11: Conversione valuta - USD to GBP
+    // TEST 9: Conversione valuta - USD to GBP
     // =================================================================
     test('Should correctly convert between non-base currencies', () {
       // ARRANGE
@@ -300,7 +263,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 12: Fallback quando mancano i tassi di cambio
+    // TEST 10: Fallback quando mancano i tassi di cambio
     // =================================================================
     test('Should return original value when exchange rates are empty', () {
       // ARRANGE
@@ -323,31 +286,34 @@ void main() {
     });
 
     // =================================================================
-    // TEST 13: Protezione divisione per zero
+    // TEST 11: Protezione divisione per zero
     // =================================================================
-    test('Should handle zero exchange rate safely to prevent division by zero', () {
-      // ARRANGE
-      final expense = ExpenseModel(
-        uuid: 'incomplete-rates',
-        value: 100.0,
-        description: 'Incomplete rates',
-        createdOn: testDate,
-        userId: 'user-123',
-        currency: ExpenseCurrency.euro,
-        exchangeRates: {'USD': 0.0, 'EUR': 1.0}, // tasso sorgente corrotto
-      );
+    test(
+      'Should handle zero exchange rate safely to prevent division by zero',
+      () {
+        // ARRANGE
+        final expense = ExpenseModel(
+          uuid: 'incomplete-rates',
+          value: 100.0,
+          description: 'Incomplete rates',
+          createdOn: testDate,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: {'USD': 0.0, 'EUR': 1.0}, // tasso sorgente corrotto
+        );
 
-      // ACT
-      final converted = expense.getValueIn(ExpenseCurrency.usd);
+        // ACT
+        final converted = expense.getValueIn(ExpenseCurrency.usd);
 
-      // ASSERT
-      // Il metodo deve gestire la valuta mancante senza crashare
-      // Fallback: ritorna valore originale
-      expect(converted, 100.0);
-    });
+        // ASSERT
+        // Il metodo deve gestire la valuta mancante senza crashare
+        // Fallback: ritorna valore originale
+        expect(converted, 100.0);
+      },
+    );
 
     // =================================================================
-    // TEST 14: Serializzazione round-trip (toMap -> fromMap)
+    // TEST 12: Serializzazione round-trip (toMap -> fromMap)
     // =================================================================
     test('Should maintain data integrity through serialization cycle', () {
       // ARRANGE
@@ -369,7 +335,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 15: Round-trip per ogni categoria (tutte le varianti)
+    // TEST 13: Round-trip per ogni categoria (tutte le varianti)
     // =================================================================
     test('Should correctly serialize and deserialize all category values', () {
       // ARRANGE + ACT + ASSERT in loop

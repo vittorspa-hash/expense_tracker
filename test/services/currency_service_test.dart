@@ -74,22 +74,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 3: Get Currency - Success (EUR)
-    // =================================================================
-    test('Should retrieve saved currency from SharedPreferences', () {
-      // ARRANGE
-      // MOCK: SharedPreferences restituisce 'EUR'
-      when(mockPrefs.getString('selected_currency')).thenReturn('EUR');
-
-      // ACT
-      final currency = currencyService.getCurrency();
-
-      // ASSERT
-      expect(currency, ExpenseCurrency.euro);
-    });
-
-    // =================================================================
-    // TEST 4: Get Currency - Fallback to EUR (No Saved Preference)
+    // TEST 3: Get Currency - Fallback to EUR (No Saved Preference)
     // =================================================================
     test('Should return EUR as default when no currency is saved', () {
       // ARRANGE
@@ -105,7 +90,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 5: Get Currency - Fallback to EUR (Error)
+    // TEST 4: Get Currency - Fallback to EUR (Error)
     // =================================================================
     test('Should return EUR as default when retrieval fails', () {
       // ARRANGE
@@ -123,7 +108,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 6: Clear Currency - Success
+    // TEST 5: Clear Currency - Success
     // =================================================================
     test('Should remove saved currency from SharedPreferences', () async {
       // ARRANGE
@@ -137,7 +122,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 7: Clear Currency - Failure
+    // TEST 6: Clear Currency - Failure
     // =================================================================
     test('Should throw exception when clearing currency fails', () async {
       // ARRANGE
@@ -153,7 +138,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 8: Get Exchange Rates - Unsupported Currency (Fallback)
+    // TEST 7: Get Exchange Rates - Unsupported Currency (Fallback)
     // =================================================================
     test('Should return 1:1 rate for unsupported currency', () async {
       // ARRANGE
@@ -174,7 +159,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 9: Get Exchange Rates - Network Success
+    // TEST 8: Get Exchange Rates - Network Success
     // =================================================================
     test(
       'Should fetch and cache exchange rates when network succeeds',
@@ -220,7 +205,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 10: Get Exchange Rates - Network Timeout, Cache Hit
+    // TEST 9: Get Exchange Rates - Network Timeout, Cache Hit
     // =================================================================
     test('Should return cached rates when network times out', () async {
       // ARRANGE
@@ -260,7 +245,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 11: Get Exchange Rates - Network Fails, Cache Hit
+    // TEST 10: Get Exchange Rates - Network Fails, Cache Hit
     // =================================================================
     test('Should use cache when network returns error status', () async {
       // ARRANGE
@@ -277,7 +262,8 @@ void main() {
       }
       ''';
 
-      // MOCK: HTTP restituisce errore 500
+      // MOCK: HTTP restituisce 500 → non entra nel blocco if (statusCode == 200)
+      // → non lancia eccezione → cade direttamente nel fallback cache
       when(
         mockHttpClient.get(any),
       ).thenAnswer((_) async => http.Response('Internal Server Error', 500));
@@ -296,7 +282,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 12: Get Exchange Rates - Both Network and Cache Fail
+    // TEST 11: Get Exchange Rates - Both Network and Cache Fail
     // =================================================================
     test('Should throw exception when both network and cache fail', () async {
       // ARRANGE
@@ -320,7 +306,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 13: Get Exchange Rates - Network Success Updates Old Cache
+    // TEST 12: Get Exchange Rates - Network Success Updates Old Cache
     // =================================================================
     test('Should update cache with fresh data when network succeeds', () async {
       // ARRANGE
@@ -363,7 +349,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 14: Multiple Currency Codes - Supported Codes
+    // TEST 13: Multiple Currency Codes - Supported Codes
     // =================================================================
     test('Should retrieve correct currency for all supported codes', () {
       final testCases = {
@@ -384,7 +370,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 15: Cache Corrupted JSON
+    // TEST 14: Cache Corrupted JSON
     // =================================================================
     test('Should throw exception when cache contains malformed JSON', () async {
       when(mockHttpClient.get(any)).thenThrow(Exception('No internet'));
