@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/pages/edit_expense_page.dart';
 import 'package:expense_tracker/providers/currency_provider.dart';
-import 'package:expense_tracker/config/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: expense_tile.dart

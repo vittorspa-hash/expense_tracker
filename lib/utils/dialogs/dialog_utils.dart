@@ -3,7 +3,7 @@ import 'package:expense_tracker/pages/profile_page.dart';
 import 'package:expense_tracker/pages/settings_page.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/providers/profile_provider.dart';
-import 'package:expense_tracker/config/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_styles.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_widgets.dart';
 import 'package:flutter/cupertino.dart';

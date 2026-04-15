@@ -11,7 +11,7 @@ import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
-import 'package:expense_tracker/config/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: profile_page.dart

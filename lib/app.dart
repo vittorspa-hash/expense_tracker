@@ -1,14 +1,8 @@
+import 'package:expense_tracker/config/app_router.dart';
 import 'package:expense_tracker/config/supported_locales.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/auth_wrapper.dart';
-import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/pages/edit_expense_page.dart';
-import 'package:expense_tracker/pages/home_page.dart';
-import 'package:expense_tracker/pages/settings_page.dart';
-import 'package:expense_tracker/pages/years_page.dart';
-import 'package:expense_tracker/pages/new_expense_page.dart';
-import 'package:expense_tracker/pages/profile_page.dart';
-import 'package:expense_tracker/providers/language_provider.dart'; 
+import 'package:expense_tracker/providers/language_provider.dart';
 import 'package:expense_tracker/providers/theme_provider.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +15,7 @@ import 'package:provider/provider.dart';
 /// Si occupa della configurazione globale della MaterialApp, includendo:
 /// - Gestione dei Temi (Chiaro/Scuro) tramite Provider.
 /// - Configurazione della Localizzazione (Lingue supportate e delegati).
-/// - Gestione del Routing (Navigazione tra pagine).
+/// - Gestione del Routing delegata a AppRouter.
 /// - Monitoraggio del ciclo di vita dell'app per la gestione delle notifiche.
 
 class App extends StatefulWidget {
@@ -33,7 +27,8 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> with WidgetsBindingObserver {
   // --- DIPENDENZE ---
-  final NotificationService _notificationService = GetIt.instance<NotificationService>();
+  final NotificationService _notificationService =
+      GetIt.instance<NotificationService>();
 
   // --- CICLO DI VITA WIDGET ---
   // Registra l'observer per rilevare quando l'app va in background o torna attiva.
@@ -74,15 +69,15 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
           // --- CONFIGURAZIONE LOCALIZZAZIONE ---
           // Imposta la lingua corrente basandosi sullo stato del LanguageProvider.
-          locale: languageProvider.currentLocale, 
-          
+          locale: languageProvider.currentLocale,
+
           // Definisce le lingue ufficialmente supportate dall'applicazione.
           supportedLocales: AppLocales.supportedLocales,
-          
+
           // Configura i delegati necessari per la traduzione dei widget Material, Cupertino
           // e delle stringhe personalizzate (AppLocalizations).
           localizationsDelegates: const [
-            AppLocalizations.delegate, 
+            AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -97,29 +92,7 @@ class _AppState extends State<App> with WidgetsBindingObserver {
           home: const AuthWrapper(),
 
           // --- GESTIONE ROUTING ---
-          // Gestisce la navigazione nominativa e il passaggio di argomenti complessi
-          // (come ExpenseModel per la pagina di modifica).
-          onGenerateRoute: (RouteSettings settings) {
-            final Map<String, WidgetBuilder> routes = {
-              HomePage.route: (_) => const HomePage(),
-              ProfilePage.route: (_) => const ProfilePage(),
-              SettingsPage.route: (_) => const SettingsPage(),
-              NewExpensePage.route: (_) => const NewExpensePage(),
-              EditExpensePage.route: (_) =>
-                  EditExpensePage(settings.arguments as ExpenseModel),
-              YearsPage.route: (_) => const YearsPage(),
-            };
-
-            final WidgetBuilder? builder = routes[settings.name];
-
-            if (builder != null) {
-              return MaterialPageRoute(
-                builder: builder,
-                settings: settings,
-              );
-            }
-            return null;
-          },
+          onGenerateRoute: AppRouter.onGenerateRoute,
         );
       },
     );

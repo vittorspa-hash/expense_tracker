@@ -7,7 +7,7 @@
 import 'package:expense_tracker/components/report/report_bar_chart.dart';
 import 'package:expense_tracker/components/report/report_pie_chart.dart';
 import 'package:expense_tracker/components/report/report_section_header.dart';
-import 'package:expense_tracker/config/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:flutter/material.dart';

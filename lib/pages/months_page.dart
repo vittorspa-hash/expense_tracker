@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:intl/intl.dart';
-import 'package:expense_tracker/config/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: months_page.dart
@@ -33,7 +33,6 @@ class MonthsPage extends StatefulWidget {
 
 class _MonthsPageState extends State<MonthsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   @override
   TickerProvider get vsync => this;
 
@@ -69,10 +68,9 @@ class _MonthsPageState extends State<MonthsPage>
           // --- RECUPERO DATI (CONSUMER) ---
           // Ascolta il Provider per ottenere le spese aggregate per giorno.
           // La logica di raggruppamento (Map<Giorno, Totale>) è delegata al Provider.
-          // 
+          //
           child: Consumer<ExpenseProvider>(
             builder: (context, expenseProvider, child) {
-              
               final dailyExpenses = expenseProvider.expensesByDay(
                 widget.year,
                 widget.month,
@@ -80,14 +78,16 @@ class _MonthsPageState extends State<MonthsPage>
 
               // --- STATO VUOTO ---
               // Visualizzazione alternativa se non ci sono dati per il periodo selezionato.
-              // 
+              //
               if (dailyExpenses.isEmpty) {
                 return buildWithFadeAnimation(
                   ReportEmptyState(
                     title: loc.noExpensesMonthTitle,
-                    subtitle: loc.noExpensesSubtitle, // Riutilizzo la stringa generica
+                    subtitle: loc
+                        .noExpensesSubtitle, // Riutilizzo la stringa generica
                     icon: Icons.event_busy_rounded,
-                    useCircleBackground: true, // Mantiene lo stile originale col cerchio
+                    useCircleBackground:
+                        true, // Mantiene lo stile originale col cerchio
                   ),
                 );
               }
@@ -96,7 +96,7 @@ class _MonthsPageState extends State<MonthsPage>
 
               // --- CONTENUTO LISTA ---
               // Visualizza la Card Totale e la lista dei giorni.
-              // 
+              //
               return buildWithFadeAnimation(
                 Column(
                   children: [
@@ -128,7 +128,7 @@ class _MonthsPageState extends State<MonthsPage>
                           );
 
                           // Navigazione al dettaglio giornaliero (DaysPage)
-                          // 
+                          //
                           return ReportPeriodListItem(
                             badgeText: "${date.day}",
                             badgeSubtext: DateFormat(
@@ -145,12 +145,10 @@ class _MonthsPageState extends State<MonthsPage>
                               final m = int.parse(parts[1]);
                               final y = int.parse(parts[2]);
 
-                              Navigator.push(
+                              Navigator.pushNamed(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      DaysPage(year: y, month: m, day: d),
-                                ),
+                                DaysPage.route,
+                                arguments: {'year': y, 'month': m, 'day': d},
                               );
                             },
                           );

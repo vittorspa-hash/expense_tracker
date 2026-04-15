@@ -12,7 +12,7 @@ import 'package:expense_tracker/utils/report_date_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/config/theme/app_colors.dart';
+import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: years_page.dart
@@ -255,14 +255,13 @@ class _YearsPageState extends State<YearsPage>
                                   ? (total / totalYear) * 100
                                   : 0,
                               onTap: () {
-                                Navigator.push(
+                                Navigator.pushNamed(
                                   context,
-                                  MaterialPageRoute(
-                                    builder: (_) => MonthsPage(
-                                      year: int.parse(selectedYear!),
-                                      month: monthNum,
-                                    ),
-                                  ),
+                                  MonthsPage.route,
+                                  arguments: {
+                                    'year': int.parse(selectedYear!),
+                                    'month': monthNum,
+                                  },
                                 );
                               },
                             ),
