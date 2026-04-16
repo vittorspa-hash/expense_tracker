@@ -9,38 +9,58 @@ import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// FILE: auth_wrapper.dart
+/// DESCRIZIONE: Orchestratore della navigazione principale.
+/// Gestisce il flusso di accesso basandosi su due stati:
+/// 1. Lo stato di autenticazione dell'utente (Firebase Auth).
+/// 2. Lo stato di inizializzazione dei dati (Firestore/API).
+/// Utilizza una logica reattiva per mostrare la pagina di Login, lo spinner di caricamento,
+/// la schermata di errore o l'applicazione vera e propria (HomePage).
+
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Rilevamento del tema corrente per l'adattamento dinamico dei colori UI.
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Ascolto degli stati dai provider tramite context.watch.
     final authStatus = context.watch<AuthProvider>().authStatus;
     final expenseProvider = context.watch<ExpenseProvider>();
 
+    // --- LOGICA DI AUTENTICAZIONE ---
+    // Determina la macro-area dell'app in base alla sessione utente.
     switch (authStatus) {
       case AuthStatus.unknown:
+        // Stato di transizione di Firebase Auth all'avvio.
         return _buildLoadingScreen();
 
       case AuthStatus.unauthenticated:
       case AuthStatus.unverified:
+        // Utente non loggato: pulizia del provider e reindirizzamento al login.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           context.read<ExpenseProvider>().clear();
         });
         return const AuthPage();
 
       case AuthStatus.authenticated:
+        // --- LOGICA DI INIZIALIZZAZIONE DATI ---
+        // Una volta autenticato, gestisce il caricamento dei dati utente.
         switch (expenseProvider.initStatus) {
           case ExpenseInitStatus.initial:
+            // Trigger automatico del caricamento dati al primo accesso autenticato.
             WidgetsBinding.instance.addPostFrameCallback(
               (_) => expenseProvider.initialise(),
             );
             return _buildLoadingScreen();
 
           case ExpenseInitStatus.loading:
+            // Visualizzazione progresso durante il fetch dei dati (Firestore/Cambi).
             return _buildLoadingScreen();
 
           case ExpenseInitStatus.error:
+            // Gestione dei fallimenti critici durante l'avvio.
             return _buildErrorScreen(
               context,
               expenseProvider.initError,
@@ -49,17 +69,22 @@ class AuthWrapper extends StatelessWidget {
             );
 
           case ExpenseInitStatus.initialized:
+            // Successo: accesso garantito alla dashboard principale.
             return const HomePage();
         }
     }
   }
 
+  // --- COMPONENTI UI PRIVATI ---
+
+  // Schermata di caricamento standardizzata per le fasi di transizione.
   Widget _buildLoadingScreen() {
     return Scaffold(
       body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
     );
   }
 
+  // Schermata di errore persistente con opzione di ripristino manuale.
   Widget _buildErrorScreen(
     BuildContext context,
     Object? error,
@@ -77,8 +102,11 @@ class AuthWrapper extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Feedback visivo dell'errore.
               Icon(Icons.error_outline, size: 48.sp, color: AppColors.delete),
               SizedBox(height: 16.h),
+
+              // Titolo dell'errore localizzato.
               Text(
                 loc.appInitErrorTitle,
                 style: TextStyle(
@@ -88,6 +116,8 @@ class AuthWrapper extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 8.h),
+
+              // Descrizione dettagliata: estrae il messaggio se l'errore è un RepositoryFailure.
               Text(
                 (error is RepositoryFailure)
                     ? error.message
@@ -98,6 +128,8 @@ class AuthWrapper extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 24.h),
+
+              // Azione di Retry: tenta nuovamente l'inizializzazione del provider.
               ElevatedButton.icon(
                 icon: Icon(
                   Icons.refresh,
@@ -110,15 +142,16 @@ class AuthWrapper extends StatelessWidget {
                   foregroundColor: isDark
                       ? AppColors.textDark
                       : AppColors.textLight,
-
-                  minimumSize: Size(double.infinity, 50.h),
-
+                  minimumSize: Size(
+                    double.infinity,
+                    50.h,
+                  ), // Layout full-width per accessibilità.
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                 ),
                 onPressed: () async {
-                  // Chiamiamo l'inizializzazione
+                  // Esegue nuovamente la logica di inizializzazione definita nel Provider.
                   await expenseProvider.initialise();
                 },
               ),

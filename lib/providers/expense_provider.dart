@@ -251,9 +251,7 @@ class ExpenseProvider extends ChangeNotifier {
     }
   }
 
-  // --- ELIMINAZIONE E RIPRISTINO ---
-  // Elimina un gruppo di spese in modo concorrente per performance.
-  // Rimuove le spese dalla lista locale e aggiorna i totali.
+  // --- ELIMINAZIONE ---
   Future<void> deleteExpenses(List<ExpenseModel> expensesToDelete) async {
     if (expensesToDelete.isEmpty) return;
 
@@ -264,28 +262,46 @@ class ExpenseProvider extends ChangeNotifier {
     final user = _authProvider.currentUser;
 
     try {
-      // Elimina tutte le spese in parallelo per performance
-      await Future.wait(
+      // Raccogliamo i risultati di ogni singola operazione, senza interrompere al primo errore
+      final results = await Future.wait(
         expensesToDelete.map(
-          (e) => _expenseService.deleteExpense(e, user: user),
+          (e) => _expenseService
+              .deleteExpense(e, user: user)
+              .then((_) => (expense: e, error: null as Object?))
+              .catchError((err) => (expense: e, error: err as Object?)),
         ),
+        eagerError: false,
       );
 
-      final idsToRemove = expensesToDelete.map((e) => e.uuid).toSet();
-      _expenses.removeWhere((element) => idsToRemove.contains(element.uuid));
-      _refreshTotals();
-    } on RepositoryFailure catch (e) {
-      _errorMessage = "Deletion failed: ${e.message}";
+      // Separiamo i successi dai fallimenti
+      final succeeded = results
+          .where((r) => r.error == null)
+          .map((r) => r.expense)
+          .toList();
+      final failed = results.where((r) => r.error != null).toList();
+
+      // Rimuoviamo dalla lista locale SOLO le spese effettivamente eliminate
+      if (succeeded.isNotEmpty) {
+        final idsRemoved = succeeded.map((e) => e.uuid).toSet();
+        _expenses.removeWhere((e) => idsRemoved.contains(e.uuid));
+        _refreshTotals();
+      }
+
+      // Notifichiamo l'utente degli eventuali fallimenti parziali
+      if (failed.isNotEmpty) {
+        _errorMessage =
+            "Deletion failed for ${failed.length} of ${expensesToDelete.length} expenses.";
+      }
     } catch (e) {
-      _errorMessage = "Error deleting: $e";
+      // Catch residuale per errori imprevisti fuori da Future.wait
+      _errorMessage = "Unexpected error during deletion: $e";
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // Ripristina un gruppo di spese eliminate in modo concorrente.
-  // Aggiunge le spese ripristinate, riordina la lista e verifica il budget.
+  // --- RIPRISTINO ---
   Future<void> restoreExpenses(
     List<ExpenseModel> expensesToRestore,
     AppLocalizations l10n,
@@ -299,25 +315,37 @@ class ExpenseProvider extends ChangeNotifier {
     final user = _authProvider.currentUser;
 
     try {
-      // Ripristina tutte le spese in parallelo per performance
-      await Future.wait(
+      final results = await Future.wait(
         expensesToRestore.map(
-          (e) => _expenseService.restoreExpense(e, user: user),
+          (e) => _expenseService
+              .restoreExpense(e, user: user)
+              .then((_) => (expense: e, error: null as Object?))
+              .catchError((err) => (expense: e, error: err as Object?)),
         ),
+        eagerError: false,
       );
 
-      _expenses.addAll(expensesToRestore);
+      final succeeded = results
+          .where((r) => r.error == null)
+          .map((r) => r.expense)
+          .toList();
+      final failed = results.where((r) => r.error != null).toList();
 
-      // RICEVI lista ordinata dal service
-      _expenses = _expenseService.sortExpenses(_expenses, "date_desc", null);
-      _refreshTotals();
+      // Aggiungiamo alla lista locale SOLO le spese effettivamente ripristinate
+      if (succeeded.isNotEmpty) {
+        _expenses.addAll(succeeded);
+        _expenses = _expenseService.sortExpenses(_expenses, "date_desc", null);
+        _refreshTotals();
 
-      // Orchestrazione: verifica budget per le spese ripristinate
-      await _checkBudgetForList(expensesToRestore, l10n);
-    } on RepositoryFailure catch (e) {
-      _errorMessage = "Unable to restore: ${e.message}";
+        await _checkBudgetForList(succeeded, l10n);
+      }
+
+      if (failed.isNotEmpty) {
+        _errorMessage =
+            "Restore failed for ${failed.length} of ${expensesToRestore.length} expenses.";
+      }
     } catch (e) {
-      _errorMessage = "Restore error: $e";
+      _errorMessage = "Unexpected error during restore: $e";
     } finally {
       _isLoading = false;
       notifyListeners();
