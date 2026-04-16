@@ -15,8 +15,6 @@ class AuthService {
   // --- CONFIGURAZIONE E STATO ---
   DateTime? _lastEmailSent;
 
-  User? get currentUser => _firebaseAuth.currentUser;
-
   // --- REGISTRAZIONE UTENTE ---
   // Crea un nuovo utente su Firebase, aggiorna il nome visualizzato (DisplayName)
   // e invia automaticamente l'email di verifica.

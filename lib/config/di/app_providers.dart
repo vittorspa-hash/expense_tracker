@@ -13,6 +13,7 @@ import 'package:expense_tracker/services/language_service.dart';
 import 'package:expense_tracker/services/notification_service.dart';
 import 'package:expense_tracker/services/profile_service.dart';
 import 'package:expense_tracker/services/theme_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' show FirebaseAuth;
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -78,7 +79,7 @@ Future<InitializedProviders> initProviders() async {
   await initializeDateFormatting(Intl.defaultLocale, null);
 
   // Inizializzazione prima della lista per poterlo passare come dipendenza a ExpenseProvider
-  final authProvider = AuthProvider(authService: getIt<AuthService>());
+  final authProvider = AuthProvider(authService: getIt<AuthService>(), firebaseAuth: getIt<FirebaseAuth>());
 
   return InitializedProviders(
     notificationProvider: notificationProvider,

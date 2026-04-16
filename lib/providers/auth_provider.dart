@@ -1,25 +1,56 @@
-import 'package:flutter/foundation.dart'; 
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:expense_tracker/services/auth_service.dart';
 
 /// FILE: auth_provider.dart
 /// DESCRIZIONE: State Manager per l'autenticazione (ChangeNotifier).
-/// Agisce come intermediario tra la UI e l'AuthService, gestendo lo stato di 
+/// Agisce come intermediario tra la UI e l'AuthService, gestendo lo stato di
 /// caricamento (loading spinners) e propagando errori o successi alle viste.
+
+enum AuthStatus { unknown, authenticated, unauthenticated, unverified }
 
 class AuthProvider extends ChangeNotifier {
   // --- STATO E DIPENDENZE ---
-  // Iniezione del servizio di autenticazione e gestione dello stato 
-  // di caricamento visibile dalla UI.
+  // Iniezione del servizio di autenticazione e gestione dello stato di caricamento
   final AuthService _authService;
+  final FirebaseAuth _firebaseAuth;
 
-  AuthProvider({required AuthService authService})
-      : _authService = authService;
+  late final StreamSubscription<User?> _authSubscription;
+  AuthStatus _authStatus = AuthStatus.unknown;
+  AuthStatus get authStatus => _authStatus;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
+  User? get currentUser => _firebaseAuth.currentUser;
 
-  User? get currentUser => _authService.currentUser;
+  AuthProvider({
+    required AuthService authService,
+    required FirebaseAuth firebaseAuth,
+  }) : _authService = authService,
+       _firebaseAuth = firebaseAuth {
+    // Sottoscrizione allo stream Firebase: aggiorna authStatus e notifica la UI.
+    _authSubscription = _firebaseAuth.idTokenChanges().listen(
+      _onAuthStateChanged,
+    );
+  }
+
+  void _onAuthStateChanged(User? user) {
+    if (user == null) {
+      _authStatus = AuthStatus.unauthenticated;
+    } else if (!user.emailVerified) {
+      _authStatus = AuthStatus.unverified;
+    } else {
+      _authStatus = AuthStatus.authenticated;
+    }
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _authSubscription.cancel(); // evita memory leak
+    super.dispose();
+  }
 
   // --- REGISTRAZIONE ---
   // Coordina la creazione dell'account gestendo il loading state.
@@ -31,13 +62,9 @@ class AuthProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      await _authService.signUp(
-        email: email, 
-        password: password, 
-        nome: nome
-      );
+      await _authService.signUp(email: email, password: password, nome: nome);
     } catch (e) {
-      rethrow; 
+      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -47,16 +74,13 @@ class AuthProvider extends ChangeNotifier {
   // Gestisce l'accesso e restituisce l'oggetto User.
   // Questo permette alla UI di verificare immediatamente lo stato (es. emailVerified)
   // e decidere se procedere alla Home o mostrare avvisi.
-  Future<User> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<User> signIn({required String email, required String password}) async {
     _setLoading(true);
     try {
       final user = await _authService.signIn(email: email, password: password);
-      return user; 
+      return user;
     } catch (e) {
-      rethrow; 
+      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -68,7 +92,6 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() async {
     try {
       await _authService.signOut();
-      notifyListeners(); 
     } catch (e) {
       rethrow;
     }

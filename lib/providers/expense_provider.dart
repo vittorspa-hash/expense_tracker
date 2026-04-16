@@ -15,6 +15,8 @@ import 'package:flutter/foundation.dart';
 /// Questo provider si occupa solo di: coordinare le operazioni, gestire loading/errori,
 /// e notificare i listener quando lo stato cambia.
 
+enum ExpenseInitStatus { initial, loading, initialized, error }
+
 class ExpenseProvider extends ChangeNotifier {
   // --- STATO E DIPENDENZE ---
   // Iniezione delle dipendenze per orchestrare operazioni tra expense e notifiche.
@@ -38,6 +40,14 @@ class ExpenseProvider extends ChangeNotifier {
   List<ExpenseModel> _expenses = [];
   List<ExpenseModel> get expenses => List.unmodifiable(_expenses);
 
+  // Gestione stato di inizializzazione
+  ExpenseInitStatus _initStatus = ExpenseInitStatus.initial;
+  ExpenseInitStatus get initStatus => _initStatus;
+
+  // Errore specifico per la fase di inizializzazione
+  Object? _initError;
+  Object? get initError => _initError;
+
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
@@ -56,6 +66,49 @@ class ExpenseProvider extends ChangeNotifier {
   double get totalExpenseWeek => _totals.week;
   double get totalExpenseMonth => _totals.month;
   double get totalExpenseYear => _totals.year;
+
+  // --- INIZIALIZZAZIONE ---
+  // Avvia il caricamento iniziale dei dati.
+  // Gestisce internamente gli stati per aggiornare la UI in modo reattivo.
+  Future<void> initialise() async {
+    // Evitiamo chiamate multiple se è già in corso o completato
+    if (_initStatus == ExpenseInitStatus.loading ||
+        _initStatus == ExpenseInitStatus.initialized) {
+      return;
+    }
+
+    _initStatus = ExpenseInitStatus.loading;
+    _initError = null;
+    notifyListeners();
+
+    final user = _authProvider.currentUser;
+
+    try {
+      _expenses = await _expenseService.loadUserExpenses(user: user);
+      _refreshTotals();
+
+      _initStatus = ExpenseInitStatus.initialized;
+    } on RepositoryFailure catch (e) {
+      _initError = e;
+      _initStatus = ExpenseInitStatus.error;
+    } catch (e) {
+      _initError = "Unknown error during startup: $e";
+      _initStatus = ExpenseInitStatus.error;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  // Resetta completamente lo stato del provider.
+  void clear() {
+    _expenses = [];
+    _errorMessage = null;
+    _warningMessage = null;
+    _initStatus = ExpenseInitStatus.initial;
+    _initError = null;
+    _refreshTotals();
+    notifyListeners();
+  }
 
   // Resetta messaggi di errore e warning.
   // Utile prima di operazioni nuove per mostrare solo errori recenti.
@@ -81,36 +134,6 @@ class ExpenseProvider extends ChangeNotifier {
       _refreshTotals();
       notifyListeners();
     }
-  }
-
-  // --- INIZIALIZZAZIONE ---
-  // Carica le spese dell'utente all'avvio dell'app.
-  // Gestisce errori di repository e generici, impostando messaggi appropriati.
-  Future<void> initialise() async {
-    _errorMessage = null;
-    final user = _authProvider.currentUser;
-
-    try {
-      _expenses = await _expenseService.loadUserExpenses(user: user);
-      _refreshTotals();
-    } on RepositoryFailure catch (e) {
-      _errorMessage = "Error loading data: ${e.message}";
-      rethrow;
-    } catch (e) {
-      _errorMessage = "Unknown error during startup.";
-      rethrow;
-    }
-
-    notifyListeners();
-  }
-
-  // Resetta completamente lo stato del provider.
-  // Utile durante logout o reset dell'applicazione.
-  void clear() {
-    _expenses = [];
-    _errorMessage = null;
-    _refreshTotals();
-    notifyListeners();
   }
 
   // --- CREAZIONE (delega al service) ---
@@ -243,7 +266,9 @@ class ExpenseProvider extends ChangeNotifier {
     try {
       // Elimina tutte le spese in parallelo per performance
       await Future.wait(
-        expensesToDelete.map((e) => _expenseService.deleteExpense(e, user: user)),
+        expensesToDelete.map(
+          (e) => _expenseService.deleteExpense(e, user: user),
+        ),
       );
 
       final idsToRemove = expensesToDelete.map((e) => e.uuid).toSet();
@@ -276,7 +301,9 @@ class ExpenseProvider extends ChangeNotifier {
     try {
       // Ripristina tutte le spese in parallelo per performance
       await Future.wait(
-        expensesToRestore.map((e) => _expenseService.restoreExpense(e, user: user)),
+        expensesToRestore.map(
+          (e) => _expenseService.restoreExpense(e, user: user),
+        ),
       );
 
       _expenses.addAll(expensesToRestore);
