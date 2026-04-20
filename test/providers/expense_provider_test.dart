@@ -123,16 +123,63 @@ void main() {
         expect(provider.expenses.first.uuid, 'expense-uuid-1');
         // Nessun errore deve essere presente
         expect(provider.errorMessage, isNull);
+        expect(provider.initError, isNull);
+        // initStatus deve essere initialized
+        expect(provider.initStatus, ExpenseInitStatus.initialized);
         // Verifichiamo che il service sia stato chiamato esattamente una volta
         verify(mockExpenseService.loadUserExpenses(user: fakeUser)).called(1);
       },
     );
 
     // =================================================================
-    // TEST 2: initialise() - Gestione RepositoryFailure
+    // TEST 2: initialise() - Seconda chiamata
+    // =================================================================
+    test('Should not re-execute initialise if already initialized', () async {
+      // ARRANGE
+      when(
+        mockExpenseService.loadUserExpenses(user: fakeUser),
+      ).thenAnswer((_) async => [sampleExpense]);
+      await provider.initialise();
+      expect(
+        provider.initStatus,
+        ExpenseInitStatus.initialized,
+      ); // precondizione
+
+      // ACT — seconda chiamata, deve essere ignorata dal guard
+      await provider.initialise();
+
+      // ASSERT
+      // loadUserExpenses deve essere stato chiamato una sola volta in totale
+      verify(mockExpenseService.loadUserExpenses(user: fakeUser)).called(1);
+    });
+
+    // =================================================================
+    // TEST 3: initialise() - Seconda chiamata (parallelo)
+    // =================================================================
+    test('Should not re-execute initialise if already loading', () async {
+      // ARRANGE
+      when(mockExpenseService.loadUserExpenses(user: fakeUser)).thenAnswer((
+        _,
+      ) async {
+        // Durante il primo initialise(), lanciamo il secondo in parallelo
+        await provider.initialise(); // deve essere bloccato dal guard
+        return [sampleExpense];
+      });
+
+      // ACT
+      await provider.initialise();
+
+      // ASSERT
+      // loadUserExpenses deve essere stato chiamato una sola volta in totale
+      verify(mockExpenseService.loadUserExpenses(user: fakeUser)).called(1);
+      expect(provider.initStatus, ExpenseInitStatus.initialized);
+    });
+
+    // =================================================================
+    // TEST 4: initialise() - Gestione RepositoryFailure
     // =================================================================
     test(
-      'Should set errorMessage and rethrow on RepositoryFailure during initialise',
+      'Should set initStatus to error and initError on RepositoryFailure during initialise',
       () async {
         // ARRANGE
         // Simuliamo un fallimento del repository (es. Firestore non raggiungibile)
@@ -140,23 +187,22 @@ void main() {
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenThrow(RepositoryFailure("Firestore unavailable"));
 
-        // ACT + ASSERT
-        // Il provider deve rilanciare l'eccezione: usiamo expectLater + throwsA
-        // per verificare che il Future completi con un errore
-        await expectLater(
-          provider.initialise(),
-          throwsA(isA<RepositoryFailure>()),
-        );
+        // ACT
+        await provider.initialise();
 
-        // Verifichiamo anche lo stato interno dopo l'errore
-        expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Firestore unavailable"));
+        // ASSERT
+        expect(provider.initStatus, ExpenseInitStatus.error);
+        expect(provider.initError, isA<RepositoryFailure>());
         expect(provider.expenses, isEmpty);
+        expect(
+          provider.errorMessage,
+          isNull,
+        ); // errorMessage non viene settato in initialise()
       },
     );
 
     // =================================================================
-    // TEST 3: clear() - Reset completo dello stato
+    // TEST 5: clear() - Reset completo dello stato
     // =================================================================
     test(
       'Should reset expenses and call calculateTotals with empty list on clear',
@@ -167,7 +213,9 @@ void main() {
         ).thenAnswer((_) async => [sampleExpense]);
         await provider.initialise();
         expect(provider.expenses, hasLength(1)); // precondizione
-        clearInteractions(mockExpenseService); // azzera contatore dopo initialise
+        clearInteractions(
+          mockExpenseService,
+        ); // azzera contatore dopo initialise
 
         // ACT
         provider.clear();
@@ -175,6 +223,8 @@ void main() {
         // ASSERT
         expect(provider.expenses, isEmpty);
         expect(provider.errorMessage, isNull);
+        expect(provider.initStatus, ExpenseInitStatus.initial);
+        expect(provider.initError, isNull);
 
         // Verifica che calculateTotals sia stato chiamato con lista VUOTA:
         verify(mockExpenseService.calculateTotals([], any)).called(1);
@@ -182,82 +232,98 @@ void main() {
     );
 
     // =================================================================
-    // TEST 4: clearError() - Reset messaggi di errore e warning
+    // TEST 6: clearError() - Reset messaggi di errore e warning
     // =================================================================
-    test('Should clear errorMessage and warningMessage on clearError', () async {
-      // ARRANGE
-      // Provocchiamo un errore tramite initialise() per avere un errorMessage reale
-      when(
-        mockExpenseService.loadUserExpenses(user: fakeUser),
-      ).thenThrow(RepositoryFailure("Some error"));
+    test(
+      'Should clear errorMessage and warningMessage on clearError',
+      () async {
+        // ARRANGE — provoca un errorMessage tramite createExpense
+        when(
+          mockExpenseService.createExpense(
+            value: anyNamed('value'),
+            description: anyNamed('description'),
+            date: anyNamed('date'),
+            currency: anyNamed('currency'),
+            category: anyNamed('category'),
+            user: anyNamed('user'),
+          ),
+        ).thenThrow(RepositoryFailure("Some error"));
 
-      await expectLater(
-        provider.initialise(),
-        throwsA(isA<RepositoryFailure>()),
-      );
-      expect(provider.errorMessage, isNotNull); // precondizione
+        await provider.createExpense(
+          value: 50.0,
+          description: 'fail',
+          date: DateTime(2024, 6, 15),
+          currencyCode: ExpenseCurrency.euro,
+          category: ExpenseCategory.food,
+          l10n: mockL10n,
+        );
+        expect(provider.errorMessage, isNotNull); // precondizione
 
-      // ACT
-      provider.clearError();
+        // ACT
+        provider.clearError();
 
-      // ASSERT
-      expect(provider.errorMessage, isNull);
-      expect(provider.warningMessage, isNull);
-    });
-
-    // =================================================================
-    // TEST 5: notifyListeners() - Notifica UI nelle operazioni principali
-    // =================================================================
-    test('Should notify listeners during createExpense (loading=true then false)', () async {
-      // ARRANGE
-      when(
-        mockExpenseService.createExpense(
-          value: anyNamed('value'),
-          description: anyNamed('description'),
-          date: anyNamed('date'),
-          currency: anyNamed('currency'),
-          category: anyNamed('category'),
-          user: anyNamed('user'),
-        ),
-      ).thenAnswer((_) async {
-        // Catturiamo lo stato DURANTE l'operazione asincrona
-        expect(provider.isLoading, true); // isLoading deve essere true qui
-        return CreateExpenseResult(expense: sampleExpense, warning: null);
-      });
-
-      when(
-        mockExpenseService.checkBudgetStatus(
-          expenses: anyNamed('expenses'),
-          expenseDate: anyNamed('expenseDate'),
-          targetCurrency: anyNamed('targetCurrency'),
-          budgetLimit: anyNamed('budgetLimit'),
-          alertEnabled: anyNamed('alertEnabled'),
-        ),
-      ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
-
-      // Contatore delle notifiche
-      int notifyCount = 0;
-      provider.addListener(() => notifyCount++);
-
-      // ACT
-      await provider.createExpense(
-        value: 50.0,
-        description: 'Test',
-        date: DateTime(2024, 6, 15),
-        currencyCode: ExpenseCurrency.euro,
-        category: ExpenseCategory.food,
-        l10n: mockL10n,
-      );
-
-      // ASSERT
-      // Almeno 2 notifiche: una con isLoading=true, una nel finally con isLoading=false
-      expect(notifyCount, greaterThanOrEqualTo(2));
-      // Dopo tutto, isLoading deve essere false
-      expect(provider.isLoading, false);
-    });
+        // ASSERT
+        expect(provider.errorMessage, isNull);
+        expect(provider.warningMessage, isNull);
+      },
+    );
 
     // =================================================================
-    // TEST 6: updateAppCurrency() - Ricalcolo totali solo se valuta cambia
+    // TEST 7: notifyListeners() - Notifica UI nelle operazioni principali
+    // =================================================================
+    test(
+      'Should notify listeners during createExpense (loading=true then false)',
+      () async {
+        // ARRANGE
+        when(
+          mockExpenseService.createExpense(
+            value: anyNamed('value'),
+            description: anyNamed('description'),
+            date: anyNamed('date'),
+            currency: anyNamed('currency'),
+            category: anyNamed('category'),
+            user: anyNamed('user'),
+          ),
+        ).thenAnswer((_) async {
+          // Catturiamo lo stato DURANTE l'operazione asincrona
+          expect(provider.isLoading, true); // isLoading deve essere true qui
+          return CreateExpenseResult(expense: sampleExpense, warning: null);
+        });
+
+        when(
+          mockExpenseService.checkBudgetStatus(
+            expenses: anyNamed('expenses'),
+            expenseDate: anyNamed('expenseDate'),
+            targetCurrency: anyNamed('targetCurrency'),
+            budgetLimit: anyNamed('budgetLimit'),
+            alertEnabled: anyNamed('alertEnabled'),
+          ),
+        ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
+
+        // Contatore delle notifiche
+        int notifyCount = 0;
+        provider.addListener(() => notifyCount++);
+
+        // ACT
+        await provider.createExpense(
+          value: 50.0,
+          description: 'Test',
+          date: DateTime(2024, 6, 15),
+          currencyCode: ExpenseCurrency.euro,
+          category: ExpenseCategory.food,
+          l10n: mockL10n,
+        );
+
+        // ASSERT
+        // Almeno 2 notifiche: una con isLoading=true, una nel finally con isLoading=false
+        expect(notifyCount, greaterThanOrEqualTo(2));
+        // Dopo tutto, isLoading deve essere false
+        expect(provider.isLoading, false);
+      },
+    );
+
+    // =================================================================
+    // TEST 8: updateAppCurrency() - Ricalcolo totali solo se valuta cambia
     // =================================================================
     test('Should recalculate totals only when currency actually changes', () {
       // ARRANGE
@@ -270,17 +336,18 @@ void main() {
       // calculateTotals deve essere stato chiamato esattamente una volta
       verify(mockExpenseService.calculateTotals(any, any)).called(1);
 
+      clearInteractions(mockExpenseService); // reset
+
       // ACT - nessun cambio: USD → USD
       provider.updateAppCurrency(ExpenseCurrency.usd);
 
       // ASSERT
       // calculateTotals NON deve essere chiamato una seconda volta
       verifyNever(mockExpenseService.calculateTotals(any, any));
-
     });
 
     // =================================================================
-    // TEST 7: createExpense() - Aggiunta spesa alla lista con successo
+    // TEST 9: createExpense() - Aggiunta spesa alla lista con successo
     // =================================================================
     test('Should add expense to list on successful createExpense', () async {
       // ARRANGE
@@ -323,10 +390,22 @@ void main() {
       expect(provider.expenses.first.uuid, sampleExpense.uuid);
       expect(provider.isLoading, false);
       expect(provider.errorMessage, isNull);
+
+      // DOPO gli expect esistenti, aggiungi:
+      verify(
+        mockExpenseService.createExpense(
+          value: 50.0,
+          description: 'Test',
+          date: DateTime(2024, 6, 15),
+          currency: ExpenseCurrency.euro,
+          category: ExpenseCategory.food,
+          user: fakeUser,
+        ),
+      ).called(1);
     });
 
     // =================================================================
-    // TEST 8: createExpense() - Warning offline settato correttamente
+    // TEST 10: createExpense() - Warning offline settato correttamente
     // =================================================================
     test('Should set warningMessage when service returns a warning', () async {
       // ARRANGE
@@ -373,10 +452,20 @@ void main() {
       expect(provider.warningMessage, 'Offline warning');
       // La spesa deve essere stata aggiunta comunque
       expect(provider.expenses, hasLength(1));
+      verify(
+        mockExpenseService.createExpense(
+          value: 50.0,
+          description: 'Offline expense',
+          date: DateTime(2024, 6, 15),
+          currency: ExpenseCurrency.euro,
+          category: ExpenseCategory.food,
+          user: fakeUser,
+        ),
+      ).called(1);
     });
 
     // =================================================================
-    // TEST 9: createExpense() - Gestione RepositoryFailure
+    // TEST 11: createExpense() - Gestione RepositoryFailure
     // =================================================================
     test(
       'Should set errorMessage and not add expense on RepositoryFailure',
@@ -414,7 +503,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 10: editExpense() - Modifica spesa con successo
+    // TEST 12: editExpense() - Modifica spesa con successo
     // =================================================================
     test('Should update expense in list on successful editExpense', () async {
       // ARRANGE
@@ -424,6 +513,7 @@ void main() {
       ).thenAnswer((_) async => [sampleExpense]);
       await provider.initialise();
       expect(provider.expenses, hasLength(1)); // precondizione
+      expect(provider.initStatus, ExpenseInitStatus.initialized);
 
       final updatedExpense = sampleExpense.copyWith(value: 999.0);
 
@@ -467,10 +557,22 @@ void main() {
       expect(provider.expenses.first.value, 999.0);
       expect(provider.isLoading, false);
       expect(provider.errorMessage, isNull);
+
+      verify(
+        mockExpenseService.editExpense(
+          sampleExpense,
+          value: 999.0,
+          description: 'Updated',
+          date: DateTime(2024, 6, 15),
+          currency: ExpenseCurrency.euro,
+          category: ExpenseCategory.food,
+          user: fakeUser,
+        ),
+      ).called(1);
     });
 
     // =================================================================
-    // TEST 11: editExpense() - Warning offline settato correttamente
+    // TEST 13: editExpense() - Warning offline settato correttamente
     // =================================================================
     test(
       'Should set warningMessage when editExpense service returns a warning',
@@ -480,6 +582,7 @@ void main() {
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense]);
         await provider.initialise();
+        expect(provider.initStatus, ExpenseInitStatus.initialized);
 
         when(
           mockL10n.warningOfflineCurrencyEdit,
@@ -530,11 +633,23 @@ void main() {
         expect(provider.warningMessage, 'Offline edit warning');
         // La spesa deve essere stata aggiornata comunque
         expect(provider.expenses.first.value, 999.0);
+
+        verify(
+          mockExpenseService.editExpense(
+            sampleExpense,
+            value: 999.0,
+            description: 'Offline edit',
+            date: DateTime(2024, 6, 15),
+            currency: ExpenseCurrency.euro,
+            category: ExpenseCategory.food,
+            user: fakeUser,
+          ),
+        ).called(1);
       },
     );
 
     // =================================================================
-    // TEST 12: editExpense() - Gestione RepositoryFailure
+    // TEST 14: editExpense() - Gestione RepositoryFailure
     // =================================================================
     test(
       'Should set errorMessage and keep original expense on RepositoryFailure during editExpense',
@@ -546,6 +661,7 @@ void main() {
         ).thenAnswer((_) async => [sampleExpense]);
         await provider.initialise();
         expect(provider.expenses, hasLength(1)); // precondizione
+        expect(provider.initStatus, ExpenseInitStatus.initialized);
 
         when(
           mockExpenseService.editExpense(
@@ -580,7 +696,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 13: deleteExpenses() - Rimozione spese dalla lista locale
+    // TEST 15: deleteExpenses() - Rimozione spese dalla lista locale
     // =================================================================
     test(
       'Should remove expenses from list on successful deleteExpenses',
@@ -592,6 +708,7 @@ void main() {
         ).thenAnswer((_) async => [sampleExpense]);
         await provider.initialise();
         expect(provider.expenses, hasLength(1)); // precondizione
+        expect(provider.initStatus, ExpenseInitStatus.initialized);
 
         // Stub deleteExpense: operazione andata a buon fine (nessuna eccezione)
         when(
@@ -609,7 +726,45 @@ void main() {
     );
 
     // =================================================================
-    // TEST 14: deleteExpenses() - Gestione RepositoryFailure
+    // TEST 16: deleteExpenses() - Gestione RepositoryFailure (partial)
+    // =================================================================
+    test(
+      'Should remove only succeeded expenses and set errorMessage on partial deleteExpenses failure',
+      () async {
+        // ARRANGE
+        final secondExpense = sampleExpense.copyWith(uuid: 'expense-uuid-2');
+
+        when(
+          mockExpenseService.loadUserExpenses(user: fakeUser),
+        ).thenAnswer((_) async => [sampleExpense, secondExpense]);
+        await provider.initialise();
+        expect(provider.expenses, hasLength(2)); // precondizione
+        expect(provider.initStatus, ExpenseInitStatus.initialized);
+
+        // Prima spesa: successo
+        when(
+          mockExpenseService.deleteExpense(sampleExpense, user: fakeUser),
+        ).thenAnswer((_) async {});
+        // Seconda spesa: fallimento
+        when(
+          mockExpenseService.deleteExpense(secondExpense, user: fakeUser),
+        ).thenAnswer(
+          (_) async => Future.error(RepositoryFailure("Network error")),
+        );
+
+        // ACT
+        await provider.deleteExpenses([sampleExpense, secondExpense]);
+
+        // ASSERT
+        expect(provider.expenses, hasLength(1));
+        expect(provider.expenses.first.uuid, secondExpense.uuid);
+        expect(provider.errorMessage, contains("Deletion failed for"));
+        expect(provider.isLoading, false);
+      },
+    );
+
+    // =================================================================
+    // TEST 17: deleteExpenses() - Gestione RepositoryFailure
     // =================================================================
     test(
       'Should set errorMessage and keep expenses on RepositoryFailure during deleteExpenses',
@@ -620,17 +775,20 @@ void main() {
         ).thenAnswer((_) async => [sampleExpense]);
         await provider.initialise();
         expect(provider.expenses, hasLength(1)); // precondizione
+        expect(provider.initStatus, ExpenseInitStatus.initialized);
 
         when(
           mockExpenseService.deleteExpense(sampleExpense, user: fakeUser),
-        ).thenThrow(RepositoryFailure("Deletion failed"));
+        ).thenAnswer(
+          (_) async => Future.error(RepositoryFailure("Deletion failed")),
+        );
 
         // ACT
         await provider.deleteExpenses([sampleExpense]);
 
         // ASSERT
         expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Deletion failed"));
+        expect(provider.errorMessage, contains("Deletion failed for"));
         // La spesa NON deve essere stata rimossa dalla lista
         expect(provider.expenses, hasLength(1));
         expect(provider.isLoading, false);
@@ -638,7 +796,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 15: deleteExpenses() - isLoading true durante l'operazione
+    // TEST 18: deleteExpenses() - isLoading true durante l'operazione
     // =================================================================
     test('Should set isLoading to true during deleteExpenses', () async {
       // ARRANGE
@@ -646,6 +804,7 @@ void main() {
         mockExpenseService.loadUserExpenses(user: fakeUser),
       ).thenAnswer((_) async => [sampleExpense]);
       await provider.initialise();
+      expect(provider.initStatus, ExpenseInitStatus.initialized);
 
       when(
         mockExpenseService.deleteExpense(sampleExpense, user: fakeUser),
@@ -662,7 +821,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 16: restoreExpenses() - Ripristino spese con successo
+    // TEST 19: restoreExpenses() - Ripristino spese con successo
     // =================================================================
     test(
       'Should add restored expenses to list on successful restoreExpenses',
@@ -692,11 +851,61 @@ void main() {
         expect(provider.expenses.first.uuid, sampleExpense.uuid);
         expect(provider.isLoading, false);
         expect(provider.errorMessage, isNull);
+        // restoreExpenses è l'unico path che chiama sortExpenses dopo un'aggiunta —
+        // verifichiamo che l'ordinamento sia stato effettivamente orchestrato.
+        verify(
+          mockExpenseService.sortExpenses(any, 'date_desc', null),
+        ).called(1);
       },
     );
 
     // =================================================================
-    // TEST 17: restoreExpenses() - Gestione RepositoryFailure
+    // TEST 20: restoreExpenses() - Failure parziale
+    // =================================================================
+    test(
+      'Should add only succeeded expenses and set errorMessage on partial restoreExpenses failure',
+      () async {
+        // ARRANGE
+        final secondExpense = sampleExpense.copyWith(uuid: 'expense-uuid-2');
+
+        // Prima spesa: successo
+        when(
+          mockExpenseService.restoreExpense(sampleExpense, user: fakeUser),
+        ).thenAnswer((_) async => sampleExpense);
+        // Seconda spesa: fallimento
+        when(
+          mockExpenseService.restoreExpense(secondExpense, user: fakeUser),
+        ).thenAnswer(
+          (_) async => Future.error(RepositoryFailure("Network error")),
+        );
+
+        when(
+          mockExpenseService.checkBudgetStatusForList(
+            allExpenses: anyNamed('allExpenses'),
+            newExpenses: anyNamed('newExpenses'),
+            targetCurrency: anyNamed('targetCurrency'),
+            budgetLimit: anyNamed('budgetLimit'),
+            alertEnabled: anyNamed('alertEnabled'),
+          ),
+        ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
+
+        // ACT
+        await provider.restoreExpenses([
+          sampleExpense,
+          secondExpense,
+        ], mockL10n);
+
+        // ASSERT
+        // Solo la prima spesa deve essere stata aggiunta
+        expect(provider.expenses, hasLength(1));
+        expect(provider.expenses.first.uuid, sampleExpense.uuid);
+        expect(provider.errorMessage, contains("Restore failed for"));
+        expect(provider.isLoading, false);
+      },
+    );
+
+    // =================================================================
+    // TEST 21: restoreExpenses() - Gestione RepositoryFailure
     // =================================================================
     test(
       'Should set errorMessage and not add expenses on RepositoryFailure during restoreExpenses',
@@ -704,14 +913,16 @@ void main() {
         // ARRANGE
         when(
           mockExpenseService.restoreExpense(sampleExpense, user: fakeUser),
-        ).thenThrow(RepositoryFailure("Unable to restore"));
+        ).thenAnswer(
+          (_) async => Future.error(RepositoryFailure("Unable to restore")),
+        );
 
         // ACT
         await provider.restoreExpenses([sampleExpense], mockL10n);
 
         // ASSERT
         expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Unable to restore"));
+        expect(provider.errorMessage, contains("Restore failed for"));
         // La spesa NON deve essere stata aggiunta alla lista
         expect(provider.expenses, isEmpty);
         expect(provider.isLoading, false);
@@ -719,7 +930,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 18: _checkBudget() - Notifica inviata quando budget superato
+    // TEST 22: _checkBudget() - Notifica inviata quando budget superato
     // =================================================================
     test(
       'Should call checkBudgetLimit on notificationProvider when budget is exceeded',
@@ -771,7 +982,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 19: _checkBudgetForList() - Notifica inviata quando budget superato
+    // TEST 23: _checkBudgetForList() - Notifica inviata quando budget superato
     // =================================================================
     test(
       'Should call checkBudgetLimit on notificationProvider when budget is exceeded after restore',
@@ -800,6 +1011,155 @@ void main() {
         // ASSERT
         verify(
           mockNotificationProvider.checkBudgetLimit(1200.0, any, any),
+        ).called(1);
+      },
+    );
+
+    // =================================================================
+    // TEST 24: initialise() - Gestione eccezione generica (non RepositoryFailure)
+    // =================================================================
+    test(
+      'Should set initStatus to error and initError as String on generic exception during initialise',
+      () async {
+        // ARRANGE
+        when(
+          mockExpenseService.loadUserExpenses(user: fakeUser),
+        ).thenThrow(Exception("Unexpected"));
+
+        // ACT
+        await provider.initialise();
+
+        // ASSERT
+        expect(provider.initStatus, ExpenseInitStatus.error);
+        // Il catch generico setta initError come String, non come RepositoryFailure
+        expect(provider.initError, isA<String>());
+        expect(provider.initError.toString(), contains("Unexpected"));
+        expect(provider.expenses, isEmpty);
+        // errorMessage NON viene settato in initialise() — né nel catch RepositoryFailure né in quello generico
+        expect(provider.errorMessage, isNull);
+      },
+    );
+
+    // =================================================================
+    // TEST 25: createExpense() - Gestione eccezione generica (non RepositoryFailure)
+    // =================================================================
+    test(
+      'Should set errorMessage via toString and not add expense on generic exception during createExpense',
+      () async {
+        // ARRANGE
+        when(
+          mockExpenseService.createExpense(
+            value: anyNamed('value'),
+            description: anyNamed('description'),
+            date: anyNamed('date'),
+            currency: anyNamed('currency'),
+            category: anyNamed('category'),
+            user: anyNamed('user'),
+          ),
+        ).thenThrow(Exception("Generic error"));
+
+        // ACT
+        await provider.createExpense(
+          value: 50.0,
+          description: 'Test',
+          date: DateTime(2024, 6, 15),
+          currencyCode: ExpenseCurrency.euro,
+          category: ExpenseCategory.food,
+          l10n: mockL10n,
+        );
+
+        // ASSERT
+        expect(provider.errorMessage, isNotNull);
+        // Il catch generico usa e.toString(), non e.message come RepositoryFailure
+        expect(provider.errorMessage, contains("Generic error"));
+        expect(provider.expenses, isEmpty);
+        expect(provider.isLoading, false);
+      },
+    );
+
+    // =================================================================
+    // TEST 26: editExpense() - Gestione eccezione generica (non RepositoryFailure)
+    // =================================================================
+    test(
+      'Should set errorMessage via toString and keep original expense on generic exception during editExpense',
+      () async {
+        // ARRANGE
+        when(
+          mockExpenseService.loadUserExpenses(user: fakeUser),
+        ).thenAnswer((_) async => [sampleExpense]);
+        await provider.initialise();
+        expect(provider.expenses, hasLength(1)); // precondizione
+
+        when(
+          mockExpenseService.editExpense(
+            sampleExpense,
+            value: anyNamed('value'),
+            description: anyNamed('description'),
+            date: anyNamed('date'),
+            currency: anyNamed('currency'),
+            category: anyNamed('category'),
+            user: anyNamed('user'),
+          ),
+        ).thenThrow(Exception("Generic error"));
+
+        // ACT
+        await provider.editExpense(
+          sampleExpense,
+          value: 999.0,
+          description: 'Updated',
+          date: DateTime(2024, 6, 15),
+          currencyCode: ExpenseCurrency.euro,
+          category: ExpenseCategory.food,
+          l10n: mockL10n,
+        );
+
+        // ASSERT
+        expect(provider.errorMessage, isNotNull);
+        expect(provider.errorMessage, contains("Generic error"));
+        // La spesa originale deve essere rimasta invariata
+        expect(provider.expenses, hasLength(1));
+        expect(provider.expenses.first.value, 50.0);
+        expect(provider.isLoading, false);
+      },
+    );
+
+    // =================================================================
+    // TEST 27: sortBy() - Passa appCurrency al service quando criteria contiene "amount"
+    // =================================================================
+    test(
+      'Should pass appCurrency to sortExpenses when criteria contains amount',
+      () {
+        // ARRANGE
+        // La valuta di default del provider è EUR
+
+        // ACT
+        provider.sortBy('amount_desc');
+
+        // ASSERT
+        // Quando il criterio contiene "amount", il provider deve passare _appCurrency (EUR)
+        verify(
+          mockExpenseService.sortExpenses(
+            any,
+            'amount_desc',
+            ExpenseCurrency.euro,
+          ),
+        ).called(1);
+      },
+    );
+
+    // =================================================================
+    // TEST 28: sortBy() - Passa null al service quando criteria non contiene "amount"
+    // =================================================================
+    test(
+      'Should pass null currency to sortExpenses when criteria does not contain amount',
+      () {
+        // ARRANGE + ACT
+        provider.sortBy('date_desc');
+
+        // ASSERT
+        // Quando il criterio non contiene "amount", il provider deve passare null
+        verify(
+          mockExpenseService.sortExpenses(any, 'date_desc', null),
         ).called(1);
       },
     );

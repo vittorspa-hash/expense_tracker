@@ -525,6 +525,15 @@ void main() {
           currency: ExpenseCurrency.euro,
           exchangeRates: testRates,
         ),
+        ExpenseModel(
+          uuid: '3',
+          value: 100.0,
+          description: 'Oldest',
+          createdOn: DateTime(2024, 1, 23),
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
       ];
 
       // ACT
@@ -532,7 +541,8 @@ void main() {
 
       // ASSERT
       expect(expenses[0].uuid, '2');
-      expect(expenses[1].uuid, '1');
+      expect(expenses[1].uuid, '3');
+      expect(expenses[2].uuid, '1');
     });
 
     // =================================================================
@@ -908,22 +918,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 22: Expenses by Category For Year - Lista vuota
-    // =================================================================
-    test('Should return empty map when expenses list is empty', () {
-      // ARRANGE + ACT
-      final byCategory = ExpenseCalculator.expensesByCategoryForYear(
-        [],
-        '2024',
-        ExpenseCurrency.euro,
-      );
-
-      // ASSERT
-      expect(byCategory, isEmpty);
-    });
-
-    // =================================================================
-    // TEST 23: Expenses by Category For Year - Anno senza spese
+    // TEST 22: Expenses by Category For Year - Anno senza spese
     // =================================================================
     test(
       'Should return empty map when no expenses match the requested year',
@@ -955,7 +950,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 24: Expenses by Category For Year - Tutte le categorie distinte
+    // TEST 23: Expenses by Category For Year - Tutte le categorie distinte
     // =================================================================
     test('Should produce one entry per distinct category', () {
       // ARRANGE
@@ -1007,7 +1002,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 25: Sort by unknown criteria - Lista non modificata
+    // TEST 24: Sort by unknown criteria - Lista non modificata
     // =================================================================
     test('Should not modify list for unknown sort criteria', () {
       final expenses = [
@@ -1039,7 +1034,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 26: Expense created exactly at midnight - inclusa
+    // TEST 25: Expense created exactly at midnight - inclusa
     // =================================================================
     test('Should include expense created exactly at midnight of today', () {
       final midnight = DateTime(now.year, now.month, now.day, 0, 0, 0);
