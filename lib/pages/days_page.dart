@@ -195,7 +195,7 @@ class _DaysPageState extends State<DaysPage>
 
     final totalDay = expensesList.fold<double>(
       0.0,
-      (sum, expense) => sum + expense.value,
+      (sum, expense) => sum + expense.getValueIn(expenseprovider.appCurrency),
     );
 
     return buildWithFadeAnimation(

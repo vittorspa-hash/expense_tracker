@@ -311,7 +311,6 @@ class ExpenseService {
   }
 
   // Filtra e restituisce tutte le spese di un giorno specifico.
-  // Utile per mostrare i dettagli quando l'utente clicca su una barra del grafico.
   List<ExpenseModel> getExpensesOfDay(
     List<ExpenseModel> expenses,
     int year,

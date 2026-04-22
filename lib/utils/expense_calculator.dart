@@ -148,8 +148,11 @@ class ExpenseCalculator {
   }
 
   // --- FILTRAGGIO SPECIFICO ---
-  // Restituisce la lista grezza di oggetti ExpenseModel per un giorno specifico.
-  // Qui non avviene conversione valuta poiché serve per visualizzare i dettagli (lista transazioni).
+  // Restituisce la lista completa di oggetti ExpenseModel per un giorno specifico.
+  // Non effettua conversione valuta: restituisce i dati grezzi poiché la View necessita
+  // degli oggetti completi per il rendering.
+  // La conversione valuta per il calcolo del totale giornaliero è delegata alla View
+  // tramite expense.getValueIn(expenseProvider.appCurrency).
   static List<ExpenseModel> expensesOfDay(
     List<ExpenseModel> expenses,
     int year,

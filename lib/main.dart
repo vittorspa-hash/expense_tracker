@@ -30,7 +30,7 @@ void main() async {
   // Configurazione responsive (ScreenUtil) e iniezione dei Provider globali.
   runApp(
     ScreenUtilInit(
-      designSize: const Size(375, 812),
+      designSize: const Size(390, 844),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (context, child) {

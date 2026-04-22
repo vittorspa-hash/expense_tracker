@@ -58,6 +58,7 @@ class ExpenseProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   ExpenseCurrency _appCurrency = ExpenseCurrency.euro;
+  ExpenseCurrency get appCurrency => _appCurrency;
 
   // Cache totali (calcolati dal service) per performance.
   // Evita ricalcoli ripetuti e garantisce che i totali siano sempre sincronizzati.

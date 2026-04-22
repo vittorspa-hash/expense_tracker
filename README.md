@@ -127,7 +127,7 @@ Il progetto include una test suite  di **108 unit test** con **~93.7%% di covera
 |------------|------|----------|-------------|
 | **ExpenseModel** | 13 | 100% | Serializzazione, conversione multi-valuta, copyWith, edge cases |
 | **ExpenseCalculator** | 25 | 100% | Calcoli temporali, aggregazioni per grafici, ordinamento |
-| **ExpenseProvider** | 28 | 89.1% | State management, orchestrazione service, gestione loading/errori, warning offline, notifiche budget |
+| **ExpenseProvider** | 28 | 89.2% | State management, orchestrazione service, gestione loading/errori, warning offline, notifiche budget |
 | **ExpenseService** | 28 | 93.8% | CRUD operations, soft-fail strategy, smart-update logic, budget checks |
 | **CurrencyService** | 14 | 94.1% | Persistenza, HTTP mocking, network-cache strategy, multi-valuta |
 

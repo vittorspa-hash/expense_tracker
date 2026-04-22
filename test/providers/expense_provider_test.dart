@@ -334,6 +334,7 @@ void main() {
 
       // ASSERT
       // calculateTotals deve essere stato chiamato esattamente una volta
+      expect(provider.appCurrency, ExpenseCurrency.usd);
       verify(mockExpenseService.calculateTotals(any, any)).called(1);
 
       clearInteractions(mockExpenseService); // reset
