@@ -55,6 +55,7 @@
     },
     "delete": "Eliminar",
     "cancel": "Cancelar",
+    "undo": "Deshacer",
     "deletedTitleSingle": "¡Eliminado!",
     "deletedTitleMultiple": "¡Eliminados!",
     "deleteSuccessMessage": "{count, plural, =1{1 gasto eliminado con éxito.} other{{count} gastos eliminados con éxito.}}",

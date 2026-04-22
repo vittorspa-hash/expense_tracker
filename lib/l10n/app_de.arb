@@ -55,6 +55,7 @@
     },
     "delete": "Löschen",
     "cancel": "Abbrechen",
+    "undo": "Rückgängig",
     "deletedTitleSingle": "Gelöscht!",
     "deletedTitleMultiple": "Gelöscht!",
     "deleteSuccessMessage": "{count, plural, =1{1 Ausgabe erfolgreich gelöscht.} other{{count} Ausgaben erfolgreich gelöscht.}}",

@@ -271,6 +271,7 @@ class _DaysPageState extends State<DaysPage>
                           context: context,
                           title: loc.deletedTitleSingle,
                           message: loc.deleteSuccessMessageSwipe,
+                          undo: loc.undo,
                           deletedItem: expense,
                           onDelete: (_) {},
                           onRestore: (exp) =>

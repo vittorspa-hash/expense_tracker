@@ -309,6 +309,7 @@ class HomeContentList extends StatelessWidget {
                                   context: context,
                                   title: loc.deletedTitleSingle,
                                   message: loc.deleteSuccessMessageSwipe,
+                                  undo: loc.undo,
                                   deletedItem: expense,
                                   onDelete: (_) {},
                                   onRestore: (exp) =>

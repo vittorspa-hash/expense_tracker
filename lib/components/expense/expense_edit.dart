@@ -416,6 +416,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               title: loc.deletedTitleSingle,
               message: loc.deleteSuccessMessageSwipe,
               deletedItem: deletedExpense,
+              undo: loc.undo,
               onDelete: (_) {},
               onRestore: (exp) async {
                 await expenseProvider.restoreExpenses(

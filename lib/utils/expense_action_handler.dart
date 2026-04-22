@@ -62,6 +62,7 @@ class ExpenseActionHandler {
       context: context,
       title: count == 1 ? loc.deletedTitleSingle : loc.deletedTitleMultiple,
       message: loc.deleteSuccessMessage(count),
+      undo: loc.undo,
       deletedItem: expensesToDelete,
       onDelete: (_) {},
       onRestore: (_) async {

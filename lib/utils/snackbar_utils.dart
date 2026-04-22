@@ -16,6 +16,7 @@ class SnackbarUtils {
     required BuildContext context,
     required String title,
     required String message,
+    String? undo,
 
     // Parametri opzionali per lo scenario "delete + undo"
     dynamic deletedItem,
@@ -100,7 +101,7 @@ class SnackbarUtils {
         // --- AZIONE (BOTTONE) ---
         action: isDeleteSnackbar
             ? SnackBarAction(
-                label: "Annulla",
+                label: undo!,
                 textColor: textColor,
                 onPressed: () {
                   onRestore(deletedItem);

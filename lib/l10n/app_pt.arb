@@ -55,6 +55,7 @@
     },
     "delete": "Excluir",
     "cancel": "Cancelar",
+    "undo": "Desfazer",
     "deletedTitleSingle": "Excluída!",
     "deletedTitleMultiple": "Excluídas!",
     "deleteSuccessMessage": "{count, plural, =1{1 despesa excluída com sucesso.} other{{count} despesas excluídas com sucesso.}}",
