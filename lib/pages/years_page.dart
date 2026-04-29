@@ -89,6 +89,11 @@ class _YearsPageState extends State<YearsPage>
                       .toList()
                     ..sort();
 
+              // Reset se l'anno selezionato non esiste più tra i dati
+              if (selectedYear != null && !years.contains(selectedYear)) {
+                selectedYear = null;
+              }
+
               // Stato Vuoto: Nessuna spesa registrata
               if (years.isEmpty) {
                 return ReportEmptyState(
