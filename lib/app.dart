@@ -8,6 +8,7 @@ import 'package:expense_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get_it/get_it.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 /// FILE: app.dart
@@ -85,8 +86,16 @@ class _AppState extends State<App> with WidgetsBindingObserver {
 
           // --- CONFIGURAZIONE TEMA ---
           themeMode: themeProvider.themeMode,
-          theme: ThemeData.light(useMaterial3: true),
-          darkTheme: ThemeData.dark(useMaterial3: true),
+          theme: ThemeData.light(useMaterial3: true).copyWith(
+            textTheme: GoogleFonts.plusJakartaSansTextTheme(
+              ThemeData.light(useMaterial3: true).textTheme,
+            ),
+          ),
+          darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+            textTheme: GoogleFonts.plusJakartaSansTextTheme(
+              ThemeData.dark(useMaterial3: true).textTheme,
+            ),
+          ),
 
           // --- PUNTO D'INGRESSO ---
           home: const AuthWrapper(),

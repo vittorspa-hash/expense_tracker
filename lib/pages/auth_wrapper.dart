@@ -13,7 +13,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// DESCRIZIONE: Orchestratore della navigazione principale.
 /// Gestisce il flusso di accesso basandosi su due stati:
 /// 1. Lo stato di autenticazione dell'utente (Firebase Auth).
-/// 2. Lo stato di inizializzazione dei dati (Firestore/API).
+/// 2. Lo stato di inizializzazione dei dati (Firestore).
 /// Utilizza una logica reattiva per mostrare la pagina di Login, lo spinner di caricamento,
 /// la schermata di errore o l'applicazione vera e propria (HomePage).
 
