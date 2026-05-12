@@ -3,20 +3,22 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i7;
-import 'dart:ui' as _i8;
+import 'dart:async' as _i8;
+import 'dart:ui' as _i12;
 
-import 'package:expense_tracker/l10n/app_localizations.dart' as _i10;
-import 'package:expense_tracker/models/expense_category.dart' as _i12;
-import 'package:expense_tracker/models/expense_currency.dart' as _i11;
-import 'package:expense_tracker/models/expense_model.dart' as _i5;
-import 'package:expense_tracker/providers/auth_provider.dart' as _i6;
-import 'package:expense_tracker/providers/notification_provider.dart' as _i9;
-import 'package:expense_tracker/services/expense_service.dart' as _i4;
-import 'package:firebase_auth/firebase_auth.dart' as _i2;
-import 'package:flutter/material.dart' as _i3;
+import 'package:expense_tracker/l10n/app_localizations.dart' as _i11;
+import 'package:expense_tracker/models/expense_category.dart' as _i14;
+import 'package:expense_tracker/models/expense_currency.dart' as _i13;
+import 'package:expense_tracker/models/expense_model.dart' as _i7;
+import 'package:expense_tracker/providers/notification_provider.dart' as _i10;
+import 'package:expense_tracker/services/expense_service.dart' as _i6;
+import 'package:firebase_auth/firebase_auth.dart' as _i4;
+import 'package:firebase_auth_platform_interface/firebase_auth_platform_interface.dart'
+    as _i3;
+import 'package:firebase_core/firebase_core.dart' as _i2;
+import 'package:flutter/material.dart' as _i5;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i13;
+import 'package:mockito/src/dummies.dart' as _i9;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -33,158 +35,539 @@ import 'package:mockito/src/dummies.dart' as _i13;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeUser_0 extends _i1.SmartFake implements _i2.User {
-  _FakeUser_0(Object parent, Invocation parentInvocation)
+class _FakeFirebaseApp_0 extends _i1.SmartFake implements _i2.FirebaseApp {
+  _FakeFirebaseApp_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeTimeOfDay_1 extends _i1.SmartFake implements _i3.TimeOfDay {
-  _FakeTimeOfDay_1(Object parent, Invocation parentInvocation)
+class _FakeActionCodeInfo_1 extends _i1.SmartFake
+    implements _i3.ActionCodeInfo {
+  _FakeActionCodeInfo_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeCreateExpenseResult_2 extends _i1.SmartFake
-    implements _i4.CreateExpenseResult {
-  _FakeCreateExpenseResult_2(Object parent, Invocation parentInvocation)
+class _FakeUserCredential_2 extends _i1.SmartFake
+    implements _i4.UserCredential {
+  _FakeUserCredential_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeEditExpenseResult_3 extends _i1.SmartFake
-    implements _i4.EditExpenseResult {
-  _FakeEditExpenseResult_3(Object parent, Invocation parentInvocation)
+class _FakeConfirmationResult_3 extends _i1.SmartFake
+    implements _i4.ConfirmationResult {
+  _FakeConfirmationResult_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeExpenseModel_4 extends _i1.SmartFake implements _i5.ExpenseModel {
-  _FakeExpenseModel_4(Object parent, Invocation parentInvocation)
+class _FakePasswordValidationStatus_4 extends _i1.SmartFake
+    implements _i3.PasswordValidationStatus {
+  _FakePasswordValidationStatus_4(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeExpenseTotals_5 extends _i1.SmartFake implements _i4.ExpenseTotals {
-  _FakeExpenseTotals_5(Object parent, Invocation parentInvocation)
+class _FakeTimeOfDay_5 extends _i1.SmartFake implements _i5.TimeOfDay {
+  _FakeTimeOfDay_5(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeBudgetCheckResult_6 extends _i1.SmartFake
-    implements _i4.BudgetCheckResult {
-  _FakeBudgetCheckResult_6(Object parent, Invocation parentInvocation)
+class _FakeCreateExpenseResult_6 extends _i1.SmartFake
+    implements _i6.CreateExpenseResult {
+  _FakeCreateExpenseResult_6(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-/// A class which mocks [AuthProvider].
+class _FakeEditExpenseResult_7 extends _i1.SmartFake
+    implements _i6.EditExpenseResult {
+  _FakeEditExpenseResult_7(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeExpenseModel_8 extends _i1.SmartFake implements _i7.ExpenseModel {
+  _FakeExpenseModel_8(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeExpenseTotals_9 extends _i1.SmartFake implements _i6.ExpenseTotals {
+  _FakeExpenseTotals_9(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeBudgetCheckResult_10 extends _i1.SmartFake
+    implements _i6.BudgetCheckResult {
+  _FakeBudgetCheckResult_10(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+/// A class which mocks [FirebaseAuth].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAuthProvider extends _i1.Mock implements _i6.AuthProvider {
-  MockAuthProvider() {
+class MockFirebaseAuth extends _i1.Mock implements _i4.FirebaseAuth {
+  MockFirebaseAuth() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  bool get isLoading =>
-      (super.noSuchMethod(Invocation.getter(#isLoading), returnValue: false)
-          as bool);
-
-  @override
-  bool get hasListeners =>
-      (super.noSuchMethod(Invocation.getter(#hasListeners), returnValue: false)
-          as bool);
-
-  @override
-  _i7.Future<void> signUp({
-    required String? email,
-    required String? password,
-    required String? nome,
-  }) =>
+  _i2.FirebaseApp get app =>
       (super.noSuchMethod(
-            Invocation.method(#signUp, [], {
-              #email: email,
-              #password: password,
-              #nome: nome,
-            }),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            Invocation.getter(#app),
+            returnValue: _FakeFirebaseApp_0(this, Invocation.getter(#app)),
           )
-          as _i7.Future<void>);
+          as _i2.FirebaseApp);
 
   @override
-  _i7.Future<_i2.User> signIn({
+  set app(_i2.FirebaseApp? value) => super.noSuchMethod(
+    Invocation.setter(#app, value),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set tenantId(String? tenantId) => super.noSuchMethod(
+    Invocation.setter(#tenantId, tenantId),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  set customAuthDomain(String? customAuthDomain) => super.noSuchMethod(
+    Invocation.setter(#customAuthDomain, customAuthDomain),
+    returnValueForMissingStub: null,
+  );
+
+  @override
+  Map<dynamic, dynamic> get pluginConstants =>
+      (super.noSuchMethod(
+            Invocation.getter(#pluginConstants),
+            returnValue: <dynamic, dynamic>{},
+          )
+          as Map<dynamic, dynamic>);
+
+  @override
+  _i8.Future<void> useAuthEmulator(
+    String? host,
+    int? port, {
+    bool? automaticHostMapping = true,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(
+              #useAuthEmulator,
+              [host, port],
+              {#automaticHostMapping: automaticHostMapping},
+            ),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> applyActionCode(String? code) =>
+      (super.noSuchMethod(
+            Invocation.method(#applyActionCode, [code]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<_i3.ActionCodeInfo> checkActionCode(String? code) =>
+      (super.noSuchMethod(
+            Invocation.method(#checkActionCode, [code]),
+            returnValue: _i8.Future<_i3.ActionCodeInfo>.value(
+              _FakeActionCodeInfo_1(
+                this,
+                Invocation.method(#checkActionCode, [code]),
+              ),
+            ),
+          )
+          as _i8.Future<_i3.ActionCodeInfo>);
+
+  @override
+  _i8.Future<void> confirmPasswordReset({
+    required String? code,
+    required String? newPassword,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#confirmPasswordReset, [], {
+              #code: code,
+              #newPassword: newPassword,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<_i4.UserCredential> createUserWithEmailAndPassword({
     required String? email,
     required String? password,
   }) =>
       (super.noSuchMethod(
-            Invocation.method(#signIn, [], {
+            Invocation.method(#createUserWithEmailAndPassword, [], {
               #email: email,
               #password: password,
             }),
-            returnValue: _i7.Future<_i2.User>.value(
-              _FakeUser_0(
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
                 this,
-                Invocation.method(#signIn, [], {
+                Invocation.method(#createUserWithEmailAndPassword, [], {
                   #email: email,
                   #password: password,
                 }),
               ),
             ),
           )
-          as _i7.Future<_i2.User>);
+          as _i8.Future<_i4.UserCredential>);
 
   @override
-  _i7.Future<void> signOut() =>
+  _i8.Future<_i4.UserCredential> getRedirectResult() =>
+      (super.noSuchMethod(
+            Invocation.method(#getRedirectResult, []),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#getRedirectResult, []),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  bool isSignInWithEmailLink(String? emailLink) =>
+      (super.noSuchMethod(
+            Invocation.method(#isSignInWithEmailLink, [emailLink]),
+            returnValue: false,
+          )
+          as bool);
+
+  @override
+  _i8.Stream<_i4.User?> authStateChanges() =>
+      (super.noSuchMethod(
+            Invocation.method(#authStateChanges, []),
+            returnValue: _i8.Stream<_i4.User?>.empty(),
+          )
+          as _i8.Stream<_i4.User?>);
+
+  @override
+  _i8.Stream<_i4.User?> idTokenChanges() =>
+      (super.noSuchMethod(
+            Invocation.method(#idTokenChanges, []),
+            returnValue: _i8.Stream<_i4.User?>.empty(),
+          )
+          as _i8.Stream<_i4.User?>);
+
+  @override
+  _i8.Stream<_i4.User?> userChanges() =>
+      (super.noSuchMethod(
+            Invocation.method(#userChanges, []),
+            returnValue: _i8.Stream<_i4.User?>.empty(),
+          )
+          as _i8.Stream<_i4.User?>);
+
+  @override
+  _i8.Future<void> sendPasswordResetEmail({
+    required String? email,
+    _i3.ActionCodeSettings? actionCodeSettings,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendPasswordResetEmail, [], {
+              #email: email,
+              #actionCodeSettings: actionCodeSettings,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> sendSignInLinkToEmail({
+    required String? email,
+    required _i3.ActionCodeSettings? actionCodeSettings,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendSignInLinkToEmail, [], {
+              #email: email,
+              #actionCodeSettings: actionCodeSettings,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> setLanguageCode(String? languageCode) =>
+      (super.noSuchMethod(
+            Invocation.method(#setLanguageCode, [languageCode]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> setSettings({
+    bool? appVerificationDisabledForTesting = false,
+    String? userAccessGroup,
+    String? phoneNumber,
+    String? smsCode,
+    bool? forceRecaptchaFlow,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#setSettings, [], {
+              #appVerificationDisabledForTesting:
+                  appVerificationDisabledForTesting,
+              #userAccessGroup: userAccessGroup,
+              #phoneNumber: phoneNumber,
+              #smsCode: smsCode,
+              #forceRecaptchaFlow: forceRecaptchaFlow,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> setPersistence(_i3.Persistence? persistence) =>
+      (super.noSuchMethod(
+            Invocation.method(#setPersistence, [persistence]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<_i4.UserCredential> signInAnonymously() =>
+      (super.noSuchMethod(
+            Invocation.method(#signInAnonymously, []),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#signInAnonymously, []),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  _i8.Future<_i4.UserCredential> signInWithCredential(
+    _i3.AuthCredential? credential,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithCredential, [credential]),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#signInWithCredential, [credential]),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  _i8.Future<_i4.UserCredential> signInWithCustomToken(String? token) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithCustomToken, [token]),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#signInWithCustomToken, [token]),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  _i8.Future<_i4.UserCredential> signInWithEmailAndPassword({
+    required String? email,
+    required String? password,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithEmailAndPassword, [], {
+              #email: email,
+              #password: password,
+            }),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#signInWithEmailAndPassword, [], {
+                  #email: email,
+                  #password: password,
+                }),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  _i8.Future<_i4.UserCredential> signInWithEmailLink({
+    required String? email,
+    required String? emailLink,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithEmailLink, [], {
+              #email: email,
+              #emailLink: emailLink,
+            }),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#signInWithEmailLink, [], {
+                  #email: email,
+                  #emailLink: emailLink,
+                }),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  _i8.Future<_i4.UserCredential> signInWithProvider(
+    _i3.AuthProvider? provider,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithProvider, [provider]),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#signInWithProvider, [provider]),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  _i8.Future<_i4.ConfirmationResult> signInWithPhoneNumber(
+    String? phoneNumber, [
+    _i4.RecaptchaVerifier? verifier,
+  ]) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithPhoneNumber, [phoneNumber, verifier]),
+            returnValue: _i8.Future<_i4.ConfirmationResult>.value(
+              _FakeConfirmationResult_3(
+                this,
+                Invocation.method(#signInWithPhoneNumber, [
+                  phoneNumber,
+                  verifier,
+                ]),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.ConfirmationResult>);
+
+  @override
+  _i8.Future<_i4.UserCredential> signInWithPopup(_i3.AuthProvider? provider) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithPopup, [provider]),
+            returnValue: _i8.Future<_i4.UserCredential>.value(
+              _FakeUserCredential_2(
+                this,
+                Invocation.method(#signInWithPopup, [provider]),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.UserCredential>);
+
+  @override
+  _i8.Future<void> signInWithRedirect(_i3.AuthProvider? provider) =>
+      (super.noSuchMethod(
+            Invocation.method(#signInWithRedirect, [provider]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<String> verifyPasswordResetCode(String? code) =>
+      (super.noSuchMethod(
+            Invocation.method(#verifyPasswordResetCode, [code]),
+            returnValue: _i8.Future<String>.value(
+              _i9.dummyValue<String>(
+                this,
+                Invocation.method(#verifyPasswordResetCode, [code]),
+              ),
+            ),
+          )
+          as _i8.Future<String>);
+
+  @override
+  _i8.Future<void> verifyPhoneNumber({
+    String? phoneNumber,
+    _i3.PhoneMultiFactorInfo? multiFactorInfo,
+    required _i3.PhoneVerificationCompleted? verificationCompleted,
+    required _i3.PhoneVerificationFailed? verificationFailed,
+    required _i3.PhoneCodeSent? codeSent,
+    required _i3.PhoneCodeAutoRetrievalTimeout? codeAutoRetrievalTimeout,
+    String? autoRetrievedSmsCodeForTesting,
+    Duration? timeout = const Duration(seconds: 30),
+    int? forceResendingToken,
+    _i3.MultiFactorSession? multiFactorSession,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#verifyPhoneNumber, [], {
+              #phoneNumber: phoneNumber,
+              #multiFactorInfo: multiFactorInfo,
+              #verificationCompleted: verificationCompleted,
+              #verificationFailed: verificationFailed,
+              #codeSent: codeSent,
+              #codeAutoRetrievalTimeout: codeAutoRetrievalTimeout,
+              #autoRetrievedSmsCodeForTesting: autoRetrievedSmsCodeForTesting,
+              #timeout: timeout,
+              #forceResendingToken: forceResendingToken,
+              #multiFactorSession: multiFactorSession,
+            }),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> revokeTokenWithAuthorizationCode(
+    String? authorizationCode,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#revokeTokenWithAuthorizationCode, [
+              authorizationCode,
+            ]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> signOut() =>
       (super.noSuchMethod(
             Invocation.method(#signOut, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> resetPassword({String? email}) =>
+  _i8.Future<void> initializeRecaptchaConfig() =>
       (super.noSuchMethod(
-            Invocation.method(#resetPassword, [], {#email: email}),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            Invocation.method(#initializeRecaptchaConfig, []),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> sendVerificationEmail(_i2.User? user) =>
+  _i8.Future<_i3.PasswordValidationStatus> validatePassword(
+    _i4.FirebaseAuth? auth,
+    String? password,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#sendVerificationEmail, [user]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            Invocation.method(#validatePassword, [auth, password]),
+            returnValue: _i8.Future<_i3.PasswordValidationStatus>.value(
+              _FakePasswordValidationStatus_4(
+                this,
+                Invocation.method(#validatePassword, [auth, password]),
+              ),
+            ),
           )
-          as _i7.Future<void>);
-
-  @override
-  void addListener(_i8.VoidCallback? listener) => super.noSuchMethod(
-    Invocation.method(#addListener, [listener]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void removeListener(_i8.VoidCallback? listener) => super.noSuchMethod(
-    Invocation.method(#removeListener, [listener]),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void dispose() => super.noSuchMethod(
-    Invocation.method(#dispose, []),
-    returnValueForMissingStub: null,
-  );
-
-  @override
-  void notifyListeners() => super.noSuchMethod(
-    Invocation.method(#notifyListeners, []),
-    returnValueForMissingStub: null,
-  );
+          as _i8.Future<_i3.PasswordValidationStatus>);
 }
 
 /// A class which mocks [NotificationProvider].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockNotificationProvider extends _i1.Mock
-    implements _i9.NotificationProvider {
+    implements _i10.NotificationProvider {
   MockNotificationProvider() {
     _i1.throwOnMissingStub(this);
   }
@@ -198,15 +581,15 @@ class MockNotificationProvider extends _i1.Mock
           as bool);
 
   @override
-  _i3.TimeOfDay get reminderTime =>
+  _i5.TimeOfDay get reminderTime =>
       (super.noSuchMethod(
             Invocation.getter(#reminderTime),
-            returnValue: _FakeTimeOfDay_1(
+            returnValue: _FakeTimeOfDay_5(
               this,
               Invocation.getter(#reminderTime),
             ),
           )
-          as _i3.TimeOfDay);
+          as _i5.TimeOfDay);
 
   @override
   bool get limitAlertEnabled =>
@@ -227,69 +610,69 @@ class MockNotificationProvider extends _i1.Mock
           as bool);
 
   @override
-  _i7.Future<void> initialize() =>
+  _i8.Future<void> initialize() =>
       (super.noSuchMethod(
             Invocation.method(#initialize, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> rescheduleNotifications(_i10.AppLocalizations? l10n) =>
+  _i8.Future<void> rescheduleNotifications(_i11.AppLocalizations? l10n) =>
       (super.noSuchMethod(
             Invocation.method(#rescheduleNotifications, [l10n]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> toggleDailyReminder(
+  _i8.Future<void> toggleDailyReminder(
     bool? enabled,
-    _i10.AppLocalizations? l10n,
+    _i11.AppLocalizations? l10n,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#toggleDailyReminder, [enabled, l10n]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> setReminderTime(
-    _i3.TimeOfDay? time,
-    _i10.AppLocalizations? l10n,
+  _i8.Future<void> setReminderTime(
+    _i5.TimeOfDay? time,
+    _i11.AppLocalizations? l10n,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#setReminderTime, [time, l10n]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> toggleLimitAlert(bool? enabled) =>
+  _i8.Future<void> toggleLimitAlert(bool? enabled) =>
       (super.noSuchMethod(
             Invocation.method(#toggleLimitAlert, [enabled]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> setMonthlyLimit(double? limit) =>
+  _i8.Future<void> setMonthlyLimit(double? limit) =>
       (super.noSuchMethod(
             Invocation.method(#setMonthlyLimit, [limit]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> checkBudgetLimit(
+  _i8.Future<void> checkBudgetLimit(
     double? currentMonthlySpent,
-    _i10.AppLocalizations? l10n,
+    _i11.AppLocalizations? l10n,
     String? currencySymbol,
   ) =>
       (super.noSuchMethod(
@@ -298,28 +681,28 @@ class MockNotificationProvider extends _i1.Mock
               l10n,
               currencySymbol,
             ]),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i7.Future<void> resetSettings() =>
+  _i8.Future<void> resetSettings() =>
       (super.noSuchMethod(
             Invocation.method(#resetSettings, []),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  void addListener(_i8.VoidCallback? listener) => super.noSuchMethod(
+  void addListener(_i12.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#addListener, [listener]),
     returnValueForMissingStub: null,
   );
 
   @override
-  void removeListener(_i8.VoidCallback? listener) => super.noSuchMethod(
+  void removeListener(_i12.VoidCallback? listener) => super.noSuchMethod(
     Invocation.method(#removeListener, [listener]),
     returnValueForMissingStub: null,
   );
@@ -340,31 +723,31 @@ class MockNotificationProvider extends _i1.Mock
 /// A class which mocks [ExpenseService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
+class MockExpenseService extends _i1.Mock implements _i6.ExpenseService {
   MockExpenseService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i7.Future<List<_i5.ExpenseModel>> loadUserExpenses({
-    required _i2.User? user,
+  _i8.Future<List<_i7.ExpenseModel>> loadUserExpenses({
+    required _i4.User? user,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#loadUserExpenses, [], {#user: user}),
-            returnValue: _i7.Future<List<_i5.ExpenseModel>>.value(
-              <_i5.ExpenseModel>[],
+            returnValue: _i8.Future<List<_i7.ExpenseModel>>.value(
+              <_i7.ExpenseModel>[],
             ),
           )
-          as _i7.Future<List<_i5.ExpenseModel>>);
+          as _i8.Future<List<_i7.ExpenseModel>>);
 
   @override
-  _i7.Future<_i4.CreateExpenseResult> createExpense({
+  _i8.Future<_i6.CreateExpenseResult> createExpense({
     required double? value,
     required String? description,
     required DateTime? date,
-    required _i11.ExpenseCurrency? currency,
-    required _i12.ExpenseCategory? category,
-    required _i2.User? user,
+    required _i13.ExpenseCurrency? currency,
+    required _i14.ExpenseCategory? category,
+    required _i4.User? user,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#createExpense, [], {
@@ -375,8 +758,8 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               #category: category,
               #user: user,
             }),
-            returnValue: _i7.Future<_i4.CreateExpenseResult>.value(
-              _FakeCreateExpenseResult_2(
+            returnValue: _i8.Future<_i6.CreateExpenseResult>.value(
+              _FakeCreateExpenseResult_6(
                 this,
                 Invocation.method(#createExpense, [], {
                   #value: value,
@@ -389,17 +772,17 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               ),
             ),
           )
-          as _i7.Future<_i4.CreateExpenseResult>);
+          as _i8.Future<_i6.CreateExpenseResult>);
 
   @override
-  _i7.Future<_i4.EditExpenseResult> editExpense(
-    _i5.ExpenseModel? expenseModel, {
+  _i8.Future<_i6.EditExpenseResult> editExpense(
+    _i7.ExpenseModel? expenseModel, {
     required double? value,
     required String? description,
     required DateTime? date,
-    required _i11.ExpenseCurrency? currency,
-    required _i12.ExpenseCategory? category,
-    required _i2.User? user,
+    required _i13.ExpenseCurrency? currency,
+    required _i14.ExpenseCategory? category,
+    required _i4.User? user,
   }) =>
       (super.noSuchMethod(
             Invocation.method(
@@ -414,8 +797,8 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
                 #user: user,
               },
             ),
-            returnValue: _i7.Future<_i4.EditExpenseResult>.value(
-              _FakeEditExpenseResult_3(
+            returnValue: _i8.Future<_i6.EditExpenseResult>.value(
+              _FakeEditExpenseResult_7(
                 this,
                 Invocation.method(
                   #editExpense,
@@ -432,17 +815,17 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               ),
             ),
           )
-          as _i7.Future<_i4.EditExpenseResult>);
+          as _i8.Future<_i6.EditExpenseResult>);
 
   @override
-  _i7.Future<_i5.ExpenseModel> restoreExpense(
-    _i5.ExpenseModel? expenseModel, {
-    required _i2.User? user,
+  _i8.Future<_i7.ExpenseModel> restoreExpense(
+    _i7.ExpenseModel? expenseModel, {
+    required _i4.User? user,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#restoreExpense, [expenseModel], {#user: user}),
-            returnValue: _i7.Future<_i5.ExpenseModel>.value(
-              _FakeExpenseModel_4(
+            returnValue: _i8.Future<_i7.ExpenseModel>.value(
+              _FakeExpenseModel_8(
                 this,
                 Invocation.method(
                   #restoreExpense,
@@ -452,39 +835,39 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               ),
             ),
           )
-          as _i7.Future<_i5.ExpenseModel>);
+          as _i8.Future<_i7.ExpenseModel>);
 
   @override
-  _i7.Future<void> deleteExpense(
-    _i5.ExpenseModel? expenseModel, {
-    required _i2.User? user,
+  _i8.Future<void> deleteExpense(
+    _i7.ExpenseModel? expenseModel, {
+    required _i4.User? user,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#deleteExpense, [expenseModel], {#user: user}),
-            returnValue: _i7.Future<void>.value(),
-            returnValueForMissingStub: _i7.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i7.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i4.ExpenseTotals calculateTotals(
-    List<_i5.ExpenseModel>? expenses,
-    _i11.ExpenseCurrency? targetCurrency,
+  _i6.ExpenseTotals calculateTotals(
+    List<_i7.ExpenseModel>? expenses,
+    _i13.ExpenseCurrency? targetCurrency,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#calculateTotals, [expenses, targetCurrency]),
-            returnValue: _FakeExpenseTotals_5(
+            returnValue: _FakeExpenseTotals_9(
               this,
               Invocation.method(#calculateTotals, [expenses, targetCurrency]),
             ),
           )
-          as _i4.ExpenseTotals);
+          as _i6.ExpenseTotals);
 
   @override
-  _i4.BudgetCheckResult checkBudgetStatus({
-    required List<_i5.ExpenseModel>? expenses,
+  _i6.BudgetCheckResult checkBudgetStatus({
+    required List<_i7.ExpenseModel>? expenses,
     required DateTime? expenseDate,
-    required _i11.ExpenseCurrency? targetCurrency,
+    required _i13.ExpenseCurrency? targetCurrency,
     required double? budgetLimit,
     required bool? alertEnabled,
   }) =>
@@ -496,7 +879,7 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               #budgetLimit: budgetLimit,
               #alertEnabled: alertEnabled,
             }),
-            returnValue: _FakeBudgetCheckResult_6(
+            returnValue: _FakeBudgetCheckResult_10(
               this,
               Invocation.method(#checkBudgetStatus, [], {
                 #expenses: expenses,
@@ -507,13 +890,13 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               }),
             ),
           )
-          as _i4.BudgetCheckResult);
+          as _i6.BudgetCheckResult);
 
   @override
-  _i4.BudgetCheckResult checkBudgetStatusForList({
-    required List<_i5.ExpenseModel>? allExpenses,
-    required List<_i5.ExpenseModel>? newExpenses,
-    required _i11.ExpenseCurrency? targetCurrency,
+  _i6.BudgetCheckResult checkBudgetStatusForList({
+    required List<_i7.ExpenseModel>? allExpenses,
+    required List<_i7.ExpenseModel>? newExpenses,
+    required _i13.ExpenseCurrency? targetCurrency,
     required double? budgetLimit,
     required bool? alertEnabled,
   }) =>
@@ -525,7 +908,7 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               #budgetLimit: budgetLimit,
               #alertEnabled: alertEnabled,
             }),
-            returnValue: _FakeBudgetCheckResult_6(
+            returnValue: _FakeBudgetCheckResult_10(
               this,
               Invocation.method(#checkBudgetStatusForList, [], {
                 #allExpenses: allExpenses,
@@ -536,13 +919,13 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               }),
             ),
           )
-          as _i4.BudgetCheckResult);
+          as _i6.BudgetCheckResult);
 
   @override
-  List<_i5.ExpenseModel> sortExpenses(
-    List<_i5.ExpenseModel>? expenses,
+  List<_i7.ExpenseModel> sortExpenses(
+    List<_i7.ExpenseModel>? expenses,
     String? criteria,
-    _i11.ExpenseCurrency? targetCurrency,
+    _i13.ExpenseCurrency? targetCurrency,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#sortExpenses, [
@@ -550,14 +933,14 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               criteria,
               targetCurrency,
             ]),
-            returnValue: <_i5.ExpenseModel>[],
+            returnValue: <_i7.ExpenseModel>[],
           )
-          as List<_i5.ExpenseModel>);
+          as List<_i7.ExpenseModel>);
 
   @override
   Map<String, double> getExpensesByMonth(
-    List<_i5.ExpenseModel>? expenses,
-    _i11.ExpenseCurrency? targetCurrency,
+    List<_i7.ExpenseModel>? expenses,
+    _i13.ExpenseCurrency? targetCurrency,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getExpensesByMonth, [expenses, targetCurrency]),
@@ -567,10 +950,10 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
 
   @override
   Map<String, double> getExpensesByDay(
-    List<_i5.ExpenseModel>? expenses,
+    List<_i7.ExpenseModel>? expenses,
     int? year,
     int? month,
-    _i11.ExpenseCurrency? targetCurrency,
+    _i13.ExpenseCurrency? targetCurrency,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getExpensesByDay, [
@@ -584,23 +967,23 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
           as Map<String, double>);
 
   @override
-  List<_i5.ExpenseModel> getExpensesOfDay(
-    List<_i5.ExpenseModel>? expenses,
+  List<_i7.ExpenseModel> getExpensesOfDay(
+    List<_i7.ExpenseModel>? expenses,
     int? year,
     int? month,
     int? day,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getExpensesOfDay, [expenses, year, month, day]),
-            returnValue: <_i5.ExpenseModel>[],
+            returnValue: <_i7.ExpenseModel>[],
           )
-          as List<_i5.ExpenseModel>);
+          as List<_i7.ExpenseModel>);
 
   @override
-  Map<_i12.ExpenseCategory, double> getExpensesByCategoryForYear(
-    List<_i5.ExpenseModel>? expenses,
+  Map<_i14.ExpenseCategory, double> getExpensesByCategoryForYear(
+    List<_i7.ExpenseModel>? expenses,
     String? year,
-    _i11.ExpenseCurrency? targetCurrency,
+    _i13.ExpenseCurrency? targetCurrency,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getExpensesByCategoryForYear, [
@@ -608,15 +991,15 @@ class MockExpenseService extends _i1.Mock implements _i4.ExpenseService {
               year,
               targetCurrency,
             ]),
-            returnValue: <_i12.ExpenseCategory, double>{},
+            returnValue: <_i14.ExpenseCategory, double>{},
           )
-          as Map<_i12.ExpenseCategory, double>);
+          as Map<_i14.ExpenseCategory, double>);
 }
 
 /// A class which mocks [AppLocalizations].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
+class MockAppLocalizations extends _i1.Mock implements _i11.AppLocalizations {
   MockAppLocalizations() {
     _i1.throwOnMissingStub(this);
   }
@@ -625,7 +1008,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get localeName =>
       (super.noSuchMethod(
             Invocation.getter(#localeName),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#localeName),
             ),
@@ -636,7 +1019,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get settingsTitle =>
       (super.noSuchMethod(
             Invocation.getter(#settingsTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#settingsTitle),
             ),
@@ -647,7 +1030,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get appearance =>
       (super.noSuchMethod(
             Invocation.getter(#appearance),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#appearance),
             ),
@@ -658,7 +1041,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get darkMode =>
       (super.noSuchMethod(
             Invocation.getter(#darkMode),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#darkMode),
             ),
@@ -669,7 +1052,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get activated =>
       (super.noSuchMethod(
             Invocation.getter(#activated),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#activated),
             ),
@@ -680,7 +1063,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deactivated =>
       (super.noSuchMethod(
             Invocation.getter(#deactivated),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deactivated),
             ),
@@ -691,7 +1074,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get notifications =>
       (super.noSuchMethod(
             Invocation.getter(#notifications),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#notifications),
             ),
@@ -702,7 +1085,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get dailyReminder =>
       (super.noSuchMethod(
             Invocation.getter(#dailyReminder),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#dailyReminder),
             ),
@@ -713,7 +1096,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get reminderTime =>
       (super.noSuchMethod(
             Invocation.getter(#reminderTime),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#reminderTime),
             ),
@@ -724,7 +1107,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get spendingLimitAlert =>
       (super.noSuchMethod(
             Invocation.getter(#spendingLimitAlert),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#spendingLimitAlert),
             ),
@@ -735,7 +1118,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get monthlyLimit =>
       (super.noSuchMethod(
             Invocation.getter(#monthlyLimit),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#monthlyLimit),
             ),
@@ -746,7 +1129,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get notificationsInfo =>
       (super.noSuchMethod(
             Invocation.getter(#notificationsInfo),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#notificationsInfo),
             ),
@@ -757,7 +1140,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get currency =>
       (super.noSuchMethod(
             Invocation.getter(#currency),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#currency),
             ),
@@ -768,7 +1151,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get defaultCurrency =>
       (super.noSuchMethod(
             Invocation.getter(#defaultCurrency),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#defaultCurrency),
             ),
@@ -779,7 +1162,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get language =>
       (super.noSuchMethod(
             Invocation.getter(#language),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#language),
             ),
@@ -790,7 +1173,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get defaultLanguage =>
       (super.noSuchMethod(
             Invocation.getter(#defaultLanguage),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#defaultLanguage),
             ),
@@ -801,7 +1184,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get setMonthlyLimitTitle =>
       (super.noSuchMethod(
             Invocation.getter(#setMonthlyLimitTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#setMonthlyLimitTitle),
             ),
@@ -812,7 +1195,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get insertAmountHint =>
       (super.noSuchMethod(
             Invocation.getter(#insertAmountHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#insertAmountHint),
             ),
@@ -823,7 +1206,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get selectCurrencyTitle =>
       (super.noSuchMethod(
             Invocation.getter(#selectCurrencyTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#selectCurrencyTitle),
             ),
@@ -834,7 +1217,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get selectLanguageTitle =>
       (super.noSuchMethod(
             Invocation.getter(#selectLanguageTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#selectLanguageTitle),
             ),
@@ -845,7 +1228,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get languageNameIt =>
       (super.noSuchMethod(
             Invocation.getter(#languageNameIt),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#languageNameIt),
             ),
@@ -856,7 +1239,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get languageNameEn =>
       (super.noSuchMethod(
             Invocation.getter(#languageNameEn),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#languageNameEn),
             ),
@@ -867,7 +1250,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get languageNameFr =>
       (super.noSuchMethod(
             Invocation.getter(#languageNameFr),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#languageNameFr),
             ),
@@ -878,7 +1261,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get languageNameEs =>
       (super.noSuchMethod(
             Invocation.getter(#languageNameEs),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#languageNameEs),
             ),
@@ -889,7 +1272,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get languageNameDe =>
       (super.noSuchMethod(
             Invocation.getter(#languageNameDe),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#languageNameDe),
             ),
@@ -900,7 +1283,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get languageNamePt =>
       (super.noSuchMethod(
             Invocation.getter(#languageNamePt),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#languageNamePt),
             ),
@@ -911,7 +1294,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get newExpense =>
       (super.noSuchMethod(
             Invocation.getter(#newExpense),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#newExpense),
             ),
@@ -922,7 +1305,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get ok =>
       (super.noSuchMethod(
             Invocation.getter(#ok),
-            returnValue: _i13.dummyValue<String>(this, Invocation.getter(#ok)),
+            returnValue: _i9.dummyValue<String>(this, Invocation.getter(#ok)),
           )
           as String);
 
@@ -930,7 +1313,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteDialogTitleSingle =>
       (super.noSuchMethod(
             Invocation.getter(#deleteDialogTitleSingle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteDialogTitleSingle),
             ),
@@ -941,7 +1324,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteDialogTitleMultiple =>
       (super.noSuchMethod(
             Invocation.getter(#deleteDialogTitleMultiple),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteDialogTitleMultiple),
             ),
@@ -952,7 +1335,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get delete =>
       (super.noSuchMethod(
             Invocation.getter(#delete),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#delete),
             ),
@@ -963,7 +1346,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get cancel =>
       (super.noSuchMethod(
             Invocation.getter(#cancel),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#cancel),
             ),
@@ -971,10 +1354,18 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
           as String);
 
   @override
+  String get undo =>
+      (super.noSuchMethod(
+            Invocation.getter(#undo),
+            returnValue: _i9.dummyValue<String>(this, Invocation.getter(#undo)),
+          )
+          as String);
+
+  @override
   String get deletedTitleSingle =>
       (super.noSuchMethod(
             Invocation.getter(#deletedTitleSingle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deletedTitleSingle),
             ),
@@ -985,7 +1376,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deletedTitleMultiple =>
       (super.noSuchMethod(
             Invocation.getter(#deletedTitleMultiple),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deletedTitleMultiple),
             ),
@@ -996,7 +1387,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get annualReport =>
       (super.noSuchMethod(
             Invocation.getter(#annualReport),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#annualReport),
             ),
@@ -1007,7 +1398,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get thisMonth =>
       (super.noSuchMethod(
             Invocation.getter(#thisMonth),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#thisMonth),
             ),
@@ -1018,7 +1409,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get today =>
       (super.noSuchMethod(
             Invocation.getter(#today),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#today),
             ),
@@ -1029,10 +1420,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get week =>
       (super.noSuchMethod(
             Invocation.getter(#week),
-            returnValue: _i13.dummyValue<String>(
-              this,
-              Invocation.getter(#week),
-            ),
+            returnValue: _i9.dummyValue<String>(this, Invocation.getter(#week)),
           )
           as String);
 
@@ -1040,10 +1428,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get year =>
       (super.noSuchMethod(
             Invocation.getter(#year),
-            returnValue: _i13.dummyValue<String>(
-              this,
-              Invocation.getter(#year),
-            ),
+            returnValue: _i9.dummyValue<String>(this, Invocation.getter(#year)),
           )
           as String);
 
@@ -1051,7 +1436,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get searchHint =>
       (super.noSuchMethod(
             Invocation.getter(#searchHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#searchHint),
             ),
@@ -1062,7 +1447,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get sortTitle =>
       (super.noSuchMethod(
             Invocation.getter(#sortTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#sortTitle),
             ),
@@ -1073,7 +1458,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get sortDateNewest =>
       (super.noSuchMethod(
             Invocation.getter(#sortDateNewest),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#sortDateNewest),
             ),
@@ -1084,7 +1469,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get sortDateOldest =>
       (super.noSuchMethod(
             Invocation.getter(#sortDateOldest),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#sortDateOldest),
             ),
@@ -1095,7 +1480,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get sortAmountHighest =>
       (super.noSuchMethod(
             Invocation.getter(#sortAmountHighest),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#sortAmountHighest),
             ),
@@ -1106,7 +1491,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get sortAmountLowest =>
       (super.noSuchMethod(
             Invocation.getter(#sortAmountLowest),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#sortAmountLowest),
             ),
@@ -1117,7 +1502,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteConfirmMessageSwipe =>
       (super.noSuchMethod(
             Invocation.getter(#deleteConfirmMessageSwipe),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteConfirmMessageSwipe),
             ),
@@ -1128,7 +1513,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteSuccessMessageSwipe =>
       (super.noSuchMethod(
             Invocation.getter(#deleteSuccessMessageSwipe),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteSuccessMessageSwipe),
             ),
@@ -1139,7 +1524,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get noDescription =>
       (super.noSuchMethod(
             Invocation.getter(#noDescription),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#noDescription),
             ),
@@ -1150,7 +1535,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deselectAll =>
       (super.noSuchMethod(
             Invocation.getter(#deselectAll),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deselectAll),
             ),
@@ -1161,7 +1546,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get selectAll =>
       (super.noSuchMethod(
             Invocation.getter(#selectAll),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#selectAll),
             ),
@@ -1172,7 +1557,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteSelectedTooltip =>
       (super.noSuchMethod(
             Invocation.getter(#deleteSelectedTooltip),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteSelectedTooltip),
             ),
@@ -1183,7 +1568,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get descriptionHint =>
       (super.noSuchMethod(
             Invocation.getter(#descriptionHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#descriptionHint),
             ),
@@ -1194,7 +1579,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteConfirmTitle =>
       (super.noSuchMethod(
             Invocation.getter(#deleteConfirmTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteConfirmTitle),
             ),
@@ -1205,7 +1590,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get errorTitle =>
       (super.noSuchMethod(
             Invocation.getter(#errorTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#errorTitle),
             ),
@@ -1216,7 +1601,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get zeroValueError =>
       (super.noSuchMethod(
             Invocation.getter(#zeroValueError),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#zeroValueError),
             ),
@@ -1227,7 +1612,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get createdTitle =>
       (super.noSuchMethod(
             Invocation.getter(#createdTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#createdTitle),
             ),
@@ -1238,7 +1623,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get editedTitle =>
       (super.noSuchMethod(
             Invocation.getter(#editedTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#editedTitle),
             ),
@@ -1249,7 +1634,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get expenseCreated =>
       (super.noSuchMethod(
             Invocation.getter(#expenseCreated),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#expenseCreated),
             ),
@@ -1260,7 +1645,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get expenseEdited =>
       (super.noSuchMethod(
             Invocation.getter(#expenseEdited),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#expenseEdited),
             ),
@@ -1271,7 +1656,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get expenseInstructionTitle =>
       (super.noSuchMethod(
             Invocation.getter(#expenseInstructionTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#expenseInstructionTitle),
             ),
@@ -1282,7 +1667,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get expenseInstructionMessage =>
       (super.noSuchMethod(
             Invocation.getter(#expenseInstructionMessage),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#expenseInstructionMessage),
             ),
@@ -1293,7 +1678,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get profileTitle =>
       (super.noSuchMethod(
             Invocation.getter(#profileTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#profileTitle),
             ),
@@ -1304,7 +1689,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get dataUpdated =>
       (super.noSuchMethod(
             Invocation.getter(#dataUpdated),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#dataUpdated),
             ),
@@ -1315,7 +1700,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get profilePictureUpdated =>
       (super.noSuchMethod(
             Invocation.getter(#profilePictureUpdated),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#profilePictureUpdated),
             ),
@@ -1326,7 +1711,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get removePictureTitle =>
       (super.noSuchMethod(
             Invocation.getter(#removePictureTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#removePictureTitle),
             ),
@@ -1337,7 +1722,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get removePictureMessage =>
       (super.noSuchMethod(
             Invocation.getter(#removePictureMessage),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#removePictureMessage),
             ),
@@ -1348,7 +1733,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get pictureRemoved =>
       (super.noSuchMethod(
             Invocation.getter(#pictureRemoved),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#pictureRemoved),
             ),
@@ -1359,7 +1744,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get nameLabel =>
       (super.noSuchMethod(
             Invocation.getter(#nameLabel),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#nameLabel),
             ),
@@ -1370,7 +1755,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get editNameTooltip =>
       (super.noSuchMethod(
             Invocation.getter(#editNameTooltip),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#editNameTooltip),
             ),
@@ -1381,7 +1766,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emailLabel =>
       (super.noSuchMethod(
             Invocation.getter(#emailLabel),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emailLabel),
             ),
@@ -1392,7 +1777,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get editEmailTooltip =>
       (super.noSuchMethod(
             Invocation.getter(#editEmailTooltip),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#editEmailTooltip),
             ),
@@ -1403,7 +1788,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get passwordLabel =>
       (super.noSuchMethod(
             Invocation.getter(#passwordLabel),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#passwordLabel),
             ),
@@ -1414,7 +1799,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get editPasswordTooltip =>
       (super.noSuchMethod(
             Invocation.getter(#editPasswordTooltip),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#editPasswordTooltip),
             ),
@@ -1425,7 +1810,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get userIdLabel =>
       (super.noSuchMethod(
             Invocation.getter(#userIdLabel),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#userIdLabel),
             ),
@@ -1436,7 +1821,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get copyIdTooltip =>
       (super.noSuchMethod(
             Invocation.getter(#copyIdTooltip),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#copyIdTooltip),
             ),
@@ -1447,7 +1832,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get idCopied =>
       (super.noSuchMethod(
             Invocation.getter(#idCopied),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#idCopied),
             ),
@@ -1458,7 +1843,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteAccountButton =>
       (super.noSuchMethod(
             Invocation.getter(#deleteAccountButton),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteAccountButton),
             ),
@@ -1469,7 +1854,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteAccountTitle =>
       (super.noSuchMethod(
             Invocation.getter(#deleteAccountTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteAccountTitle),
             ),
@@ -1480,7 +1865,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteAccountMessage =>
       (super.noSuchMethod(
             Invocation.getter(#deleteAccountMessage),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteAccountMessage),
             ),
@@ -1491,7 +1876,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get accountDeleted =>
       (super.noSuchMethod(
             Invocation.getter(#accountDeleted),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#accountDeleted),
             ),
@@ -1502,10 +1887,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get save =>
       (super.noSuchMethod(
             Invocation.getter(#save),
-            returnValue: _i13.dummyValue<String>(
-              this,
-              Invocation.getter(#save),
-            ),
+            returnValue: _i9.dummyValue<String>(this, Invocation.getter(#save)),
           )
           as String);
 
@@ -1513,7 +1895,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get newNameHint =>
       (super.noSuchMethod(
             Invocation.getter(#newNameHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#newNameHint),
             ),
@@ -1524,7 +1906,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get nameUpdated =>
       (super.noSuchMethod(
             Invocation.getter(#nameUpdated),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#nameUpdated),
             ),
@@ -1535,7 +1917,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get newEmailHint =>
       (super.noSuchMethod(
             Invocation.getter(#newEmailHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#newEmailHint),
             ),
@@ -1546,7 +1928,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get currentPasswordHint =>
       (super.noSuchMethod(
             Invocation.getter(#currentPasswordHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#currentPasswordHint),
             ),
@@ -1557,7 +1939,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get invalidData =>
       (super.noSuchMethod(
             Invocation.getter(#invalidData),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#invalidData),
             ),
@@ -1568,7 +1950,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emailUpdateSent =>
       (super.noSuchMethod(
             Invocation.getter(#emailUpdateSent),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emailUpdateSent),
             ),
@@ -1579,7 +1961,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get newPasswordHint =>
       (super.noSuchMethod(
             Invocation.getter(#newPasswordHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#newPasswordHint),
             ),
@@ -1590,7 +1972,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get confirmPasswordHint =>
       (super.noSuchMethod(
             Invocation.getter(#confirmPasswordHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#confirmPasswordHint),
             ),
@@ -1601,7 +1983,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get passwordsDoNotMatch =>
       (super.noSuchMethod(
             Invocation.getter(#passwordsDoNotMatch),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#passwordsDoNotMatch),
             ),
@@ -1612,7 +1994,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get passwordUpdated =>
       (super.noSuchMethod(
             Invocation.getter(#passwordUpdated),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#passwordUpdated),
             ),
@@ -1623,7 +2005,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get notAvailable =>
       (super.noSuchMethod(
             Invocation.getter(#notAvailable),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#notAvailable),
             ),
@@ -1634,7 +2016,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get yearsPageTitle =>
       (super.noSuchMethod(
             Invocation.getter(#yearsPageTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#yearsPageTitle),
             ),
@@ -1645,7 +2027,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get noExpensesTitle =>
       (super.noSuchMethod(
             Invocation.getter(#noExpensesTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#noExpensesTitle),
             ),
@@ -1656,7 +2038,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get noExpensesSubtitle =>
       (super.noSuchMethod(
             Invocation.getter(#noExpensesSubtitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#noExpensesSubtitle),
             ),
@@ -1667,7 +2049,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get monthlyDetail =>
       (super.noSuchMethod(
             Invocation.getter(#monthlyDetail),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#monthlyDetail),
             ),
@@ -1678,7 +2060,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get noExpensesMonthTitle =>
       (super.noSuchMethod(
             Invocation.getter(#noExpensesMonthTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#noExpensesMonthTitle),
             ),
@@ -1689,7 +2071,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get dailyExpenses =>
       (super.noSuchMethod(
             Invocation.getter(#dailyExpenses),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#dailyExpenses),
             ),
@@ -1700,7 +2082,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get noExpensesDayTitle =>
       (super.noSuchMethod(
             Invocation.getter(#noExpensesDayTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#noExpensesDayTitle),
             ),
@@ -1711,7 +2093,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get totalDayLabel =>
       (super.noSuchMethod(
             Invocation.getter(#totalDayLabel),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#totalDayLabel),
             ),
@@ -1722,7 +2104,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get allExpenses =>
       (super.noSuchMethod(
             Invocation.getter(#allExpenses),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#allExpenses),
             ),
@@ -1733,7 +2115,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get confirm =>
       (super.noSuchMethod(
             Invocation.getter(#confirm),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#confirm),
             ),
@@ -1744,7 +2126,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get dontShowAgain =>
       (super.noSuchMethod(
             Invocation.getter(#dontShowAgain),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#dontShowAgain),
             ),
@@ -1755,7 +2137,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get selectYear =>
       (super.noSuchMethod(
             Invocation.getter(#selectYear),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#selectYear),
             ),
@@ -1766,7 +2148,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get logout =>
       (super.noSuchMethod(
             Invocation.getter(#logout),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#logout),
             ),
@@ -1777,7 +2159,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get logoutConfirmTitle =>
       (super.noSuchMethod(
             Invocation.getter(#logoutConfirmTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#logoutConfirmTitle),
             ),
@@ -1788,7 +2170,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get logoutConfirmMessage =>
       (super.noSuchMethod(
             Invocation.getter(#logoutConfirmMessage),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#logoutConfirmMessage),
             ),
@@ -1799,7 +2181,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get close =>
       (super.noSuchMethod(
             Invocation.getter(#close),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#close),
             ),
@@ -1810,7 +2192,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get forgotPassword =>
       (super.noSuchMethod(
             Invocation.getter(#forgotPassword),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#forgotPassword),
             ),
@@ -1821,7 +2203,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get accountFallback =>
       (super.noSuchMethod(
             Invocation.getter(#accountFallback),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#accountFallback),
             ),
@@ -1832,7 +2214,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get appInitErrorTitle =>
       (super.noSuchMethod(
             Invocation.getter(#appInitErrorTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#appInitErrorTitle),
             ),
@@ -1843,7 +2225,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get appInitErrorMessage =>
       (super.noSuchMethod(
             Invocation.getter(#appInitErrorMessage),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#appInitErrorMessage),
             ),
@@ -1854,7 +2236,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get retry =>
       (super.noSuchMethod(
             Invocation.getter(#retry),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#retry),
             ),
@@ -1865,7 +2247,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get authAppTitle =>
       (super.noSuchMethod(
             Invocation.getter(#authAppTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#authAppTitle),
             ),
@@ -1876,7 +2258,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get authAppSubtitle =>
       (super.noSuchMethod(
             Invocation.getter(#authAppSubtitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#authAppSubtitle),
             ),
@@ -1887,7 +2269,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get loginTab =>
       (super.noSuchMethod(
             Invocation.getter(#loginTab),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#loginTab),
             ),
@@ -1898,7 +2280,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get registerTab =>
       (super.noSuchMethod(
             Invocation.getter(#registerTab),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#registerTab),
             ),
@@ -1909,7 +2291,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get welcomeBack =>
       (super.noSuchMethod(
             Invocation.getter(#welcomeBack),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#welcomeBack),
             ),
@@ -1920,7 +2302,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get signInToContinue =>
       (super.noSuchMethod(
             Invocation.getter(#signInToContinue),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#signInToContinue),
             ),
@@ -1931,7 +2313,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emailHint =>
       (super.noSuchMethod(
             Invocation.getter(#emailHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emailHint),
             ),
@@ -1942,7 +2324,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emailRequired =>
       (super.noSuchMethod(
             Invocation.getter(#emailRequired),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emailRequired),
             ),
@@ -1953,7 +2335,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emailInvalid =>
       (super.noSuchMethod(
             Invocation.getter(#emailInvalid),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emailInvalid),
             ),
@@ -1964,7 +2346,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get passwordHint =>
       (super.noSuchMethod(
             Invocation.getter(#passwordHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#passwordHint),
             ),
@@ -1975,7 +2357,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get passwordRequired =>
       (super.noSuchMethod(
             Invocation.getter(#passwordRequired),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#passwordRequired),
             ),
@@ -1986,7 +2368,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get loginButton =>
       (super.noSuchMethod(
             Invocation.getter(#loginButton),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#loginButton),
             ),
@@ -1997,7 +2379,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emailNotVerifiedTitle =>
       (super.noSuchMethod(
             Invocation.getter(#emailNotVerifiedTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emailNotVerifiedTitle),
             ),
@@ -2008,7 +2390,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emailNotVerifiedMessage =>
       (super.noSuchMethod(
             Invocation.getter(#emailNotVerifiedMessage),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emailNotVerifiedMessage),
             ),
@@ -2019,7 +2401,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get resendEmail =>
       (super.noSuchMethod(
             Invocation.getter(#resendEmail),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#resendEmail),
             ),
@@ -2030,7 +2412,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get verificationEmailSent =>
       (super.noSuchMethod(
             Invocation.getter(#verificationEmailSent),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#verificationEmailSent),
             ),
@@ -2041,7 +2423,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get insertEmailForRecovery =>
       (super.noSuchMethod(
             Invocation.getter(#insertEmailForRecovery),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#insertEmailForRecovery),
             ),
@@ -2052,7 +2434,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get createAccount =>
       (super.noSuchMethod(
             Invocation.getter(#createAccount),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#createAccount),
             ),
@@ -2063,7 +2445,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get registerToStart =>
       (super.noSuchMethod(
             Invocation.getter(#registerToStart),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#registerToStart),
             ),
@@ -2074,7 +2456,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get fullNameHint =>
       (super.noSuchMethod(
             Invocation.getter(#fullNameHint),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#fullNameHint),
             ),
@@ -2085,7 +2467,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get nameRequired =>
       (super.noSuchMethod(
             Invocation.getter(#nameRequired),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#nameRequired),
             ),
@@ -2096,7 +2478,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get passwordMinLength =>
       (super.noSuchMethod(
             Invocation.getter(#passwordMinLength),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#passwordMinLength),
             ),
@@ -2107,7 +2489,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get confirmPasswordRequired =>
       (super.noSuchMethod(
             Invocation.getter(#confirmPasswordRequired),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#confirmPasswordRequired),
             ),
@@ -2118,7 +2500,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get registerButton =>
       (super.noSuchMethod(
             Invocation.getter(#registerButton),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#registerButton),
             ),
@@ -2129,7 +2511,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get verifyEmailTitle =>
       (super.noSuchMethod(
             Invocation.getter(#verifyEmailTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#verifyEmailTitle),
             ),
@@ -2140,7 +2522,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get verifyEmailContent =>
       (super.noSuchMethod(
             Invocation.getter(#verifyEmailContent),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#verifyEmailContent),
             ),
@@ -2151,7 +2533,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get notificationDailyTitle =>
       (super.noSuchMethod(
             Invocation.getter(#notificationDailyTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#notificationDailyTitle),
             ),
@@ -2162,7 +2544,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get notificationDailyBody =>
       (super.noSuchMethod(
             Invocation.getter(#notificationDailyBody),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#notificationDailyBody),
             ),
@@ -2173,7 +2555,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get notificationBudgetTitle =>
       (super.noSuchMethod(
             Invocation.getter(#notificationBudgetTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#notificationBudgetTitle),
             ),
@@ -2184,7 +2566,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get editExpenseConvertedTitle =>
       (super.noSuchMethod(
             Invocation.getter(#editExpenseConvertedTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#editExpenseConvertedTitle),
             ),
@@ -2195,7 +2577,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get warningOfflineCurrencyCreate =>
       (super.noSuchMethod(
             Invocation.getter(#warningOfflineCurrencyCreate),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#warningOfflineCurrencyCreate),
             ),
@@ -2206,7 +2588,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get warningOfflineCurrencyEdit =>
       (super.noSuchMethod(
             Invocation.getter(#warningOfflineCurrencyEdit),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#warningOfflineCurrencyEdit),
             ),
@@ -2217,7 +2599,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get warningTitle =>
       (super.noSuchMethod(
             Invocation.getter(#warningTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#warningTitle),
             ),
@@ -2228,7 +2610,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get conversionUnavailable =>
       (super.noSuchMethod(
             Invocation.getter(#conversionUnavailable),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#conversionUnavailable),
             ),
@@ -2239,7 +2621,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get retryWhenOnline =>
       (super.noSuchMethod(
             Invocation.getter(#retryWhenOnline),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#retryWhenOnline),
             ),
@@ -2250,7 +2632,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryFood =>
       (super.noSuchMethod(
             Invocation.getter(#categoryFood),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryFood),
             ),
@@ -2261,7 +2643,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryTransport =>
       (super.noSuchMethod(
             Invocation.getter(#categoryTransport),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryTransport),
             ),
@@ -2272,7 +2654,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryHome =>
       (super.noSuchMethod(
             Invocation.getter(#categoryHome),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryHome),
             ),
@@ -2283,7 +2665,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryHealth =>
       (super.noSuchMethod(
             Invocation.getter(#categoryHealth),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryHealth),
             ),
@@ -2294,7 +2676,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryEntertainment =>
       (super.noSuchMethod(
             Invocation.getter(#categoryEntertainment),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryEntertainment),
             ),
@@ -2305,7 +2687,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryShopping =>
       (super.noSuchMethod(
             Invocation.getter(#categoryShopping),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryShopping),
             ),
@@ -2316,7 +2698,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryEducation =>
       (super.noSuchMethod(
             Invocation.getter(#categoryEducation),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryEducation),
             ),
@@ -2327,7 +2709,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryTravel =>
       (super.noSuchMethod(
             Invocation.getter(#categoryTravel),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryTravel),
             ),
@@ -2338,7 +2720,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryOther =>
       (super.noSuchMethod(
             Invocation.getter(#categoryOther),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryOther),
             ),
@@ -2349,7 +2731,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get deleteAccountMessageConfirm =>
       (super.noSuchMethod(
             Invocation.getter(#deleteAccountMessageConfirm),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#deleteAccountMessageConfirm),
             ),
@@ -2360,7 +2742,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get monthlyTrend =>
       (super.noSuchMethod(
             Invocation.getter(#monthlyTrend),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#monthlyTrend),
             ),
@@ -2371,7 +2753,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get categoryBreakdown =>
       (super.noSuchMethod(
             Invocation.getter(#categoryBreakdown),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#categoryBreakdown),
             ),
@@ -2382,7 +2764,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emptyExpensesTitle =>
       (super.noSuchMethod(
             Invocation.getter(#emptyExpensesTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emptyExpensesTitle),
             ),
@@ -2393,7 +2775,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emptyExpensesSubtitle =>
       (super.noSuchMethod(
             Invocation.getter(#emptyExpensesSubtitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emptyExpensesSubtitle),
             ),
@@ -2404,7 +2786,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emptySearchTitle =>
       (super.noSuchMethod(
             Invocation.getter(#emptySearchTitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emptySearchTitle),
             ),
@@ -2415,7 +2797,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String get emptySearchSubtitle =>
       (super.noSuchMethod(
             Invocation.getter(#emptySearchSubtitle),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.getter(#emptySearchSubtitle),
             ),
@@ -2426,7 +2808,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String activeAt(String? time) =>
       (super.noSuchMethod(
             Invocation.method(#activeAt, [time]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#activeAt, [time]),
             ),
@@ -2437,7 +2819,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String activeMonthlyLimit(String? amount) =>
       (super.noSuchMethod(
             Invocation.method(#activeMonthlyLimit, [amount]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#activeMonthlyLimit, [amount]),
             ),
@@ -2448,7 +2830,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String deleteConfirmMessage(int? count) =>
       (super.noSuchMethod(
             Invocation.method(#deleteConfirmMessage, [count]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#deleteConfirmMessage, [count]),
             ),
@@ -2459,7 +2841,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String deleteSuccessMessage(int? count) =>
       (super.noSuchMethod(
             Invocation.method(#deleteSuccessMessage, [count]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#deleteSuccessMessage, [count]),
             ),
@@ -2470,7 +2852,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String selectedCountLabel(int? count) =>
       (super.noSuchMethod(
             Invocation.method(#selectedCountLabel, [count]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#selectedCountLabel, [count]),
             ),
@@ -2481,7 +2863,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String refreshError(String? error) =>
       (super.noSuchMethod(
             Invocation.method(#refreshError, [error]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#refreshError, [error]),
             ),
@@ -2492,7 +2874,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String recoveryEmailSent(String? email) =>
       (super.noSuchMethod(
             Invocation.method(#recoveryEmailSent, [email]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#recoveryEmailSent, [email]),
             ),
@@ -2503,7 +2885,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String totalYearLabel(String? year) =>
       (super.noSuchMethod(
             Invocation.method(#totalYearLabel, [year]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#totalYearLabel, [year]),
             ),
@@ -2514,7 +2896,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String totalMonthLabel(String? month) =>
       (super.noSuchMethod(
             Invocation.method(#totalMonthLabel, [month]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#totalMonthLabel, [month]),
             ),
@@ -2525,7 +2907,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String dayCountLabel(int? count) =>
       (super.noSuchMethod(
             Invocation.method(#dayCountLabel, [count]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#dayCountLabel, [count]),
             ),
@@ -2536,7 +2918,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String expenseCountLabel(int? count) =>
       (super.noSuchMethod(
             Invocation.method(#expenseCountLabel, [count]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#expenseCountLabel, [count]),
             ),
@@ -2547,7 +2929,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String logoutError(String? error) =>
       (super.noSuchMethod(
             Invocation.method(#logoutError, [error]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#logoutError, [error]),
             ),
@@ -2558,7 +2940,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String notificationBudgetBody(String? spent, String? limit) =>
       (super.noSuchMethod(
             Invocation.method(#notificationBudgetBody, [spent, limit]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#notificationBudgetBody, [spent, limit]),
             ),
@@ -2569,7 +2951,7 @@ class MockAppLocalizations extends _i1.Mock implements _i10.AppLocalizations {
   String editExpenseExchangeRateDate(String? date) =>
       (super.noSuchMethod(
             Invocation.method(#editExpenseExchangeRateDate, [date]),
-            returnValue: _i13.dummyValue<String>(
+            returnValue: _i9.dummyValue<String>(
               this,
               Invocation.method(#editExpenseExchangeRateDate, [date]),
             ),

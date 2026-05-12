@@ -2,10 +2,10 @@ import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/services/expense_service.dart';
 import 'package:expense_tracker/utils/repository_failure.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 /// FILE: expense_provider.dart
@@ -21,15 +21,15 @@ class ExpenseProvider extends ChangeNotifier {
   // --- STATO E DIPENDENZE ---
   // Iniezione delle dipendenze per orchestrare operazioni tra expense e notifiche.
 
-  final AuthProvider _authProvider;
+  final FirebaseAuth _firebaseAuth;
   final NotificationProvider _notificationProvider;
   final ExpenseService _expenseService;
 
   ExpenseProvider({
-    required AuthProvider authProvider,
+    required FirebaseAuth firebaseAuth,
     required NotificationProvider notificationProvider,
     required ExpenseService expenseService,
-  }) : _authProvider = authProvider,
+  }) : _firebaseAuth = firebaseAuth,
        _notificationProvider = notificationProvider,
        _expenseService = expenseService;
 
@@ -82,7 +82,7 @@ class ExpenseProvider extends ChangeNotifier {
     _initError = null;
     notifyListeners();
 
-    final user = _authProvider.currentUser;
+    final user = _firebaseAuth.currentUser;
 
     try {
       _expenses = await _expenseService.loadUserExpenses(user: user);
@@ -153,7 +153,7 @@ class ExpenseProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final user = _authProvider.currentUser;
+    final user = _firebaseAuth.currentUser;
 
     try {
       // DELEGA LA BUSINESS LOGIC AL SERVICE
@@ -206,7 +206,7 @@ class ExpenseProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
 
-    final user = _authProvider.currentUser;
+    final user = _firebaseAuth.currentUser;
 
     try {
       // DELEGA LA BUSINESS LOGIC AL SERVICE
@@ -260,7 +260,7 @@ class ExpenseProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final user = _authProvider.currentUser;
+    final user = _firebaseAuth.currentUser;
 
     try {
       // Raccogliamo i risultati di ogni singola operazione, senza interrompere al primo errore
@@ -313,7 +313,7 @@ class ExpenseProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
-    final user = _authProvider.currentUser;
+    final user = _firebaseAuth.currentUser;
 
     try {
       final results = await Future.wait(

@@ -7,19 +7,18 @@ import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/providers/notification_provider.dart';
 import 'package:expense_tracker/services/expense_service.dart';
 import 'package:expense_tracker/utils/repository_failure.dart';
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
 // Genera i mock per le 3 dipendenze del provider
 @GenerateMocks([
-  AuthProvider,
+  FirebaseAuth,
   NotificationProvider,
   ExpenseService,
   AppLocalizations,
@@ -38,7 +37,7 @@ class FakeUser extends Fake implements User {
 void main() {
   group('ExpenseProvider Tests', () {
     // --- DIPENDENZE MOCKATE ---
-    late MockAuthProvider mockAuthProvider;
+    late MockFirebaseAuth mockFirebaseAuth;
     late MockNotificationProvider mockNotificationProvider;
     late MockExpenseService mockExpenseService;
     late MockAppLocalizations mockL10n;
@@ -51,7 +50,7 @@ void main() {
     late ExpenseModel sampleExpense;
 
     setUp(() {
-      mockAuthProvider = MockAuthProvider();
+      mockFirebaseAuth = MockFirebaseAuth();
       mockNotificationProvider = MockNotificationProvider();
       mockExpenseService = MockExpenseService();
       mockL10n = MockAppLocalizations();
@@ -72,7 +71,7 @@ void main() {
       );
 
       // Stub comuni a tutti i test: currentUser e NotificationProvider getters, l10n
-      when(mockAuthProvider.currentUser).thenReturn(fakeUser);
+      when(mockFirebaseAuth.currentUser).thenReturn(fakeUser);
       when(mockNotificationProvider.monthlyLimit).thenReturn(1000.0);
       when(mockNotificationProvider.limitAlertEnabled).thenReturn(false);
       when(mockL10n.warningOfflineCurrencyCreate).thenReturn('Offline warning');
@@ -95,7 +94,7 @@ void main() {
 
       // Creazione del provider con le dipendenze mockate
       provider = ExpenseProvider(
-        authProvider: mockAuthProvider,
+        firebaseAuth: mockFirebaseAuth,
         notificationProvider: mockNotificationProvider,
         expenseService: mockExpenseService,
       );

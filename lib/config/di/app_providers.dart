@@ -35,14 +35,12 @@ class InitializedProviders {
   final ThemeProvider themeProvider;
   final CurrencyProvider currencyProvider;
   final LanguageProvider languageProvider;
-  final AuthProvider authProvider;
 
   const InitializedProviders({
     required this.notificationProvider,
     required this.themeProvider,
     required this.currencyProvider,
     required this.languageProvider,
-    required this.authProvider,
   });
 }
 
@@ -78,22 +76,19 @@ Future<InitializedProviders> initProviders() async {
   Intl.defaultLocale = languageProvider.currentLocale.toString();
   await initializeDateFormatting(Intl.defaultLocale, null);
 
-  // Inizializzazione prima della lista per poterlo passare come dipendenza a ExpenseProvider
-  final authProvider = AuthProvider(authService: getIt<AuthService>(), firebaseAuth: getIt<FirebaseAuth>());
 
   return InitializedProviders(
     notificationProvider: notificationProvider,
     themeProvider: themeProvider,
     currencyProvider: currencyProvider,
     languageProvider: languageProvider,
-    authProvider: authProvider,
   );
 }
 
 // --- COSTRUZIONE LISTA PROVIDER ---
 // Assembla la lista completa dei ChangeNotifierProvider da passare al MultiProvider in main.dart.
 // I Provider pre-inizializzati vengono iniettati tramite .value() per preservare le istanze
-// già configurate. I Provider lazy vengono invece creati direttamente tramite GetIt.
+// già configurate. I Provider lazy vengono invece creati direttamente.
 List<SingleChildWidget> buildProviders(InitializedProviders initialized) {
   final getIt = GetIt.instance;
 
@@ -103,16 +98,21 @@ List<SingleChildWidget> buildProviders(InitializedProviders initialized) {
     ChangeNotifierProvider.value(value: initialized.themeProvider),
     ChangeNotifierProvider.value(value: initialized.currencyProvider),
     ChangeNotifierProvider.value(value: initialized.languageProvider),
-    ChangeNotifierProvider.value(value: initialized.authProvider),
 
-    // Provider lazy: istanziati al primo accesso tramite GetIt.
+    // Provider lazy: istanziati al primo accesso.
     ChangeNotifierProvider(
       create: (_) => ProfileProvider(profileService: getIt<ProfileService>()),
     ),
     ChangeNotifierProvider(
+      create: (_) => AuthProvider(
+        authService: getIt<AuthService>(),
+        firebaseAuth: getIt<FirebaseAuth>(),
+      ),
+    ),
+    ChangeNotifierProvider(
       create: (_) => ExpenseProvider(
         expenseService: getIt<ExpenseService>(),
-        authProvider: initialized.authProvider,
+        firebaseAuth: getIt<FirebaseAuth>(),
         notificationProvider: initialized.notificationProvider,
       ),
     ),
