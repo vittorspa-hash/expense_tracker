@@ -1,27 +1,27 @@
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
 
 /// FILE: login_form.dart
 /// DESCRIZIONE: Widget contenente il form di accesso. Gestisce l'input utente,
 /// la validazione dei campi, la chiamata al Provider di autenticazione e
 /// la logica di verifica email/recupero password.
 
-class LoginForm extends StatefulWidget {
+class LoginForm extends ConsumerStatefulWidget {
   const LoginForm({super.key});
 
   @override
-  State<LoginForm> createState() => _LoginFormState();
+  ConsumerState<LoginForm> createState() => _LoginFormState();
 }
 
-class _LoginFormState extends State<LoginForm> {
+class _LoginFormState extends ConsumerState<LoginForm> {
   // --- GESTIONE STATO E CONTROLLER ---
   // Definizione delle chiavi per la validazione del form e dei controller
   // per gestire l'input testuale e il focus dei campi.
@@ -52,8 +52,7 @@ class _LoginFormState extends State<LoginForm> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<AuthProvider>();
-    final isLoading = provider.isLoading;
+    final isLoading = ref.watch(authNotifierProvider).isLoading;
     final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
@@ -220,12 +219,12 @@ class _LoginFormState extends State<LoginForm> {
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final provider = context.read<AuthProvider>();
+    final auth = ref.read(authNotifierProvider.notifier);
     final loc = AppLocalizations.of(context)!;
 
     try {
       // 1. Chiamata al Provider (Logica Pura)
-      final user = await provider.signIn(
+      final user = await auth.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -248,7 +247,7 @@ class _LoginFormState extends State<LoginForm> {
         if (confirm == true) {
           // 2b. Invia Email Verifica (se richiesto)
           try {
-            await provider.sendVerificationEmail(user);
+            await auth.sendVerificationEmail(user);
             _showSnack(loc.verificationEmailSent);
           } catch (e) {
             _showSnack(e.toString(), isError: true);
@@ -256,7 +255,7 @@ class _LoginFormState extends State<LoginForm> {
         }
 
         // 2c. Forza il Logout perché l'accesso è bloccato
-        await provider.signOut();
+        await auth.signOut();
         return;
       }
 
@@ -280,7 +279,7 @@ class _LoginFormState extends State<LoginForm> {
     }
 
     try {
-      await context.read<AuthProvider>().resetPassword(email: email);
+      await ref.read(authNotifierProvider.notifier).resetPassword(email: email);
       _showSnack(loc.recoveryEmailSent(email));
     } catch (e) {
       _showSnack(e.toString(), isError: true);

@@ -1,26 +1,26 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// FILE: new_expense_page.dart
 /// DESCRIZIONE: Pagina dedicata alla creazione di una nuova spesa.
 /// Funge da wrapper per il componente riutilizzabile ExpenseEdit, gestendo
 /// specificamente la logica di creazione (onSubmit) e l'animazione di ingresso.
 
-class NewExpensePage extends StatefulWidget {
+class NewExpensePage extends ConsumerStatefulWidget {
   static const route = "/expense/new";
   const NewExpensePage({super.key});
 
   @override
-  State<NewExpensePage> createState() => _NewExpensePageState();
+  ConsumerState<NewExpensePage> createState() => _NewExpensePageState();
 }
 
-class _NewExpensePageState extends State<NewExpensePage>
+class _NewExpensePageState extends ConsumerState<NewExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   // --- CONFIGURAZIONE ANIMAZIONE ---
   @override
@@ -53,9 +53,8 @@ class _NewExpensePageState extends State<NewExpensePage>
     required ExpenseCategory category, 
     required AppLocalizations l10n,
   }) async {
-    final provider = context.read<ExpenseProvider>();
-
-    await provider.createExpense(
+    
+    await ref.read(expenseNotifierProvider.notifier).createExpense(
       value: value,
       description: description,
       date: date,

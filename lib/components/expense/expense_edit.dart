@@ -1,19 +1,16 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// FILE: expense_edit.dart
 /// DESCRIZIONE: Schermata generica per la creazione o la modifica di una spesa.
@@ -21,7 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Centralizza la logica di visualizzazione delle Snackbar (Successo vs Warning)
 /// basandosi sullo stato del Provider dopo il tentativo di salvataggio.
 
-class ExpenseEdit extends StatefulWidget {
+class ExpenseEdit extends ConsumerStatefulWidget {
   // --- PARAMETRI ---
   final double? initialValue;
   final String? initialDescription;
@@ -39,9 +36,10 @@ class ExpenseEdit extends StatefulWidget {
     required String? description,
     required DateTime date,
     required ExpenseCurrency currencyCode,
-    required ExpenseCategory category, 
+    required ExpenseCategory category,
     required AppLocalizations l10n,
-  }) onSubmit;
+  })
+  onSubmit;
 
   const ExpenseEdit({
     super.key,
@@ -49,7 +47,7 @@ class ExpenseEdit extends StatefulWidget {
     this.initialDescription,
     this.initialDate,
     this.initialCurrencyCode,
-    this.initialCategory, 
+    this.initialCategory,
     this.headerBuilder,
     this.floatingActionButtonIcon,
     this.onFloatingActionButtonPressed,
@@ -57,10 +55,10 @@ class ExpenseEdit extends StatefulWidget {
   });
 
   @override
-  State<ExpenseEdit> createState() => _ExpenseEditState();
+  ConsumerState<ExpenseEdit> createState() => _ExpenseEditState();
 }
 
-class _ExpenseEditState extends State<ExpenseEdit> {
+class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
   final priceController = TextEditingController();
   final descriptionController = TextEditingController();
   bool isTappedDown = false;
@@ -79,7 +77,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     if (widget.initialCurrencyCode != null) {
       _selectedCurrency = ExpenseCurrency.fromCode(widget.initialCurrencyCode!);
     } else {
-      _selectedCurrency = context.read<CurrencyProvider>().currentCurrency;
+      _selectedCurrency = ref.read(currencyNotifierProvider).currentCurrency;
     }
 
     // Categoria: usa quella passata oppure default a "other"
@@ -94,7 +92,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoading = context.select<ExpenseProvider, bool>((p) => p.isLoading);
+    final isLoading = ref.watch(expenseNotifierProvider.select((p) => p.isLoading));
 
     final header = widget.headerBuilder?.call(isTappedDown);
 
@@ -145,17 +143,19 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
       floatingActionButton:
           (widget.floatingActionButtonIcon == null || isLoading)
-              ? null
-              : floatingActionButton(context, isDark),
+          ? null
+          : floatingActionButton(context, isDark),
     );
   }
 
   // --- INPUT PREZZO E VALUTA ---
   Widget inputPrice(bool isDark) {
-    final String hintText =
-        _selectedCurrency == ExpenseCurrency.jpy ? "0" : "0.00";
-    final textColor =
-        isTappedDown ? AppColors.textLight : AppColors.textTappedDown;
+    final String hintText = _selectedCurrency == ExpenseCurrency.jpy
+        ? "0"
+        : "0.00";
+    final textColor = isTappedDown
+        ? AppColors.textLight
+        : AppColors.textTappedDown;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -243,39 +243,33 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
   // --- INPUT DESCRIZIONE ---
   Widget inputDescription() => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: TextField(
-          keyboardType: TextInputType.text,
-          maxLines: null,
-          controller: descriptionController,
-          cursorColor: isTappedDown
-              ? AppColors.textLight
-              : AppColors.textTappedDown,
-          textAlign: TextAlign.center,
-          textCapitalization: TextCapitalization.sentences,
-          style: TextStyle(
-            fontSize: 20.sp,
-            color: isTappedDown
-                ? AppColors.textLight
-                : AppColors.textTappedDown,
-            fontWeight: FontWeight.w600,
-          ),
-          decoration: InputDecoration(
-            hintText: AppLocalizations.of(context)!.descriptionHint,
-            border: InputBorder.none,
-            hintStyle: TextStyle(
-              color: AppColors.secondaryDark,
-              fontSize: 18.sp,
-            ),
-          ),
-        ),
-      );
+    padding: EdgeInsets.symmetric(horizontal: 24.w),
+    child: TextField(
+      keyboardType: TextInputType.text,
+      maxLines: null,
+      controller: descriptionController,
+      cursorColor: isTappedDown
+          ? AppColors.textLight
+          : AppColors.textTappedDown,
+      textAlign: TextAlign.center,
+      textCapitalization: TextCapitalization.sentences,
+      style: TextStyle(
+        fontSize: 20.sp,
+        color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: InputDecoration(
+        hintText: AppLocalizations.of(context)!.descriptionHint,
+        border: InputBorder.none,
+        hintStyle: TextStyle(color: AppColors.secondaryDark, fontSize: 18.sp),
+      ),
+    ),
+  );
 
   // --- INPUT DATA ---
   Widget inputDate() {
     final locale = Localizations.localeOf(context).toString();
-    final formattedDate =
-        DateFormat("d MMMM y", locale).format(selectedDate);
+    final formattedDate = DateFormat("d MMMM y", locale).format(selectedDate);
     final displayDate = capitalizeMonth(formattedDate);
 
     return GestureDetector(
@@ -332,8 +326,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                 color: isSelected
                     ? AppColors.primary
                     : (isDark
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : AppColors.primary.withValues(alpha: 0.07)),
+                          ? AppColors.primary.withValues(alpha: 0.1)
+                          : AppColors.primary.withValues(alpha: 0.07)),
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
                   color: isSelected
@@ -351,8 +345,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                     color: isSelected
                         ? AppColors.textLight
                         : (isTappedDown
-                            ? AppColors.textLight
-                            : AppColors.textTappedDown),
+                              ? AppColors.textLight
+                              : AppColors.textTappedDown),
                   ),
                   SizedBox(width: 6.w),
                   Text(
@@ -363,8 +357,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
                       color: isSelected
                           ? AppColors.textLight
                           : (isTappedDown
-                              ? AppColors.textLight
-                              : AppColors.textTappedDown),
+                                ? AppColors.textLight
+                                : AppColors.textTappedDown),
                     ),
                   ),
                 ],
@@ -378,7 +372,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
   // --- GESTIONE ELIMINAZIONE ---
   Widget floatingActionButton(BuildContext context, bool isDark) {
-    final expenseProvider = context.read<ExpenseProvider>();
     final loc = AppLocalizations.of(context)!;
 
     return FloatingActionButton(
@@ -395,15 +388,16 @@ class _ExpenseEditState extends State<ExpenseEdit> {
         );
 
         if (confirm == true && widget.onFloatingActionButtonPressed != null) {
-          final deletedExpense =
-              await widget.onFloatingActionButtonPressed!();
+          final deletedExpense = await widget.onFloatingActionButtonPressed!();
 
           if (!context.mounted) return;
 
-          if (expenseProvider.errorMessage != null) {
+          final currentState = ref.read(expenseNotifierProvider);
+
+          if (currentState.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(expenseProvider.errorMessage!),
+                content: Text(currentState.errorMessage!),
                 backgroundColor: AppColors.snackBar,
               ),
             );
@@ -411,6 +405,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
           }
 
           if (deletedExpense != null) {
+            final expenseNotifier = ref.read(expenseNotifierProvider.notifier);
+            final locCopy = loc;
             SnackbarUtils.show(
               context: context,
               title: loc.deletedTitleSingle,
@@ -419,10 +415,7 @@ class _ExpenseEditState extends State<ExpenseEdit> {
               undo: loc.undo,
               onDelete: (_) {},
               onRestore: (exp) async {
-                await expenseProvider.restoreExpenses(
-                  [exp],
-                  loc,
-                );
+                await expenseNotifier.restoreExpenses([exp], locCopy);
               },
             );
             Navigator.pop(context);
@@ -448,8 +441,6 @@ class _ExpenseEditState extends State<ExpenseEdit> {
       return;
     }
 
-    final expenseProvider = context.read<ExpenseProvider>();
-
     await widget.onSubmit(
       value: value,
       description: description.isEmpty ? null : description,
@@ -461,11 +452,13 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
     if (!mounted) return;
 
+    final currentState = ref.read(expenseNotifierProvider);
+
     // 1. GESTIONE ERRORE BLOCCANTE
-    if (expenseProvider.errorMessage != null) {
+    if (currentState.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(expenseProvider.errorMessage!),
+          content: Text(currentState.errorMessage!),
           backgroundColor: AppColors.snackBar,
         ),
       );
@@ -473,17 +466,16 @@ class _ExpenseEditState extends State<ExpenseEdit> {
     }
 
     // 2. GESTIONE WARNING vs SUCCESSO
-    if (expenseProvider.warningMessage != null) {
+    if (currentState.warningMessage != null) {
       SnackbarUtils.show(
         context: context,
         title: loc.warningTitle,
-        message: expenseProvider.warningMessage!,
+        message: currentState.warningMessage!,
       );
     } else {
       SnackbarUtils.show(
         context: context,
-        title:
-            widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
+        title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
         message: widget.initialValue == null
             ? loc.expenseCreated
             : loc.expenseEdited,
@@ -522,8 +514,8 @@ class _ExpenseEditState extends State<ExpenseEdit> {
 
   // --- ISTRUZIONI UTENTE ---
   Future<void> _showInstructionDialogIfNeeded() async {
-    final prefs = await SharedPreferences.getInstance();
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? "guest";
+    final prefs = await ref.read(sharedPreferencesProvider.future);
+    final uid = ref.read(firebaseAuthProvider).currentUser?.uid ?? "guest";
     final shouldShow = prefs.getBool('showExpenseEditHint_$uid') ?? true;
 
     if (shouldShow && mounted) {

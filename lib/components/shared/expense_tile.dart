@@ -1,10 +1,10 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/pages/edit_expense_page.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -15,7 +15,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// mostra il controvalore convertito oppure un'icona di warning se i tassi non sono disponibili
 /// (es. spesa creata offline con strategia "Soft Fail").
 
-class ExpenseTile extends StatefulWidget {
+class ExpenseTile extends ConsumerStatefulWidget {
   final ExpenseModel expenseModel;
   final bool isSelectionMode;
   final bool isSelected;
@@ -34,10 +34,10 @@ class ExpenseTile extends StatefulWidget {
   });
 
   @override
-  State<ExpenseTile> createState() => _ExpenseTileState();
+  ConsumerState<ExpenseTile> createState() => _ExpenseTileState();
 }
 
-class _ExpenseTileState extends State<ExpenseTile> {
+class _ExpenseTileState extends ConsumerState<ExpenseTile> {
   bool _isPressed = false;
 
   // --- FORMATTAZIONE DATI ---
@@ -67,11 +67,10 @@ class _ExpenseTileState extends State<ExpenseTile> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
+    final currencyState = ref.watch(currencyNotifierProvider);
 
-    return Consumer<CurrencyProvider>(
-      builder: (context, currencyProvider, child) {
         // --- 1. LOGICA DI CONVERSIONE E FEEDBACK ---
-        final currentCurrency = currencyProvider.currentCurrency;
+        final currentCurrency = currencyState.currentCurrency;
         final bool showConversion =
             widget.expenseModel.currency != currentCurrency;
 
@@ -90,7 +89,7 @@ class _ExpenseTileState extends State<ExpenseTile> {
               currentCurrency,
             );
             convertedAmountString =
-                "≈ ${currencyProvider.formatAmount(convertedValue)}";
+                "≈ ${currencyState.formatAmount(convertedValue)}";
           }
         }
 
@@ -321,8 +320,6 @@ class _ExpenseTileState extends State<ExpenseTile> {
               ),
             ),
           ),
-        );
-      },
     );
   }
 }

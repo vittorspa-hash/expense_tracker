@@ -1,8 +1,8 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/config/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart'; 
-import 'package:expense_tracker/providers/currency_provider.dart'; 
 
 /// FILE: report_card_widget.dart
 /// DESCRIZIONE: Componente UI utilizzato nei report per mostrare un riepilogo.
@@ -10,14 +10,14 @@ import 'package:expense_tracker/providers/currency_provider.dart';
 /// dinamicamente in base alla valuta selezionata.
 /// Supporta opzionalmente un contatore di elementi sulla destra.
 
-class ReportTotalCard extends StatelessWidget {
+class ReportTotalCard extends ConsumerWidget {
   // --- PARAMETRI ---
   // Dati essenziali (label, importo, icona) e dati opzionali per il badge contatore.
-  final String label; 
-  final double totalAmount; 
-  final IconData icon; 
-  final int? itemCount; 
-  final String? itemLabel; 
+  final String label;
+  final double totalAmount;
+  final IconData icon;
+  final int? itemCount;
+  final String? itemLabel;
 
   const ReportTotalCard({
     super.key,
@@ -29,7 +29,7 @@ class ReportTotalCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // --- STILE CARD ---
@@ -84,26 +84,22 @@ class ReportTotalCard extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4.h),
-                
+
                 // --- FORMATTAZIONE VALUTA ---
                 // Utilizza il CurrencyProvider per formattare correttamente l'importo
                 // (simbolo e posizione) in base alle impostazioni globali.
-                Consumer<CurrencyProvider>(
-                  builder: (context, currencyProvider, child) {
-                    return SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Text(
-                        currencyProvider.formatAmount(totalAmount),
-                        style: TextStyle(
-                          fontSize: 24.sp,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    );
-                  },
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Text(
+                    ref.watch(currencyNotifierProvider).formatAmount(totalAmount),
+                    style: TextStyle(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                 ),
               ],
             ),

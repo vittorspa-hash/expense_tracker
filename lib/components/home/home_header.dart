@@ -1,12 +1,10 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/providers/profile_provider.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
 import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
 
 /// FILE: home_header.dart
 /// DESCRIZIONE: Componente superiore della Home Page (Dashboard).
@@ -14,7 +12,7 @@ import 'package:provider/provider.dart';
 /// Utilizza un [Consumer3] per aggiornarsi reattivamente ai cambiamenti
 /// delle spese (ExpenseProvider), del profilo utente (ProfileProvider) e della valuta (CurrencyProvider).
 
-class HomeHeader extends StatelessWidget {
+class HomeHeader extends ConsumerWidget {
   final Animation<double> fadeAnimation;
   final bool isDark;
   final VoidCallback onTapProfile;
@@ -29,17 +27,19 @@ class HomeHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // --- GESTIONE DATI MULTIPLA (CONSUMER) ---
     // Ascolta simultaneamente ExpenseProvider (per i totali), ProfileProvider (per l'avatar)
     // e CurrencyProvider (per la formattazione degli importi).
     // Questo evita rebuild inutili dell'intera pagina se cambiano solo questi dati.
     //
-    return Consumer3<ExpenseProvider, ProfileProvider, CurrencyProvider>(
-      builder: (context, expenseProvider, profileProvider, currencyProvider, child) {
+
+        final expenseState = ref.watch(expenseNotifierProvider);
+        final profileState = ref.watch(profileNotifierProvider);
+        final currencyState = ref.watch(currencyNotifierProvider);
         // Recupero dati profilo per visualizzazione avatar
-        final user = profileProvider.user;
-        final localAvatar = profileProvider.localImage;
+        final user = profileState.user;
+        final localAvatar = profileState.localImage;
         final loc = AppLocalizations.of(context)!;
 
         return FadeTransition(
@@ -180,8 +180,8 @@ class HomeHeader extends StatelessWidget {
                           scrollDirection: Axis.horizontal,
                           physics: const BouncingScrollPhysics(),
                           child: Text(
-                            currencyProvider.formatAmount(
-                              expenseProvider.totalExpenseMonth,
+                            currencyState.formatAmount(
+                              expenseState.totalExpenseMonth,
                             ),
                             style: TextStyle(
                               fontSize: 35.sp,
@@ -204,25 +204,22 @@ class HomeHeader extends StatelessWidget {
                       children: [
                         Expanded(
                           child: HeaderExpenseState(
-                            value: expenseProvider.totalExpenseToday,
+                            value: expenseState.totalExpenseToday,
                             label: loc.today,
-                            currencyProvider: currencyProvider,
                           ),
                         ),
                         SizedBox(width: 10.w),
                         Expanded(
                           child: HeaderExpenseState(
-                            value: expenseProvider.totalExpenseWeek,
+                            value: expenseState.totalExpenseWeek,
                             label: loc.week,
-                            currencyProvider: currencyProvider,
                           ),
                         ),
                         SizedBox(width: 10.w),
                         Expanded(
                           child: HeaderExpenseState(
-                            value: expenseProvider.totalExpenseYear,
+                            value: expenseState.totalExpenseYear,
                             label: loc.year,
-                            currencyProvider: currencyProvider,
                           ),
                         ),
                       ],
@@ -232,8 +229,6 @@ class HomeHeader extends StatelessWidget {
               ),
             ),
           ),
-        );
-      },
     );
   }
 }
@@ -241,20 +236,18 @@ class HomeHeader extends StatelessWidget {
 // --- WIDGET HELPER STATISTICHE ---
 // Card riutilizzabile per visualizzare una singola statistica (Valore + Etichetta).
 // Ora include il CurrencyProvider per formattare correttamente gli importi.
-class HeaderExpenseState extends StatelessWidget {
+class HeaderExpenseState extends ConsumerWidget {
   final double value;
   final String label;
-  final CurrencyProvider currencyProvider;
 
   const HeaderExpenseState({
     super.key,
     required this.value,
     required this.label,
-    required this.currencyProvider,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -282,7 +275,7 @@ class HeaderExpenseState extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
             child: Text(
-              currencyProvider.formatAmount(value),
+              ref.watch(currencyNotifierProvider).formatAmount(value),
               style: TextStyle(
                 fontSize: 14.sp,
                 color: isDark ? AppColors.textDark : AppColors.textLight,

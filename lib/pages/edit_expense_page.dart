@@ -1,15 +1,15 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
+import 'package:expense_tracker/notifiers/currency_notifier.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: edit_expense_page.dart
@@ -18,17 +18,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// logiche avanzate come la visualizzazione del tasso di cambio storico se la
 /// valuta della spesa originale differisce da quella attualmente impostata nell'app.
 
-class EditExpensePage extends StatefulWidget {
+class EditExpensePage extends ConsumerStatefulWidget {
   static const route = "/expense/edit";
   final ExpenseModel expenseModel;
 
   const EditExpensePage(this.expenseModel, {super.key});
 
   @override
-  State<EditExpensePage> createState() => _EditExpensePageState();
+  ConsumerState<EditExpensePage> createState() => _EditExpensePageState();
 }
 
-class _EditExpensePageState extends State<EditExpensePage>
+class _EditExpensePageState extends ConsumerState<EditExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   // --- CONFIGURAZIONE ANIMAZIONE ---
   @override
@@ -54,11 +54,8 @@ class _EditExpensePageState extends State<EditExpensePage>
     final model = widget.expenseModel;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
-    final currencyProvider = Provider.of<CurrencyProvider>(
-      context,
-      listen: false,
-    );
-    final currentAppCurrency = currencyProvider.currentCurrency;
+    final currencyState = ref.watch(currencyNotifierProvider);
+    final currentAppCurrency = currencyState.currentCurrency;
     if (model.currency == currentAppCurrency) return null;
 
     final bool hasRate = model.exchangeRates.containsKey(currentAppCurrency.code);
@@ -121,7 +118,7 @@ class _EditExpensePageState extends State<EditExpensePage>
                     context,
                     model,
                     currentAppCurrency,
-                    currencyProvider,
+                    currencyState,
                     loc,
                     textColor,
                     highlightColor,
@@ -141,7 +138,7 @@ class _EditExpensePageState extends State<EditExpensePage>
     BuildContext context,
     ExpenseModel model,
     ExpenseCurrency  targetCurrency,
-    CurrencyProvider cp,
+    CurrencyState cp,
     AppLocalizations loc,
     Color textColor,
     Color highlightColor,
@@ -208,9 +205,8 @@ class _EditExpensePageState extends State<EditExpensePage>
     required ExpenseCategory category, // NUOVO
     required AppLocalizations l10n,
   }) async {
-    final provider = context.read<ExpenseProvider>();
 
-    await provider.editExpense(
+    await ref.read(expenseNotifierProvider.notifier).editExpense(
       widget.expenseModel,
       value: value,
       description: description,
@@ -223,13 +219,12 @@ class _EditExpensePageState extends State<EditExpensePage>
 
   // --- ELIMINAZIONE SPESA ---
   Future<ExpenseModel?> onDelete() async {
-    final provider = context.read<ExpenseProvider>();
     final modelToDelete = widget.expenseModel;
 
-    await provider.deleteExpenses([modelToDelete]);
+    await ref.read(expenseNotifierProvider.notifier).deleteExpenses([modelToDelete]);
 
     if (!mounted) return null;
-    if (provider.errorMessage != null) return null;
+    if (ref.read(expenseNotifierProvider).errorMessage != null) return null;
 
     return modelToDelete;
   }

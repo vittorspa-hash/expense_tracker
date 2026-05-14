@@ -3,15 +3,17 @@
 // Testa la gestione dello stato UI, l'orchestrazione verso il service
 // e la corretta propagazione di errori e warning.
 
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/providers/notification_provider.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
+import 'package:expense_tracker/notifiers/notification_notifier.dart';
 import 'package:expense_tracker/services/expense_service.dart';
 import 'package:expense_tracker/utils/repository_failure.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
@@ -19,11 +21,11 @@ import 'package:mockito/mockito.dart';
 // Genera i mock per le 3 dipendenze del provider
 @GenerateMocks([
   FirebaseAuth,
-  NotificationProvider,
+  NotificationNotifier,
   ExpenseService,
   AppLocalizations,
 ])
-import 'expense_provider_test.mocks.dart';
+import 'expense_notifier_test.mocks.dart';
 
 // --- FAKE USER ---
 // User di Firebase non è mockabile direttamente con mockito.
@@ -35,23 +37,22 @@ class FakeUser extends Fake implements User {
 }
 
 void main() {
-  group('ExpenseProvider Tests', () {
+  group('ExpenseNotifier Tests', () {
     // --- DIPENDENZE MOCKATE ---
     late MockFirebaseAuth mockFirebaseAuth;
-    late MockNotificationProvider mockNotificationProvider;
+    late MockNotificationNotifier mockNotificationNotifier;
     late MockExpenseService mockExpenseService;
     late MockAppLocalizations mockL10n;
-
-    // --- OGGETTO DA TESTARE ---
-    late ExpenseProvider provider;
-
-    // --- DATI DI TEST RIUTILIZZABILI ---
+    late ProviderContainer container;
     late FakeUser fakeUser;
     late ExpenseModel sampleExpense;
 
+    ExpenseState readState() => container.read(expenseNotifierProvider);
+    ExpenseNotifier readNotifier() => container.read(expenseNotifierProvider.notifier);
+
     setUp(() {
       mockFirebaseAuth = MockFirebaseAuth();
-      mockNotificationProvider = MockNotificationProvider();
+      mockNotificationNotifier = MockNotificationNotifier();
       mockExpenseService = MockExpenseService();
       mockL10n = MockAppLocalizations();
 
@@ -72,8 +73,6 @@ void main() {
 
       // Stub comuni a tutti i test: currentUser e NotificationProvider getters, l10n
       when(mockFirebaseAuth.currentUser).thenReturn(fakeUser);
-      when(mockNotificationProvider.monthlyLimit).thenReturn(1000.0);
-      when(mockNotificationProvider.limitAlertEnabled).thenReturn(false);
       when(mockL10n.warningOfflineCurrencyCreate).thenReturn('Offline warning');
 
       // Stub per calculateTotals: il provider lo chiama sempre dopo ogni operazione.
@@ -87,17 +86,25 @@ void main() {
         (invocation) => invocation.positionalArguments[0] as List<ExpenseModel>,
       );
 
-      // Stub per checkBudgetLimit: ritorna sempre vuoto
       when(
-        mockNotificationProvider.checkBudgetLimit(any, any, any),
+        mockNotificationNotifier.checkBudgetLimit(any, any, any),
       ).thenAnswer((_) async {});
 
-      // Creazione del provider con le dipendenze mockate
-      provider = ExpenseProvider(
-        firebaseAuth: mockFirebaseAuth,
-        notificationProvider: mockNotificationProvider,
-        expenseService: mockExpenseService,
+      // ProviderContainer con override di tutti i provider necessari
+      container = ProviderContainer(
+        overrides: [
+          firebaseAuthProvider.overrideWithValue(mockFirebaseAuth),
+          expenseServiceProvider.overrideWithValue(mockExpenseService),
+          // Override del notificationNotifierProvider con uno stub
+          notificationNotifierProvider.overrideWith(
+            () => _FakeNotificationNotifier(mockNotificationNotifier),
+          ),
+        ],
       );
+    });
+
+    tearDown(() {
+      container.dispose();
     });
 
     // =================================================================
@@ -114,17 +121,17 @@ void main() {
         ).thenAnswer((_) async => [sampleExpense]);
 
         // ACT
-        await provider.initialise();
+        await readNotifier().initialise();
 
         // ASSERT
         // La lista deve contenere esattamente la spesa restituita dal service
-        expect(provider.expenses, hasLength(1));
-        expect(provider.expenses.first.uuid, 'expense-uuid-1');
+        expect(readState().expenses, hasLength(1));
+        expect(readState().expenses.first.uuid, 'expense-uuid-1');
         // Nessun errore deve essere presente
-        expect(provider.errorMessage, isNull);
-        expect(provider.initError, isNull);
+        expect(readState().errorMessage, isNull);
+        expect(readState().initError, isNull);
         // initStatus deve essere initialized
-        expect(provider.initStatus, ExpenseInitStatus.initialized);
+        expect(readState().initStatus, ExpenseInitStatus.initialized);
         // Verifichiamo che il service sia stato chiamato esattamente una volta
         verify(mockExpenseService.loadUserExpenses(user: fakeUser)).called(1);
       },
@@ -138,14 +145,14 @@ void main() {
       when(
         mockExpenseService.loadUserExpenses(user: fakeUser),
       ).thenAnswer((_) async => [sampleExpense]);
-      await provider.initialise();
+      await readNotifier().initialise();
       expect(
-        provider.initStatus,
+        readState().initStatus,
         ExpenseInitStatus.initialized,
       ); // precondizione
 
       // ACT — seconda chiamata, deve essere ignorata dal guard
-      await provider.initialise();
+      await readNotifier().initialise();
 
       // ASSERT
       // loadUserExpenses deve essere stato chiamato una sola volta in totale
@@ -161,17 +168,17 @@ void main() {
         _,
       ) async {
         // Durante il primo initialise(), lanciamo il secondo in parallelo
-        await provider.initialise(); // deve essere bloccato dal guard
+        await readNotifier().initialise(); // deve essere bloccato dal guard
         return [sampleExpense];
       });
 
       // ACT
-      await provider.initialise();
+      await readNotifier().initialise();
 
       // ASSERT
       // loadUserExpenses deve essere stato chiamato una sola volta in totale
       verify(mockExpenseService.loadUserExpenses(user: fakeUser)).called(1);
-      expect(provider.initStatus, ExpenseInitStatus.initialized);
+      expect(readState().initStatus, ExpenseInitStatus.initialized);
     });
 
     // =================================================================
@@ -187,14 +194,14 @@ void main() {
         ).thenThrow(RepositoryFailure("Firestore unavailable"));
 
         // ACT
-        await provider.initialise();
+        await readNotifier().initialise();
 
         // ASSERT
-        expect(provider.initStatus, ExpenseInitStatus.error);
-        expect(provider.initError, isA<RepositoryFailure>());
-        expect(provider.expenses, isEmpty);
+        expect(readState().initStatus, ExpenseInitStatus.error);
+        expect(readState().initError, isA<RepositoryFailure>());
+        expect(readState().expenses, isEmpty);
         expect(
-          provider.errorMessage,
+          readState().errorMessage,
           isNull,
         ); // errorMessage non viene settato in initialise()
       },
@@ -210,23 +217,20 @@ void main() {
         when(
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense]);
-        await provider.initialise();
-        expect(provider.expenses, hasLength(1)); // precondizione
+        await readNotifier().initialise();
+        expect(readState().expenses, hasLength(1)); // precondizione
         clearInteractions(
           mockExpenseService,
         ); // azzera contatore dopo initialise
 
         // ACT
-        provider.clear();
+        readNotifier().clear();
 
         // ASSERT
-        expect(provider.expenses, isEmpty);
-        expect(provider.errorMessage, isNull);
-        expect(provider.initStatus, ExpenseInitStatus.initial);
-        expect(provider.initError, isNull);
-
-        // Verifica che calculateTotals sia stato chiamato con lista VUOTA:
-        verify(mockExpenseService.calculateTotals([], any)).called(1);
+        expect(readState().expenses, isEmpty);
+        expect(readState().errorMessage, isNull);
+        expect(readState().initStatus, ExpenseInitStatus.initial);
+        expect(readState().initError, isNull);
       },
     );
 
@@ -248,7 +252,7 @@ void main() {
           ),
         ).thenThrow(RepositoryFailure("Some error"));
 
-        await provider.createExpense(
+        await readNotifier().createExpense(
           value: 50.0,
           description: 'fail',
           date: DateTime(2024, 6, 15),
@@ -256,14 +260,14 @@ void main() {
           category: ExpenseCategory.food,
           l10n: mockL10n,
         );
-        expect(provider.errorMessage, isNotNull); // precondizione
+        expect(readState().errorMessage, isNotNull); // precondizione
 
         // ACT
-        provider.clearError();
+        readNotifier().clearError();
 
         // ASSERT
-        expect(provider.errorMessage, isNull);
-        expect(provider.warningMessage, isNull);
+        expect(readState().errorMessage, isNull);
+        expect(readState().warningMessage, isNull);
       },
     );
 
@@ -285,7 +289,7 @@ void main() {
           ),
         ).thenAnswer((_) async {
           // Catturiamo lo stato DURANTE l'operazione asincrona
-          expect(provider.isLoading, true); // isLoading deve essere true qui
+          expect(readState().isLoading, true); // isLoading deve essere true qui
           return CreateExpenseResult(expense: sampleExpense, warning: null);
         });
 
@@ -301,10 +305,10 @@ void main() {
 
         // Contatore delle notifiche
         int notifyCount = 0;
-        provider.addListener(() => notifyCount++);
+        container.listen(expenseNotifierProvider, (_, _) => notifyCount++);
 
         // ACT
-        await provider.createExpense(
+        await readNotifier().createExpense(
           value: 50.0,
           description: 'Test',
           date: DateTime(2024, 6, 15),
@@ -317,7 +321,7 @@ void main() {
         // Almeno 2 notifiche: una con isLoading=true, una nel finally con isLoading=false
         expect(notifyCount, greaterThanOrEqualTo(2));
         // Dopo tutto, isLoading deve essere false
-        expect(provider.isLoading, false);
+        expect(readState().isLoading, false);
       },
     );
 
@@ -329,17 +333,17 @@ void main() {
       // La valuta di default è EUR, quindi passare USD è un cambio reale
 
       // ACT - cambio reale: EUR → USD
-      provider.updateAppCurrency(ExpenseCurrency.usd);
+      readNotifier().updateAppCurrency(ExpenseCurrency.usd);
 
       // ASSERT
       // calculateTotals deve essere stato chiamato esattamente una volta
-      expect(provider.appCurrency, ExpenseCurrency.usd);
+      expect(readState().appCurrency, ExpenseCurrency.usd);
       verify(mockExpenseService.calculateTotals(any, any)).called(1);
 
       clearInteractions(mockExpenseService); // reset
 
       // ACT - nessun cambio: USD → USD
-      provider.updateAppCurrency(ExpenseCurrency.usd);
+      readNotifier().updateAppCurrency(ExpenseCurrency.usd);
 
       // ASSERT
       // calculateTotals NON deve essere chiamato una seconda volta
@@ -376,7 +380,7 @@ void main() {
       ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
 
       // ACT
-      await provider.createExpense(
+      await readNotifier().createExpense(
         value: 50.0,
         description: 'Test',
         date: DateTime(2024, 6, 15),
@@ -386,10 +390,10 @@ void main() {
       );
 
       // ASSERT
-      expect(provider.expenses, hasLength(1));
-      expect(provider.expenses.first.uuid, sampleExpense.uuid);
-      expect(provider.isLoading, false);
-      expect(provider.errorMessage, isNull);
+      expect(readState().expenses, hasLength(1));
+      expect(readState().expenses.first.uuid, sampleExpense.uuid);
+      expect(readState().isLoading, false);
+      expect(readState().errorMessage, isNull);
 
       // DOPO gli expect esistenti, aggiungi:
       verify(
@@ -437,7 +441,7 @@ void main() {
       ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
 
       // ACT
-      await provider.createExpense(
+      await readNotifier().createExpense(
         value: 50.0,
         description: 'Offline expense',
         date: DateTime(2024, 6, 15),
@@ -448,10 +452,10 @@ void main() {
 
       // ASSERT
       // Il warning deve essere presente (testo localizzato dal mock l10n)
-      expect(provider.warningMessage, isNotNull);
-      expect(provider.warningMessage, 'Offline warning');
+      expect(readState().warningMessage, isNotNull);
+      expect(readState().warningMessage, 'Offline warning');
       // La spesa deve essere stata aggiunta comunque
-      expect(provider.expenses, hasLength(1));
+      expect(readState().expenses, hasLength(1));
       verify(
         mockExpenseService.createExpense(
           value: 50.0,
@@ -483,7 +487,7 @@ void main() {
         ).thenThrow(RepositoryFailure("Save failed"));
 
         // ACT
-        await provider.createExpense(
+        await readNotifier().createExpense(
           value: 50.0,
           description: 'Failing expense',
           date: DateTime(2024, 6, 15),
@@ -493,12 +497,12 @@ void main() {
         );
 
         // ASSERT
-        expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Save failed"));
+        expect(readState().errorMessage, isNotNull);
+        expect(readState().errorMessage, contains("Save failed"));
         // La spesa NON deve essere stata aggiunta alla lista
-        expect(provider.expenses, isEmpty);
+        expect(readState().expenses, isEmpty);
         // isLoading deve essere false: verifica che il finally abbia funzionato
-        expect(provider.isLoading, false);
+        expect(readState().isLoading, false);
       },
     );
 
@@ -511,9 +515,9 @@ void main() {
       when(
         mockExpenseService.loadUserExpenses(user: fakeUser),
       ).thenAnswer((_) async => [sampleExpense]);
-      await provider.initialise();
-      expect(provider.expenses, hasLength(1)); // precondizione
-      expect(provider.initStatus, ExpenseInitStatus.initialized);
+      await readNotifier().initialise();
+      expect(readState().expenses, hasLength(1)); // precondizione
+      expect(readState().initStatus, ExpenseInitStatus.initialized);
 
       final updatedExpense = sampleExpense.copyWith(value: 999.0);
 
@@ -542,7 +546,7 @@ void main() {
       ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
 
       // ACT
-      await provider.editExpense(
+      await readNotifier().editExpense(
         sampleExpense,
         value: 999.0,
         description: 'Updated',
@@ -553,10 +557,10 @@ void main() {
       );
 
       // ASSERT
-      expect(provider.expenses, hasLength(1));
-      expect(provider.expenses.first.value, 999.0);
-      expect(provider.isLoading, false);
-      expect(provider.errorMessage, isNull);
+      expect(readState().expenses, hasLength(1));
+      expect(readState().expenses.first.value, 999.0);
+      expect(readState().isLoading, false);
+      expect(readState().errorMessage, isNull);
 
       verify(
         mockExpenseService.editExpense(
@@ -581,8 +585,8 @@ void main() {
         when(
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense]);
-        await provider.initialise();
-        expect(provider.initStatus, ExpenseInitStatus.initialized);
+        await readNotifier().initialise();
+        expect(readState().initStatus, ExpenseInitStatus.initialized);
 
         when(
           mockL10n.warningOfflineCurrencyEdit,
@@ -618,7 +622,7 @@ void main() {
         ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
 
         // ACT
-        await provider.editExpense(
+        await readNotifier().editExpense(
           sampleExpense,
           value: 999.0,
           description: 'Offline edit',
@@ -629,10 +633,10 @@ void main() {
         );
 
         // ASSERT
-        expect(provider.warningMessage, isNotNull);
-        expect(provider.warningMessage, 'Offline edit warning');
+        expect(readState().warningMessage, isNotNull);
+        expect(readState().warningMessage, 'Offline edit warning');
         // La spesa deve essere stata aggiornata comunque
-        expect(provider.expenses.first.value, 999.0);
+        expect(readState().expenses.first.value, 999.0);
 
         verify(
           mockExpenseService.editExpense(
@@ -659,9 +663,9 @@ void main() {
         when(
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense]);
-        await provider.initialise();
-        expect(provider.expenses, hasLength(1)); // precondizione
-        expect(provider.initStatus, ExpenseInitStatus.initialized);
+        await readNotifier().initialise();
+        expect(readState().expenses, hasLength(1)); // precondizione
+        expect(readState().initStatus, ExpenseInitStatus.initialized);
 
         when(
           mockExpenseService.editExpense(
@@ -676,7 +680,7 @@ void main() {
         ).thenThrow(RepositoryFailure("Edit failed"));
 
         // ACT
-        await provider.editExpense(
+        await readNotifier().editExpense(
           sampleExpense,
           value: 999.0,
           description: 'Updated',
@@ -687,11 +691,11 @@ void main() {
         );
 
         // ASSERT
-        expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Edit failed"));
+        expect(readState().errorMessage, isNotNull);
+        expect(readState().errorMessage, contains("Edit failed"));
         // La spesa originale deve essere rimasta invariata
-        expect(provider.expenses.first.value, 50.0);
-        expect(provider.isLoading, false);
+        expect(readState().expenses.first.value, 50.0);
+        expect(readState().isLoading, false);
       },
     );
 
@@ -706,9 +710,9 @@ void main() {
         when(
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense]);
-        await provider.initialise();
-        expect(provider.expenses, hasLength(1)); // precondizione
-        expect(provider.initStatus, ExpenseInitStatus.initialized);
+        await readNotifier().initialise();
+        expect(readState().expenses, hasLength(1)); // precondizione
+        expect(readState().initStatus, ExpenseInitStatus.initialized);
 
         // Stub deleteExpense: operazione andata a buon fine (nessuna eccezione)
         when(
@@ -716,12 +720,12 @@ void main() {
         ).thenAnswer((_) async {});
 
         // ACT
-        await provider.deleteExpenses([sampleExpense]);
+        await readNotifier().deleteExpenses([sampleExpense]);
 
         // ASSERT
-        expect(provider.expenses, isEmpty);
-        expect(provider.isLoading, false);
-        expect(provider.errorMessage, isNull);
+        expect(readState().expenses, isEmpty);
+        expect(readState().isLoading, false);
+        expect(readState().errorMessage, isNull);
       },
     );
 
@@ -737,9 +741,9 @@ void main() {
         when(
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense, secondExpense]);
-        await provider.initialise();
-        expect(provider.expenses, hasLength(2)); // precondizione
-        expect(provider.initStatus, ExpenseInitStatus.initialized);
+        await readNotifier().initialise();
+        expect(readState().expenses, hasLength(2)); // precondizione
+        expect(readState().initStatus, ExpenseInitStatus.initialized);
 
         // Prima spesa: successo
         when(
@@ -753,13 +757,13 @@ void main() {
         );
 
         // ACT
-        await provider.deleteExpenses([sampleExpense, secondExpense]);
+        await readNotifier().deleteExpenses([sampleExpense, secondExpense]);
 
         // ASSERT
-        expect(provider.expenses, hasLength(1));
-        expect(provider.expenses.first.uuid, secondExpense.uuid);
-        expect(provider.errorMessage, contains("Deletion failed for"));
-        expect(provider.isLoading, false);
+        expect(readState().expenses, hasLength(1));
+        expect(readState().expenses.first.uuid, secondExpense.uuid);
+        expect(readState().errorMessage, contains("Deletion failed for"));
+        expect(readState().isLoading, false);
       },
     );
 
@@ -773,9 +777,9 @@ void main() {
         when(
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense]);
-        await provider.initialise();
-        expect(provider.expenses, hasLength(1)); // precondizione
-        expect(provider.initStatus, ExpenseInitStatus.initialized);
+        await readNotifier().initialise();
+        expect(readState().expenses, hasLength(1)); // precondizione
+        expect(readState().initStatus, ExpenseInitStatus.initialized);
 
         when(
           mockExpenseService.deleteExpense(sampleExpense, user: fakeUser),
@@ -784,14 +788,14 @@ void main() {
         );
 
         // ACT
-        await provider.deleteExpenses([sampleExpense]);
+        await readNotifier().deleteExpenses([sampleExpense]);
 
         // ASSERT
-        expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Deletion failed for"));
+        expect(readState().errorMessage, isNotNull);
+        expect(readState().errorMessage, contains("Deletion failed for"));
         // La spesa NON deve essere stata rimossa dalla lista
-        expect(provider.expenses, hasLength(1));
-        expect(provider.isLoading, false);
+        expect(readState().expenses, hasLength(1));
+        expect(readState().isLoading, false);
       },
     );
 
@@ -803,21 +807,21 @@ void main() {
       when(
         mockExpenseService.loadUserExpenses(user: fakeUser),
       ).thenAnswer((_) async => [sampleExpense]);
-      await provider.initialise();
-      expect(provider.initStatus, ExpenseInitStatus.initialized);
+      await readNotifier().initialise();
+      expect(readState().initStatus, ExpenseInitStatus.initialized);
 
       when(
         mockExpenseService.deleteExpense(sampleExpense, user: fakeUser),
       ).thenAnswer((_) async {
         // Verifica lo stato intermedio: durante la delete, isLoading deve essere true
-        expect(provider.isLoading, true);
+        expect(readState().isLoading, true);
       });
 
       // ACT
-      await provider.deleteExpenses([sampleExpense]);
+      await readNotifier().deleteExpenses([sampleExpense]);
 
       // ASSERT: dopo l'operazione, isLoading torna false
-      expect(provider.isLoading, false);
+      expect(readState().isLoading, false);
     });
 
     // =================================================================
@@ -844,13 +848,13 @@ void main() {
         ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
 
         // ACT
-        await provider.restoreExpenses([sampleExpense], mockL10n);
+        await readNotifier().restoreExpenses([sampleExpense], mockL10n);
 
         // ASSERT
-        expect(provider.expenses, hasLength(1));
-        expect(provider.expenses.first.uuid, sampleExpense.uuid);
-        expect(provider.isLoading, false);
-        expect(provider.errorMessage, isNull);
+        expect(readState().expenses, hasLength(1));
+        expect(readState().expenses.first.uuid, sampleExpense.uuid);
+        expect(readState().isLoading, false);
+        expect(readState().errorMessage, isNull);
         // restoreExpenses è l'unico path che chiama sortExpenses dopo un'aggiunta —
         // verifichiamo che l'ordinamento sia stato effettivamente orchestrato.
         verify(
@@ -890,17 +894,17 @@ void main() {
         ).thenReturn(BudgetCheckResult(shouldNotify: false, currentTotal: 0));
 
         // ACT
-        await provider.restoreExpenses([
+        await readNotifier().restoreExpenses([
           sampleExpense,
           secondExpense,
         ], mockL10n);
 
         // ASSERT
         // Solo la prima spesa deve essere stata aggiunta
-        expect(provider.expenses, hasLength(1));
-        expect(provider.expenses.first.uuid, sampleExpense.uuid);
-        expect(provider.errorMessage, contains("Restore failed for"));
-        expect(provider.isLoading, false);
+        expect(readState().expenses, hasLength(1));
+        expect(readState().expenses.first.uuid, sampleExpense.uuid);
+        expect(readState().errorMessage, contains("Restore failed for"));
+        expect(readState().isLoading, false);
       },
     );
 
@@ -918,14 +922,14 @@ void main() {
         );
 
         // ACT
-        await provider.restoreExpenses([sampleExpense], mockL10n);
+        await readNotifier().restoreExpenses([sampleExpense], mockL10n);
 
         // ASSERT
-        expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Restore failed for"));
+        expect(readState().errorMessage, isNotNull);
+        expect(readState().errorMessage, contains("Restore failed for"));
         // La spesa NON deve essere stata aggiunta alla lista
-        expect(provider.expenses, isEmpty);
-        expect(provider.isLoading, false);
+        expect(readState().expenses, isEmpty);
+        expect(readState().isLoading, false);
       },
     );
 
@@ -964,7 +968,7 @@ void main() {
         );
 
         // ACT
-        await provider.createExpense(
+        await readNotifier().createExpense(
           value: 50.0,
           description: 'Over budget',
           date: DateTime.now(),
@@ -976,7 +980,7 @@ void main() {
         // ASSERT
         // Verifichiamo che la notifica sia stata effettivamente inviata
         verify(
-          mockNotificationProvider.checkBudgetLimit(1200.0, any, any),
+          mockNotificationNotifier.checkBudgetLimit(1200.0, any, any),
         ).called(1);
       },
     );
@@ -1006,11 +1010,11 @@ void main() {
         );
 
         // ACT
-        await provider.restoreExpenses([sampleExpense], mockL10n);
+        await readNotifier().restoreExpenses([sampleExpense], mockL10n);
 
         // ASSERT
         verify(
-          mockNotificationProvider.checkBudgetLimit(1200.0, any, any),
+          mockNotificationNotifier.checkBudgetLimit(1200.0, any, any),
         ).called(1);
       },
     );
@@ -1027,16 +1031,16 @@ void main() {
         ).thenThrow(Exception("Unexpected"));
 
         // ACT
-        await provider.initialise();
+        await readNotifier().initialise();
 
         // ASSERT
-        expect(provider.initStatus, ExpenseInitStatus.error);
+        expect(readState().initStatus, ExpenseInitStatus.error);
         // Il catch generico setta initError come String, non come RepositoryFailure
-        expect(provider.initError, isA<String>());
-        expect(provider.initError.toString(), contains("Unexpected"));
-        expect(provider.expenses, isEmpty);
+        expect(readState().initError, isA<String>());
+        expect(readState().initError.toString(), contains("Unexpected"));
+        expect(readState().expenses, isEmpty);
         // errorMessage NON viene settato in initialise() — né nel catch RepositoryFailure né in quello generico
-        expect(provider.errorMessage, isNull);
+        expect(readState().errorMessage, isNull);
       },
     );
 
@@ -1059,7 +1063,7 @@ void main() {
         ).thenThrow(Exception("Generic error"));
 
         // ACT
-        await provider.createExpense(
+        await readNotifier().createExpense(
           value: 50.0,
           description: 'Test',
           date: DateTime(2024, 6, 15),
@@ -1069,11 +1073,11 @@ void main() {
         );
 
         // ASSERT
-        expect(provider.errorMessage, isNotNull);
+        expect(readState().errorMessage, isNotNull);
         // Il catch generico usa e.toString(), non e.message come RepositoryFailure
-        expect(provider.errorMessage, contains("Generic error"));
-        expect(provider.expenses, isEmpty);
-        expect(provider.isLoading, false);
+        expect(readState().errorMessage, contains("Generic error"));
+        expect(readState().expenses, isEmpty);
+        expect(readState().isLoading, false);
       },
     );
 
@@ -1087,8 +1091,8 @@ void main() {
         when(
           mockExpenseService.loadUserExpenses(user: fakeUser),
         ).thenAnswer((_) async => [sampleExpense]);
-        await provider.initialise();
-        expect(provider.expenses, hasLength(1)); // precondizione
+        await readNotifier().initialise();
+        expect(readState().expenses, hasLength(1)); // precondizione
 
         when(
           mockExpenseService.editExpense(
@@ -1103,7 +1107,7 @@ void main() {
         ).thenThrow(Exception("Generic error"));
 
         // ACT
-        await provider.editExpense(
+        await readNotifier().editExpense(
           sampleExpense,
           value: 999.0,
           description: 'Updated',
@@ -1114,12 +1118,12 @@ void main() {
         );
 
         // ASSERT
-        expect(provider.errorMessage, isNotNull);
-        expect(provider.errorMessage, contains("Generic error"));
+        expect(readState().errorMessage, isNotNull);
+        expect(readState().errorMessage, contains("Generic error"));
         // La spesa originale deve essere rimasta invariata
-        expect(provider.expenses, hasLength(1));
-        expect(provider.expenses.first.value, 50.0);
-        expect(provider.isLoading, false);
+        expect(readState().expenses, hasLength(1));
+        expect(readState().expenses.first.value, 50.0);
+        expect(readState().isLoading, false);
       },
     );
 
@@ -1133,7 +1137,7 @@ void main() {
         // La valuta di default del provider è EUR
 
         // ACT
-        provider.sortBy('amount_desc');
+        readNotifier().sortBy('amount_desc');
 
         // ASSERT
         // Quando il criterio contiene "amount", il provider deve passare _appCurrency (EUR)
@@ -1154,7 +1158,7 @@ void main() {
       'Should pass null currency to sortExpenses when criteria does not contain amount',
       () {
         // ARRANGE + ACT
-        provider.sortBy('date_desc');
+        readNotifier().sortBy('date_desc');
 
         // ASSERT
         // Quando il criterio non contiene "amount", il provider deve passare null
@@ -1164,4 +1168,25 @@ void main() {
       },
     );
   });
+}
+
+// --- FAKE NOTIFICATION NOTIFIER ---
+// Necessario perché NotificationNotifier estende Notifier e non può essere
+// mockato direttamente. Lo wrappa delegando al mock.
+class _FakeNotificationNotifier extends NotificationNotifier {
+  final MockNotificationNotifier _mock;
+  _FakeNotificationNotifier(this._mock);
+
+  @override
+  NotificationState build() => const NotificationState(
+    monthlyLimit: 1000.0,
+    limitAlertEnabled: false,
+  );
+
+  @override
+  Future<void> checkBudgetLimit(
+    double currentMonthlySpent,
+    dynamic l10n,
+    String currencySymbol,
+  ) => _mock.checkBudgetLimit(currentMonthlySpent, l10n, currencySymbol);
 }

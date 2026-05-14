@@ -1,15 +1,14 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/profile_page.dart';
 import 'package:expense_tracker/pages/settings_page.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
-import 'package:expense_tracker/providers/profile_provider.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_styles.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
 
 /// FILE: dialog_utils.dart
 /// DESCRIZIONE: Classe di utilità statica per la gestione centralizzata dei dialoghi.
@@ -22,11 +21,10 @@ import 'package:provider/provider.dart';
 /// 4. Pickers (Data, Ora, Anno).
 
 class DialogUtils {
-  
   // --- DIALOGHI DI BASE ---
   // Metodi per mostrare avvisi semplici o richieste di conferma.
   // Utilizzano un helper privato `_showGenericDialog` per astrarre la scelta del widget.
-  // 
+  //
 
   static Future<void> showInfoDialog(
     BuildContext context, {
@@ -35,7 +33,7 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return;
     final loc = AppLocalizations.of(context)!;
-    
+
     await _showGenericDialog(
       context: context,
       title: title,
@@ -55,12 +53,15 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return false;
     final loc = AppLocalizations.of(context)!;
-    
+
     // Default localizzati
     final effectiveConfirmText = confirmText ?? loc.confirm;
     final effectiveCancelText = cancelText ?? loc.cancel;
 
-    final isDestructive = DialogStyles.isDestructiveAction(context, effectiveConfirmText);
+    final isDestructive = DialogStyles.isDestructiveAction(
+      context,
+      effectiveConfirmText,
+    );
     final textColor = DialogStyles.textColor(context);
     final confirmColor = isDestructive ? AppColors.delete : textColor;
 
@@ -69,8 +70,18 @@ class DialogUtils {
       title: title,
       content: content,
       actions: (ctx, _) => [
-        DialogStyles.buildActionButton(ctx, effectiveCancelText, textColor, false),
-        DialogStyles.buildActionButton(ctx, effectiveConfirmText, confirmColor, true),
+        DialogStyles.buildActionButton(
+          ctx,
+          effectiveCancelText,
+          textColor,
+          false,
+        ),
+        DialogStyles.buildActionButton(
+          ctx,
+          effectiveConfirmText,
+          confirmColor,
+          true,
+        ),
       ],
     );
   }
@@ -124,7 +135,11 @@ class DialogUtils {
               ),
             ),
             actions: [
-              DialogStyles.buildActionButton(ctx, effectiveConfirmText, textColor),
+              DialogStyles.buildActionButton(
+                ctx,
+                effectiveConfirmText,
+                textColor,
+              ),
             ],
           ),
         ),
@@ -141,7 +156,11 @@ class DialogUtils {
             ),
             content: buildContent(setState),
             actions: [
-              DialogStyles.buildActionButton(ctx, effectiveConfirmText, textColor),
+              DialogStyles.buildActionButton(
+                ctx,
+                effectiveConfirmText,
+                textColor,
+              ),
             ],
           ),
         ),
@@ -259,13 +278,16 @@ class DialogUtils {
   }
 
   // Menu Profilo complesso: gestisce navigazione e logica di logout.
-  // 
-  static Future<void> showProfileSheet(BuildContext context) async {
+  //
+  static Future<void> showProfileSheet(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     if (!context.mounted) return;
     final isDark = DialogStyles.isDark(context);
     final loc = AppLocalizations.of(context)!;
 
-    // -- Logica di Navigazione e Logout interna --
+    // -- Logica di Navigazione --
     Future<void> handleNav(
       String routeName,
       Future<void> Function()? reload,
@@ -282,9 +304,11 @@ class DialogUtils {
       }
     }
 
+    // -- Logica di Logout --
     Future<void> handleLogout() async {
-      final auth = context.read<AuthProvider>();
-      // Chiude il sheet del profilo per mostrare la conferma pulita
+      // RIVERPOD: Usiamo il ref passato al metodo
+      final auth = ref.read(authNotifierProvider.notifier);
+
       Navigator.pop(context);
 
       if (!context.mounted) return;
@@ -303,21 +327,27 @@ class DialogUtils {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(loc.logoutError(e.toString())),
-                backgroundColor: AppColors.snackBar,
+                backgroundColor:
+                    AppColors.delete, // Usato colore errore standard
               ),
             );
           }
         }
       }
     }
-    // ---------------------------------------------
 
-    // UI Builder usando Consumer
-    Widget sheetBuilder(BuildContext _) => Consumer<ProfileProvider>(
-      builder: (ctx, provider, _) {
-        final user = provider.user;
-        final localAvatar = provider.localImage;
-        Future<void> reload() => provider.loadLocalData();
+    // UI Builder usando il Consumer di Riverpod
+    Widget sheetBuilder(BuildContext _) => Consumer(
+      builder: (ctx, ref, _) {
+        // Ascoltiamo il profilo tramite Riverpod
+        final profileState = ref.watch(profileNotifierProvider);
+        final user = profileState.user;
+        final localAvatar = profileState.localImage;
+        final profileNotifier = ref.read(profileNotifierProvider.notifier);
+
+        // Metodo per ricaricare i dati
+        Future<void> reload() =>
+            profileNotifier.loadLocalData();
 
         if (DialogStyles.isIOS) {
           return CupertinoActionSheet(
@@ -352,7 +382,6 @@ class DialogUtils {
             ),
           );
         } else {
-          // Material
           return Padding(
             padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
             child: SafeArea(
@@ -388,11 +417,13 @@ class DialogUtils {
       },
     );
 
+    // Apertura del modal
     if (DialogStyles.isIOS) {
       await showCupertinoModalPopup(context: context, builder: sheetBuilder);
     } else {
       await showModalBottomSheet(
         context: context,
+        isScrollControlled: true, // Consigliato se il contenuto può variare
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         ),
@@ -405,7 +436,7 @@ class DialogUtils {
   // Selettori di data e ora.
   // Su iOS usano un container custom con altezza fissa per simulare lo slot machine style.
   // Su Android usano i dialoghi nativi full-screen.
-  // 
+  //
 
   static Future<DateTime?> showDatePickerAdaptive(
     BuildContext context, {
@@ -465,12 +496,14 @@ class DialogUtils {
           data: theme.copyWith(
             colorScheme: theme.colorScheme.copyWith(
               // Questo cambia lo sfondo del giorno selezionato e l'header
-              primary: AppColors.primary, 
+              primary: AppColors.primary,
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
                 // Cambia il colore del testo dei pulsanti
-                foregroundColor: isDark ? AppColors.textLight : AppColors.textDark,
+                foregroundColor: isDark
+                    ? AppColors.textLight
+                    : AppColors.textDark,
               ),
             ),
             datePickerTheme: DatePickerThemeData(
@@ -652,7 +685,7 @@ class DialogUtils {
   }
 
   // --- PRIVATE HELPERS ---
-  
+
   static Future<T?> _showGenericDialog<T>({
     required BuildContext context,
     required String title,

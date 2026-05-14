@@ -1,14 +1,13 @@
 import 'dart:io';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/clipboard_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
-import 'package:expense_tracker/providers/profile_provider.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
 import 'package:expense_tracker/components/profile/profile_tile.dart';
 import 'package:expense_tracker/config/app_colors.dart';
@@ -20,15 +19,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// e gestire la sicurezza dell'account (Eliminazione).
 /// Interagisce con ProfileProvider per la logica di business e AuthProvider per il reset password.
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   static const route = "/profile/page";
   const ProfilePage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage>
+class _ProfilePageState extends ConsumerState<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   // --- INIZIALIZZAZIONE ---
   // Configura il picker immagini, le animazioni e richiede il caricamento
@@ -45,7 +44,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<ProfileProvider>().loadLocalData();
+        ref.read(profileNotifierProvider.notifier).loadLocalData();
       }
     });
   }
@@ -64,8 +63,8 @@ class _ProfilePageState extends State<ProfilePage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<ProfileProvider>();
-    final user = provider.user;
+    final profileState = ref.watch(profileNotifierProvider);
+    final user = profileState.user;
     final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -82,7 +81,7 @@ class _ProfilePageState extends State<ProfilePage>
         color: AppColors.primary,
         onRefresh: () async {
           try {
-            await provider.refreshUser();
+            await ref.read(profileNotifierProvider.notifier).refreshUser();
             if (mounted) _showSnack(loc.dataUpdated);
           } catch (e) {
             if (mounted) {
@@ -111,9 +110,9 @@ class _ProfilePageState extends State<ProfilePage>
                     borderRadius: BorderRadius.circular(24.r),
                   ),
                   child: ProfileAvatar(
-                    key: ObjectKey(provider.localImage),
-                    image: provider.localImage,
-                    isUploading: provider.isLoading,
+                    key: ObjectKey(profileState.localImage),
+                    image: profileState.localImage,
+                    isUploading: profileState.isLoading,
                     onChangePicture: _handleChangePicture,
                     onRemovePicture: _handleRemovePicture,
                   ),
@@ -147,7 +146,7 @@ class _ProfilePageState extends State<ProfilePage>
                         value: user?.displayName,
                         tooltip: loc.editNameTooltip,
                         onPressed: _handleChangeDisplayName,
-                        isLoading: provider.isLoading,
+                        isLoading: profileState.isLoading,
                       ),
 
                       _buildDivider(isDark),
@@ -159,7 +158,7 @@ class _ProfilePageState extends State<ProfilePage>
                         value: user?.email,
                         tooltip: loc.editEmailTooltip,
                         onPressed: _handleChangeEmail,
-                        isLoading: provider.isLoading,
+                        isLoading: profileState.isLoading,
                       ),
 
                       _buildDivider(isDark),
@@ -171,7 +170,7 @@ class _ProfilePageState extends State<ProfilePage>
                         value: "••••••••••",
                         tooltip: loc.editPasswordTooltip,
                         onPressed: _handleChangePassword,
-                        isLoading: provider.isLoading,
+                        isLoading: profileState.isLoading,
                       ),
 
                       _buildDivider(isDark),
@@ -188,7 +187,7 @@ class _ProfilePageState extends State<ProfilePage>
                           await ClipboardUtils.copy(user?.uid);
                           _showSnack(loc.idCopied);
                         },
-                        isLoading: provider.isLoading,
+                        isLoading: profileState.isLoading,
                       ),
                     ],
                   ),
@@ -198,7 +197,7 @@ class _ProfilePageState extends State<ProfilePage>
 
                 // BOTTONE ELIMINAZIONE ACCOUNT
                 ElevatedButton(
-                  onPressed: provider.isLoading ? null : _handleDeleteAccount,
+                  onPressed: profileState.isLoading ? null : _handleDeleteAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: isDark
@@ -214,7 +213,7 @@ class _ProfilePageState extends State<ProfilePage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (provider.isLoading)
+                      if (profileState.isLoading)
                         Padding(
                           padding: EdgeInsets.only(right: 12.w),
                           child: SizedBox(
@@ -287,8 +286,8 @@ class _ProfilePageState extends State<ProfilePage>
   // Logica per selezionare una nuova immagine dalla galleria o rimuovere quella esistente.
   //
   Future<void> _handleChangePicture() async {
-    final provider = context.read<ProfileProvider>();
     final loc = AppLocalizations.of(context)!;
+    final notifier = ref.read(profileNotifierProvider.notifier);
 
     try {
       final pickedFile = await _picker.pickImage(
@@ -298,8 +297,9 @@ class _ProfilePageState extends State<ProfilePage>
       );
 
       if (pickedFile == null) return;
+      if (!mounted) return;
 
-      await provider.setProfileImage(File(pickedFile.path));
+      await notifier.setProfileImage(File(pickedFile.path));
       _showSnack(loc.profilePictureUpdated);
     } catch (e) {
       _showSnack(e.toString(), isError: true);
@@ -307,8 +307,8 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _handleRemovePicture() async {
-    final provider = context.read<ProfileProvider>();
     final loc = AppLocalizations.of(context)!;
+    final notifier = ref.read(profileNotifierProvider.notifier);
 
     final confirm = await DialogUtils.showConfirmDialog(
       context,
@@ -319,9 +319,10 @@ class _ProfilePageState extends State<ProfilePage>
     );
 
     if (confirm != true) return;
+    if (!mounted) return;
 
     try {
-      await provider.deleteProfileImage();
+      await notifier.deleteProfileImage();
       _showSnack(loc.pictureRemoved);
     } catch (e) {
       _showSnack(e.toString(), isError: true);
@@ -333,7 +334,6 @@ class _ProfilePageState extends State<ProfilePage>
   // validano i dati inseriti e invocano i metodi di aggiornamento del Provider.
   //
   Future<void> _handleChangeDisplayName() async {
-    final provider = context.read<ProfileProvider>();
     final loc = AppLocalizations.of(context)!;
 
     final result = await DialogUtils.showInputDialogAdaptive(
@@ -342,7 +342,7 @@ class _ProfilePageState extends State<ProfilePage>
       fields: [
         {
           "hintText": loc.newNameHint,
-          "initialValue": provider.user?.displayName ?? "",
+          "initialValue": ref.read(profileNotifierProvider).user?.displayName ?? "",
           "obscureText": false,
         },
       ],
@@ -352,7 +352,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     if (result != null && result.isNotEmpty && result.first.isNotEmpty) {
       try {
-        await provider.updateDisplayName(result.first);
+        await ref.read(profileNotifierProvider.notifier).updateDisplayName(result.first);
         _showSnack(loc.nameUpdated);
       } catch (e) {
         _showSnack(e.toString(), isError: true);
@@ -361,7 +361,6 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _handleChangeEmail() async {
-    final provider = context.read<ProfileProvider>();
     final loc = AppLocalizations.of(context)!;
 
     final result = await DialogUtils.showInputDialogAdaptive(
@@ -370,7 +369,7 @@ class _ProfilePageState extends State<ProfilePage>
       fields: [
         {
           "hintText": loc.newEmailHint,
-          "initialValue": provider.user?.email ?? "",
+          "initialValue": ref.read(profileNotifierProvider).user?.email ?? "",
           "keyboardType": TextInputType.emailAddress,
           "obscureText": false,
         },
@@ -391,7 +390,7 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     try {
-      await provider.updateEmail(newEmail: newEmail, password: password);
+      await ref.read(profileNotifierProvider.notifier).updateEmail(newEmail: newEmail, password: password);
       if (!mounted) return;
 
       _showSnack(loc.emailUpdateSent);
@@ -402,8 +401,7 @@ class _ProfilePageState extends State<ProfilePage>
   }
 
   Future<void> _handleChangePassword() async {
-    final provider = context.read<ProfileProvider>();
-    final userEmail = provider.user?.email;
+    final userEmail = ref.read(profileNotifierProvider).user?.email;
     final loc = AppLocalizations.of(context)!;
 
     final result = await DialogUtils.showInputDialogAdaptive(
@@ -419,7 +417,7 @@ class _ProfilePageState extends State<ProfilePage>
       // Callback per AuthProvider
       onForgotPassword: () async {
         try {
-          await context.read<AuthProvider>().resetPassword(email: userEmail);
+          await ref.read(authNotifierProvider.notifier).resetPassword(email: userEmail);
           if (mounted) {
             _showSnack(loc.recoveryEmailSent(userEmail.toString()));
           }
@@ -443,7 +441,7 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     try {
-      await provider.updatePassword(
+      await ref.read(profileNotifierProvider.notifier).updatePassword(
         currentPassword: currentPass,
         newPassword: newPass,
       );
@@ -456,7 +454,6 @@ class _ProfilePageState extends State<ProfilePage>
   // --- CANCELLAZIONE ACCOUNT ---
   // Flusso critico per l'eliminazione definitiva dell'utente.
   Future<void> _handleDeleteAccount() async {
-    final provider = context.read<ProfileProvider>();
     final loc = AppLocalizations.of(context)!;
 
     final confirm = await DialogUtils.showConfirmDialog(
@@ -481,7 +478,7 @@ class _ProfilePageState extends State<ProfilePage>
       if (confirm2 == true) {
         if (!mounted) return;
         try {
-          await provider.deleteAccount();
+          await ref.read(profileNotifierProvider.notifier).deleteAccount();
           if (!mounted) return;
           _showSnack(loc.accountDeleted);
           Navigator.of(context).popUntil((route) => route.isFirst);

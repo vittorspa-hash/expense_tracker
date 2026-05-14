@@ -1,27 +1,27 @@
 import 'package:expense_tracker/components/auth/auth_button.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:provider/provider.dart';
 
 /// FILE: register_form.dart
 /// DESCRIZIONE: Widget contenente il form di registrazione. Raccoglie i dati dell'utente
 /// (Nome, Email, Password), gestisce la validazione dei campi e comunica con il
 /// Provider di autenticazione per la creazione di un nuovo account Firebase.
 
-class RegisterForm extends StatefulWidget {
+class RegisterForm extends ConsumerStatefulWidget {
   const RegisterForm({super.key});
 
   @override
-  State<RegisterForm> createState() => _RegisterFormState();
+  ConsumerState<RegisterForm> createState() => _RegisterFormState();
 }
 
-class _RegisterFormState extends State<RegisterForm> {
+class _RegisterFormState extends ConsumerState<RegisterForm> {
   // --- GESTIONE STATO E CONTROLLER ---
   // Controller per l'input testuale, nodi per la gestione del focus
   // e variabili per la visibilità delle password.
@@ -60,8 +60,7 @@ class _RegisterFormState extends State<RegisterForm> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final provider = context.watch<AuthProvider>();
-    final isLoading = provider.isLoading;
+    final isLoading = ref.watch(authNotifierProvider).isLoading;
     final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
@@ -237,10 +236,10 @@ class _RegisterFormState extends State<RegisterForm> {
       return;
     }
 
-    final provider = context.read<AuthProvider>();
+    final auth = ref.read(authNotifierProvider.notifier);
 
     try {
-      await provider.signUp(
+      await auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
         nome: _nameController.text.trim(),

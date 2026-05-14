@@ -1,26 +1,26 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/config/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:provider/provider.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
 
 /// FILE: report_period_list_item.dart
 /// DESCRIZIONE: Componente UI riutilizzabile per le liste dei report.
 /// Visualizza una riga contenente un badge (es. Mese/Giorno), titolo, sottotitolo,
 /// importo totale formattato secondo la valuta corrente e percentuale di incidenza.
 
-class ReportPeriodListItem extends StatelessWidget {
+class ReportPeriodListItem extends ConsumerWidget {
   // --- PARAMETRI ---
   // Dati da visualizzare nel badge, testi descrittivi, valori finanziari
   // e callback per la navigazione al dettaglio.
-  final String badgeText; 
-  final String? badgeSubtext; 
-  final String title; 
-  final String? subtitle; 
-  final double totalAmount; 
-  final double percentage; 
-  final VoidCallback onTap; 
-  final Color? badgeBackgroundColor; 
+  final String badgeText;
+  final String? badgeSubtext;
+  final String title;
+  final String? subtitle;
+  final double totalAmount;
+  final double percentage;
+  final VoidCallback onTap;
+  final Color? badgeBackgroundColor;
 
   const ReportPeriodListItem({
     super.key,
@@ -35,7 +35,7 @@ class ReportPeriodListItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // --- CARD INTERATTIVA ---
@@ -147,18 +147,14 @@ class ReportPeriodListItem extends StatelessWidget {
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    child: Consumer<CurrencyProvider>(
-                      builder: (context, currencyProvider, child) {
-                        return Text(
-                          currencyProvider.formatAmount(totalAmount),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14.sp,
-                            color: AppColors.primary,
-                            letterSpacing: -0.3,
-                          ),
-                        );
-                      },
+                    child: Text(
+                      ref.watch(currencyNotifierProvider).formatAmount(totalAmount),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.sp,
+                        color: AppColors.primary,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                 ),

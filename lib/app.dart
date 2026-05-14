@@ -1,109 +1,78 @@
 import 'package:expense_tracker/config/app_router.dart';
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/config/supported_locales.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/auth_wrapper.dart';
-import 'package:expense_tracker/providers/language_provider.dart';
-import 'package:expense_tracker/providers/theme_provider.dart';
-import 'package:expense_tracker/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:get_it/get_it.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 
-/// FILE: app.dart
-/// DESCRIZIONE: Widget radice (Root) dell'applicazione.
-/// Si occupa della configurazione globale della MaterialApp, includendo:
-/// - Gestione dei Temi (Chiaro/Scuro) tramite Provider.
-/// - Configurazione della Localizzazione (Lingue supportate e delegati).
-/// - Gestione del Routing delegata a AppRouter.
-/// - Monitoraggio del ciclo di vita dell'app per la gestione delle notifiche.
-
-class App extends StatefulWidget {
+class App extends ConsumerStatefulWidget {
   const App({super.key});
 
   @override
-  State<App> createState() => _AppState();
+  ConsumerState<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> with WidgetsBindingObserver {
-  // --- DIPENDENZE ---
-  final NotificationService _notificationService =
-      GetIt.instance<NotificationService>();
+class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
 
-  // --- CICLO DI VITA WIDGET ---
-  // Registra l'observer per rilevare quando l'app va in background o torna attiva.
-  // Pulisce il badge delle notifiche all'avvio.
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _notificationService.clearBadge();
+    _clearBadge();
   }
 
-  // Rimuove l'observer quando il widget viene distrutto per evitare memory leak.
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // --- CICLO DI VITA APP ---
-  // Metodo triggerato dal sistema operativo al cambio di stato dell'applicazione.
-  // Se l'app viene ripresa (Resumed), resetta il contatore delle notifiche sull'icona.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _notificationService.clearBadge();
+      _clearBadge();
     }
   }
 
-  // --- BUILD UI ---
+  // Legge il service direttamente dal provider Riverpod.
+  // Usiamo .requireValue perché il FutureProvider è già risolto
+  // prima del runApp in main.dart.
+  void _clearBadge() {
+    ref.read(notificationServiceProvider).requireValue.clearBadge();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Utilizza Consumer2 per ascoltare contemporaneamente i cambiamenti di Tema e Lingua
-    // e ricostruire l'intera MaterialApp di conseguenza.
-    return Consumer2<ThemeProvider, LanguageProvider>(
-      builder: (context, themeProvider, languageProvider, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
+    // ref.watch al posto di Consumer2 — più semplice e leggibile.
+    final themeState = ref.watch(themeNotifierProvider);
+    final languageState = ref.watch(languageNotifierProvider);
 
-          // --- CONFIGURAZIONE LOCALIZZAZIONE ---
-          // Imposta la lingua corrente basandosi sullo stato del LanguageProvider.
-          locale: languageProvider.currentLocale,
-
-          // Definisce le lingue ufficialmente supportate dall'applicazione.
-          supportedLocales: AppLocales.supportedLocales,
-
-          // Configura i delegati necessari per la traduzione dei widget Material, Cupertino
-          // e delle stringhe personalizzate (AppLocalizations).
-          localizationsDelegates: const [
-            AppLocalizations.delegate,
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-
-          // --- CONFIGURAZIONE TEMA ---
-          themeMode: themeProvider.themeMode,
-          theme: ThemeData.light(useMaterial3: true).copyWith(
-            textTheme: GoogleFonts.plusJakartaSansTextTheme(
-              ThemeData.light(useMaterial3: true).textTheme,
-            ),
-          ),
-          darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
-            textTheme: GoogleFonts.plusJakartaSansTextTheme(
-              ThemeData.dark(useMaterial3: true).textTheme,
-            ),
-          ),
-
-          // --- PUNTO D'INGRESSO ---
-          home: const AuthWrapper(),
-
-          // --- GESTIONE ROUTING ---
-          onGenerateRoute: AppRouter.onGenerateRoute,
-        );
-      },
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      locale: languageState.currentLocale,
+      supportedLocales: AppLocales.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      themeMode: themeState.themeMode,
+      theme: ThemeData.light(useMaterial3: true).copyWith(
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          ThemeData.light(useMaterial3: true).textTheme,
+        ),
+      ),
+      darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
+        textTheme: GoogleFonts.plusJakartaSansTextTheme(
+          ThemeData.dark(useMaterial3: true).textTheme,
+        ),
+      ),
+      home: const AuthWrapper(),
+      onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }
 }

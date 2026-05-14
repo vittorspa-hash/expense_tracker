@@ -1,12 +1,13 @@
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/pages/auth_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
-import 'package:expense_tracker/providers/auth_provider.dart';
+import 'package:expense_tracker/notifiers/auth_notifier.dart';
 import 'package:expense_tracker/utils/repository_failure.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/pages/home_page.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: auth_wrapper.dart
@@ -17,21 +18,21 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// Utilizza una logica reattiva per mostrare la pagina di Login, lo spinner di caricamento,
 /// la schermata di errore o l'applicazione vera e propria (HomePage).
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     // Rilevamento del tema corrente per l'adattamento dinamico dei colori UI.
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Ascolto degli stati dai provider tramite context.watch.
-    final authStatus = context.watch<AuthProvider>().authStatus;
-    final expenseProvider = context.watch<ExpenseProvider>();
+    final authState = ref.watch(authNotifierProvider);
+    final expenseState = ref.watch(expenseNotifierProvider);
 
     // --- LOGICA DI AUTENTICAZIONE ---
     // Determina la macro-area dell'app in base alla sessione utente.
-    switch (authStatus) {
+    switch (authState.authStatus) {
       case AuthStatus.unknown:
         // Stato di transizione di Firebase Auth all'avvio.
         return _buildLoadingScreen();
@@ -40,18 +41,18 @@ class AuthWrapper extends StatelessWidget {
       case AuthStatus.unverified:
         // Utente non loggato: pulizia del provider e reindirizzamento al login.
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.read<ExpenseProvider>().clear();
+          ref.read(expenseNotifierProvider.notifier).clear();
         });
         return const AuthPage();
 
       case AuthStatus.authenticated:
         // --- LOGICA DI INIZIALIZZAZIONE DATI ---
         // Una volta autenticato, gestisce il caricamento dei dati utente.
-        switch (expenseProvider.initStatus) {
+        switch (expenseState.initStatus) {
           case ExpenseInitStatus.initial:
             // Trigger automatico del caricamento dati al primo accesso autenticato.
             WidgetsBinding.instance.addPostFrameCallback(
-              (_) => expenseProvider.initialise(),
+              (_) => ref.read(expenseNotifierProvider.notifier).initialise(),
             );
             return _buildLoadingScreen();
 
@@ -63,8 +64,8 @@ class AuthWrapper extends StatelessWidget {
             // Gestione dei fallimenti critici durante l'avvio.
             return _buildErrorScreen(
               context,
-              expenseProvider.initError,
-              expenseProvider,
+              ref,
+              expenseState.initError,
               isDark,
             );
 
@@ -87,8 +88,8 @@ class AuthWrapper extends StatelessWidget {
   // Schermata di errore persistente con opzione di ripristino manuale.
   Widget _buildErrorScreen(
     BuildContext context,
+    WidgetRef ref,
     Object? error,
-    ExpenseProvider expenseProvider,
     bool isDark,
   ) {
     final loc = AppLocalizations.of(context)!;
@@ -152,7 +153,7 @@ class AuthWrapper extends StatelessWidget {
                 ),
                 onPressed: () async {
                   // Esegue nuovamente la logica di inizializzazione definita nel Provider.
-                  await expenseProvider.initialise();
+                  await ref.read(expenseNotifierProvider.notifier).initialise();
                 },
               ),
             ],

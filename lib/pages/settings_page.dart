@@ -1,16 +1,14 @@
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
-import 'package:expense_tracker/providers/expense_provider.dart';
-import 'package:expense_tracker/providers/language_provider.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:expense_tracker/providers/theme_provider.dart';
-import 'package:expense_tracker/providers/notification_provider.dart';
-import 'package:expense_tracker/providers/currency_provider.dart';
+import 'package:expense_tracker/notifiers/notification_notifier.dart';
+import 'package:expense_tracker/notifiers/currency_notifier.dart';
 import 'package:expense_tracker/config/app_colors.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:expense_tracker/components/settings/settings_tile.dart';
 import 'package:expense_tracker/components/settings/settings_section_header.dart';
@@ -22,15 +20,15 @@ import 'package:expense_tracker/components/settings/settings_container.dart';
 /// e le notifiche (Promemoria giornalieri e avvisi di limite budget).
 /// Utilizza SettingsContainer per uniformare lo stile delle sezioni.
 
-class SettingsPage extends StatefulWidget {
+class SettingsPage extends ConsumerStatefulWidget {
   static const route = "/settings/page";
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  ConsumerState<SettingsPage> createState() => _SettingsPageState();
 }
 
-class _SettingsPageState extends State<SettingsPage>
+class _SettingsPageState extends ConsumerState<SettingsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
   @override
   TickerProvider get vsync => this;
@@ -85,14 +83,15 @@ class _SettingsPageState extends State<SettingsPage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final notificationProvider = Provider.of<NotificationProvider>(context);
-    final currencyProvider = Provider.of<CurrencyProvider>(context);
-    final languageProvider = Provider.of<LanguageProvider>(context);
+    final notificationState = ref.watch(notificationNotifierProvider);
+    final currencyState = ref.watch(currencyNotifierProvider);
+    final languageState = ref.watch(languageNotifierProvider);
+    final themeState = ref.watch(themeNotifierProvider);
     final loc = AppLocalizations.of(context)!;
 
     // Determina l'icona della valuta corrente per visualizzarla nei tile o dialoghi.
     final currentCurrencyIcon = _getCurrencyIcon(
-      currencyProvider.currentCurrency,
+      currencyState.currentCurrency,
     );
 
     return Scaffold(
@@ -130,19 +129,15 @@ class _SettingsPageState extends State<SettingsPage>
                         : Icons.light_mode_rounded,
                     title: loc.darkMode,
                     subtitle: isDark ? loc.activated : loc.deactivated,
-                    trailingWidget: Consumer<ThemeProvider>(
-                      builder: (context, themeProvider, _) {
-                        return Transform.scale(
+                    trailingWidget: Transform.scale(
                           scale: 0.9,
                           child: Switch(
-                            value: themeProvider.isDarkMode,
+                            value: themeState.isDarkMode,
                             onChanged: (value) =>
-                                themeProvider.toggleTheme(value),
+                                ref.read(themeNotifierProvider.notifier).toggleTheme(value),
                             activeThumbColor: AppColors.primary,
                           ),
-                        );
-                      },
-                    ),
+                        )
                   ),
                 ),
 
@@ -164,16 +159,16 @@ class _SettingsPageState extends State<SettingsPage>
                       SettingsTile(
                         icon: Icons.alarm_rounded,
                         title: loc.dailyReminder,
-                        subtitle: notificationProvider.dailyReminderEnabled
+                        subtitle: notificationState.dailyReminderEnabled
                             ? loc.activeAt(
-                                notificationProvider.reminderTime.format(context))
+                                notificationState.reminderTime.format(context))
                             : loc.deactivated,
                         trailingWidget: Transform.scale(
                           scale: 0.9,
                           child: Switch(
-                            value: notificationProvider.dailyReminderEnabled,
+                            value: notificationState.dailyReminderEnabled,
                             onChanged: (value) {
-                              notificationProvider.toggleDailyReminder(value, AppLocalizations.of(context)!);
+                              ref.read(notificationNotifierProvider.notifier).toggleDailyReminder(value, AppLocalizations.of(context)!);
                             },
                             activeThumbColor: AppColors.primary,
                           ),
@@ -181,17 +176,17 @@ class _SettingsPageState extends State<SettingsPage>
                       ),
 
                       // Opzione 1.1: Selettore orario (visibile solo se attivo)
-                      if (notificationProvider.dailyReminderEnabled) ...[
+                      if (notificationState.dailyReminderEnabled) ...[
                         _buildDivider(isDark),
                         SettingsTile(
                           icon: Icons.schedule_rounded,
                           title: loc.reminderTime,
-                          subtitle: notificationProvider.reminderTime.format(
+                          subtitle: notificationState.reminderTime.format(
                             context,
                           ),
                           trailingIcon: Icons.chevron_right_rounded,
                           onPressed: () =>
-                              _selectTime(context, notificationProvider),
+                              _selectTime(context, notificationState),
                         ),
                       ],
 
@@ -201,16 +196,16 @@ class _SettingsPageState extends State<SettingsPage>
                       SettingsTile(
                         icon: Icons.warning_amber_rounded,
                         title: loc.spendingLimitAlert,
-                        subtitle: notificationProvider.limitAlertEnabled
-                            ? loc.activeMonthlyLimit(currencyProvider
-                                .formatAmount(notificationProvider.monthlyLimit))
+                        subtitle: notificationState.limitAlertEnabled
+                            ? loc.activeMonthlyLimit(currencyState
+                                .formatAmount(notificationState.monthlyLimit))
                             : loc.deactivated,
                         trailingWidget: Transform.scale(
                           scale: 0.9,
                           child: Switch(
-                            value: notificationProvider.limitAlertEnabled,
+                            value: notificationState.limitAlertEnabled,
                             onChanged: (value) {
-                              notificationProvider.toggleLimitAlert(value);
+                              ref.read(notificationNotifierProvider.notifier).toggleLimitAlert(value);
                             },
                             activeThumbColor: AppColors.primary,
                           ),
@@ -218,18 +213,18 @@ class _SettingsPageState extends State<SettingsPage>
                       ),
 
                       // Opzione 2.1: Input limite mensile (visibile solo se attivo)
-                      if (notificationProvider.limitAlertEnabled) ...[
+                      if (notificationState.limitAlertEnabled) ...[
                         _buildDivider(isDark),
                         SettingsTile(
                           icon: currentCurrencyIcon,
                           title: loc.monthlyLimit,
-                          subtitle: currencyProvider.formatAmount(
-                            notificationProvider.monthlyLimit,
+                          subtitle: currencyState.formatAmount(
+                            notificationState.monthlyLimit,
                           ),
                           trailingIcon: Icons.chevron_right_rounded,
                           onPressed: () => _selectLimit(
                             context,
-                            notificationProvider,
+                            notificationState,
                             currentCurrencyIcon,
                           ),
                         ),
@@ -293,10 +288,10 @@ class _SettingsPageState extends State<SettingsPage>
                     icon: Icons.payments_rounded,
                     title: loc.defaultCurrency,
                     subtitle:
-                        "${currencyProvider.currencyName} (${currencyProvider.currencySymbol})",
+                        "${currencyState.currencyName} (${currencyState.currencySymbol})",
                     trailingIcon: Icons.chevron_right_rounded,
                     onPressed: () {
-                      _selectCurrency(context, isDark, currencyProvider);
+                      _selectCurrency(context, isDark, currencyState);
                     },
                   ),
                 ),
@@ -318,11 +313,11 @@ class _SettingsPageState extends State<SettingsPage>
                     title: loc.defaultLanguage,
                     subtitle: _getLanguageName(
                       context,
-                      languageProvider.currentLocale.languageCode,
+                      languageState.currentLocale.languageCode,
                     ),
                     trailingIcon: Icons.chevron_right_rounded,
                     onPressed: () {
-                      _selectLanguage(context, isDark, languageProvider);
+                      _selectLanguage(context, isDark);
                     },
                   ),
                 ),
@@ -339,15 +334,15 @@ class _SettingsPageState extends State<SettingsPage>
   // Apre il TimePicker nativo per scegliere l'orario del promemoria.
   Future<void> _selectTime(
     BuildContext context,
-    NotificationProvider provider,
+    NotificationState notificationState,
   ) async {
     final picked = await DialogUtils.showTimePickerAdaptive(
       context,
-      initialTime: provider.reminderTime,
+      initialTime: notificationState.reminderTime,
     );
 
-    if (picked != null && picked != provider.reminderTime && context.mounted) {
-      await provider.setReminderTime(picked, AppLocalizations.of(context)!);
+    if (picked != null && picked != notificationState.reminderTime && context.mounted) {
+      await ref.read(notificationNotifierProvider.notifier).setReminderTime(picked, AppLocalizations.of(context)!);
     }
   }
 
@@ -355,7 +350,7 @@ class _SettingsPageState extends State<SettingsPage>
   // Utilizza l'icona della valuta corrente nel campo di testo.
   Future<void> _selectLimit(
     BuildContext context,
-    NotificationProvider provider,
+    NotificationState notificationState,
     IconData currencyIcon,
   ) async {
     final loc = AppLocalizations.of(context)!;
@@ -368,7 +363,7 @@ class _SettingsPageState extends State<SettingsPage>
           "hintText": loc.insertAmountHint,
           "prefixIcon": currencyIcon,
           "keyboardType": TextInputType.number,
-          "initialValue": provider.monthlyLimit.toStringAsFixed(0),
+          "initialValue": notificationState.monthlyLimit.toStringAsFixed(0),
           "obscureText": false,
         },
       ],
@@ -377,7 +372,7 @@ class _SettingsPageState extends State<SettingsPage>
     if (result != null && result.isNotEmpty) {
       final value = double.tryParse(result.first);
       if (value != null && value > 0) {
-        provider.setMonthlyLimit(value);
+        ref.read(notificationNotifierProvider.notifier).setMonthlyLimit(value);
       }
     }
   }
@@ -386,7 +381,7 @@ class _SettingsPageState extends State<SettingsPage>
   Future<void> _selectCurrency(
     BuildContext context,
     bool isDark,
-    CurrencyProvider currencyProvider,
+    CurrencyState currencyState,
   ) async {
     final loc = AppLocalizations.of(context)!;
     final result = await DialogUtils.showSortSheet(
@@ -403,9 +398,9 @@ class _SettingsPageState extends State<SettingsPage>
 
     if (result != null) {
       final selectedCurrency = ExpenseCurrency.fromCode(result);
-      await currencyProvider.setCurrency(selectedCurrency);
+      await ref.read(currencyNotifierProvider.notifier).setCurrency(selectedCurrency);
       if (context.mounted) {
-        context.read<ExpenseProvider>().updateAppCurrency(selectedCurrency);
+        ref.read(expenseNotifierProvider.notifier).updateAppCurrency(selectedCurrency);
       }
     }
   }
@@ -414,7 +409,6 @@ class _SettingsPageState extends State<SettingsPage>
   Future<void> _selectLanguage(
     BuildContext context,
     bool isDark,
-    LanguageProvider languageProvider,
   ) async {
     final loc = AppLocalizations.of(context)!;
     final result = await DialogUtils.showSortSheet(
@@ -436,7 +430,7 @@ class _SettingsPageState extends State<SettingsPage>
       final newLocale = Locale(result);
       
       // 2. Aggiorniamo la lingua nell'app (questo aggiorna la UI)
-      await languageProvider.changeLanguage(newLocale);
+      await ref.read(languageNotifierProvider.notifier).changeLanguage(newLocale);
 
       // 3. AGGIORNAMENTO NOTIFICHE:
       // Carichiamo manualmente le traduzioni per la NUOVA lingua.
@@ -446,7 +440,7 @@ class _SettingsPageState extends State<SettingsPage>
 
       // 4. Se il widget è ancora montato, rischeduliamo le notifiche
       if (context.mounted) {
-        context.read<NotificationProvider>().rescheduleNotifications(newL10n);
+        ref.read(notificationNotifierProvider.notifier).rescheduleNotifications(newL10n);
         debugPrint("🌍 Notifiche aggiornate alla lingua: $result");
       }
     }
