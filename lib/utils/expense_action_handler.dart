@@ -49,7 +49,7 @@ class ExpenseActionHandler {
 
     if (!context.mounted) return;
 
-    if (expenseState.errorMessage != null) return;
+    if (ref.read(expenseNotifierProvider).errorMessage != null) return;
 
     // Salva loc di nuovo dopo il check mounted, è ancora valido qui
     // perché abbiamo verificato context.mounted appena sopra
