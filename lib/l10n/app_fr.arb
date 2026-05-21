@@ -102,7 +102,7 @@
     "expenseInstructionTitle": "Création ou modification d'une dépense",
     "expenseInstructionMessage": "Pour confirmer la création ou la modification d'une dépense, maintenez l'écran enfoncé.",
     "profileTitle": "Profil",
-    "dataUpdated": "Données mises à jour",
+    "dataUpdated": "Données mises à jour avec succès !",
     "refreshError": "Erreur d'actualisation : {error}",
     "@refreshError": {
         "placeholders": {
@@ -271,5 +271,6 @@
     "emptyExpensesTitle": "Aucune dépense enregistrée",
     "emptyExpensesSubtitle": "Vos dépenses apparaîtront ici. Ajoutez-en une avec le bouton ci-dessous !",
     "emptySearchTitle": "Aucun résultat",
-    "emptySearchSubtitle": "Aucune dépense ne correspond à votre recherche."
+    "emptySearchSubtitle": "Aucune dépense ne correspond à votre recherche.",
+    "successTitle" : "Fait !"
 }

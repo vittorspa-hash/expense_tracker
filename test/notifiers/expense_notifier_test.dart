@@ -1,5 +1,5 @@
-// FILE: expense_provider_test.dart
-// DESCRIZIONE: Test suite per ExpenseProvider
+// FILE: expense_notifier_test.dart
+// DESCRIZIONE: Test suite per ExpenseNotifier
 // Testa la gestione dello stato UI, l'orchestrazione verso il service
 // e la corretta propagazione di errori e warning.
 
@@ -18,9 +18,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-// Genera i mock per le 3 dipendenze del provider
+// Genera i mock per le 3 dipendenze del notifier
 @GenerateMocks([
-  FirebaseAuth,
   NotificationNotifier,
   ExpenseService,
   AppLocalizations,
@@ -28,18 +27,23 @@ import 'package:mockito/mockito.dart';
 import 'expense_notifier_test.mocks.dart';
 
 // --- FAKE USER ---
-// User di Firebase non è mockabile direttamente con mockito.
-// Creiamo un fake minimale con solo i campi usati dal provider (uid).
 class FakeUser extends Fake implements User {
   @override
   final String uid;
   FakeUser(this.uid);
 }
 
+class FakeFirebaseAuth extends Fake implements FirebaseAuth {
+  final User? user;
+  FakeFirebaseAuth(this.user);
+
+  @override
+  User? get currentUser => user;
+}
+
 void main() {
   group('ExpenseNotifier Tests', () {
     // --- DIPENDENZE MOCKATE ---
-    late MockFirebaseAuth mockFirebaseAuth;
     late MockNotificationNotifier mockNotificationNotifier;
     late MockExpenseService mockExpenseService;
     late MockAppLocalizations mockL10n;
@@ -48,10 +52,10 @@ void main() {
     late ExpenseModel sampleExpense;
 
     ExpenseState readState() => container.read(expenseNotifierProvider);
-    ExpenseNotifier readNotifier() => container.read(expenseNotifierProvider.notifier);
+    ExpenseNotifier readNotifier() =>
+        container.read(expenseNotifierProvider.notifier);
 
     setUp(() {
-      mockFirebaseAuth = MockFirebaseAuth();
       mockNotificationNotifier = MockNotificationNotifier();
       mockExpenseService = MockExpenseService();
       mockL10n = MockAppLocalizations();
@@ -72,7 +76,6 @@ void main() {
       );
 
       // Stub comuni a tutti i test: currentUser e NotificationProvider getters, l10n
-      when(mockFirebaseAuth.currentUser).thenReturn(fakeUser);
       when(mockL10n.warningOfflineCurrencyCreate).thenReturn('Offline warning');
 
       // Stub per calculateTotals: il provider lo chiama sempre dopo ogni operazione.
@@ -86,14 +89,19 @@ void main() {
         (invocation) => invocation.positionalArguments[0] as List<ExpenseModel>,
       );
 
+      // Stub per checkBudgetLimit
       when(
-        mockNotificationNotifier.checkBudgetLimit(any, any, any),
+        mockNotificationNotifier.checkBudgetLimit(
+          currentMonthlySpent: anyNamed('currentMonthlySpent'),
+          l10n: anyNamed('l10n'),
+          currencySymbol: anyNamed('currencySymbol'),
+        ),
       ).thenAnswer((_) async {});
 
       // ProviderContainer con override di tutti i provider necessari
       container = ProviderContainer(
         overrides: [
-          firebaseAuthProvider.overrideWithValue(mockFirebaseAuth),
+          firebaseAuthProvider.overrideWithValue(FakeFirebaseAuth(fakeUser)),
           expenseServiceProvider.overrideWithValue(mockExpenseService),
           // Override del notificationNotifierProvider con uno stub
           notificationNotifierProvider.overrideWith(
@@ -117,7 +125,7 @@ void main() {
         // Definiamo cosa restituisce il service quando gli chiediamo le spese.
         // In questo test simuliamo una risposta positiva con una spesa.
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenAnswer((_) async => [sampleExpense]);
 
         // ACT
@@ -143,7 +151,7 @@ void main() {
     test('Should not re-execute initialise if already initialized', () async {
       // ARRANGE
       when(
-        mockExpenseService.loadUserExpenses(user: fakeUser),
+        mockExpenseService.loadUserExpenses(user: anyNamed('user')),
       ).thenAnswer((_) async => [sampleExpense]);
       await readNotifier().initialise();
       expect(
@@ -164,7 +172,7 @@ void main() {
     // =================================================================
     test('Should not re-execute initialise if already loading', () async {
       // ARRANGE
-      when(mockExpenseService.loadUserExpenses(user: fakeUser)).thenAnswer((
+      when(mockExpenseService.loadUserExpenses(user: anyNamed('user'))).thenAnswer((
         _,
       ) async {
         // Durante il primo initialise(), lanciamo il secondo in parallelo
@@ -190,7 +198,7 @@ void main() {
         // ARRANGE
         // Simuliamo un fallimento del repository (es. Firestore non raggiungibile)
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenThrow(RepositoryFailure("Firestore unavailable"));
 
         // ACT
@@ -215,7 +223,7 @@ void main() {
       () async {
         // ARRANGE
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenAnswer((_) async => [sampleExpense]);
         await readNotifier().initialise();
         expect(readState().expenses, hasLength(1)); // precondizione
@@ -513,7 +521,7 @@ void main() {
       // ARRANGE
       // Prima popoliamo il provider con una spesa tramite initialise()
       when(
-        mockExpenseService.loadUserExpenses(user: fakeUser),
+        mockExpenseService.loadUserExpenses(user: anyNamed('user')),
       ).thenAnswer((_) async => [sampleExpense]);
       await readNotifier().initialise();
       expect(readState().expenses, hasLength(1)); // precondizione
@@ -583,7 +591,7 @@ void main() {
       () async {
         // ARRANGE
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenAnswer((_) async => [sampleExpense]);
         await readNotifier().initialise();
         expect(readState().initStatus, ExpenseInitStatus.initialized);
@@ -661,7 +669,7 @@ void main() {
         // ARRANGE
         // Prima popoliamo il provider con una spesa tramite initialise()
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenAnswer((_) async => [sampleExpense]);
         await readNotifier().initialise();
         expect(readState().expenses, hasLength(1)); // precondizione
@@ -708,7 +716,7 @@ void main() {
         // ARRANGE
         // Prima popoliamo il provider con una spesa tramite initialise()
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenAnswer((_) async => [sampleExpense]);
         await readNotifier().initialise();
         expect(readState().expenses, hasLength(1)); // precondizione
@@ -739,7 +747,7 @@ void main() {
         final secondExpense = sampleExpense.copyWith(uuid: 'expense-uuid-2');
 
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenAnswer((_) async => [sampleExpense, secondExpense]);
         await readNotifier().initialise();
         expect(readState().expenses, hasLength(2)); // precondizione
@@ -775,7 +783,7 @@ void main() {
       () async {
         // ARRANGE
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenAnswer((_) async => [sampleExpense]);
         await readNotifier().initialise();
         expect(readState().expenses, hasLength(1)); // precondizione
@@ -805,7 +813,7 @@ void main() {
     test('Should set isLoading to true during deleteExpenses', () async {
       // ARRANGE
       when(
-        mockExpenseService.loadUserExpenses(user: fakeUser),
+        mockExpenseService.loadUserExpenses(user: anyNamed('user')),
       ).thenAnswer((_) async => [sampleExpense]);
       await readNotifier().initialise();
       expect(readState().initStatus, ExpenseInitStatus.initialized);
@@ -980,7 +988,11 @@ void main() {
         // ASSERT
         // Verifichiamo che la notifica sia stata effettivamente inviata
         verify(
-          mockNotificationNotifier.checkBudgetLimit(1200.0, any, any),
+          mockNotificationNotifier.checkBudgetLimit(
+            currentMonthlySpent: 1200.0,
+            l10n: anyNamed('l10n'),
+            currencySymbol: anyNamed('currencySymbol'),
+          ),
         ).called(1);
       },
     );
@@ -1014,7 +1026,11 @@ void main() {
 
         // ASSERT
         verify(
-          mockNotificationNotifier.checkBudgetLimit(1200.0, any, any),
+          mockNotificationNotifier.checkBudgetLimit(
+            currentMonthlySpent: 1200.0,
+            l10n: anyNamed('l10n'),
+            currencySymbol: anyNamed('currencySymbol'),
+          ),
         ).called(1);
       },
     );
@@ -1027,7 +1043,7 @@ void main() {
       () async {
         // ARRANGE
         when(
-          mockExpenseService.loadUserExpenses(user: fakeUser),
+          mockExpenseService.loadUserExpenses(user: anyNamed('user')),
         ).thenThrow(Exception("Unexpected"));
 
         // ACT
@@ -1178,15 +1194,17 @@ class _FakeNotificationNotifier extends NotificationNotifier {
   _FakeNotificationNotifier(this._mock);
 
   @override
-  NotificationState build() => const NotificationState(
-    monthlyLimit: 1000.0,
-    limitAlertEnabled: false,
-  );
+  NotificationState build() =>
+      const NotificationState(monthlyLimit: 1000.0, limitAlertEnabled: false);
 
   @override
-  Future<void> checkBudgetLimit(
-    double currentMonthlySpent,
-    dynamic l10n,
-    String currencySymbol,
-  ) => _mock.checkBudgetLimit(currentMonthlySpent, l10n, currencySymbol);
+  Future<void> checkBudgetLimit({
+    required double currentMonthlySpent,
+    required AppLocalizations l10n,
+    required String currencySymbol,
+  }) => _mock.checkBudgetLimit(
+    currentMonthlySpent: currentMonthlySpent,
+    l10n: l10n,
+    currencySymbol: currencySymbol,
+  );
 }

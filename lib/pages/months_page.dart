@@ -15,11 +15,9 @@ import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: months_page.dart
-/// DESCRIZIONE: Schermata di dettaglio mensile.
-/// Visualizza il totale delle spese per il mese selezionato e una lista
-/// aggregata per giorni. Cliccando su un giorno si naviga al dettaglio giornaliero.
-
-// ... (import identici)
+/// DESCRIZIONE: Schermata di dettaglio mensile dei report.
+/// Mostra il riepilogo complessivo dei costi del mese e la lista aggregata
+/// giorno per giorno, con navigazione diretta verso il dettaglio giornaliero.
 
 class MonthsPage extends ConsumerStatefulWidget {
   static const route = "/months";
@@ -27,7 +25,11 @@ class MonthsPage extends ConsumerStatefulWidget {
   final int year;
   final int month;
 
-  const MonthsPage({super.key, required this.year, required this.month});
+  const MonthsPage({
+    super.key, 
+    required this.year, 
+    required this.month,
+  });
 
   @override
   ConsumerState<MonthsPage> createState() => _MonthsPageState();
@@ -35,6 +37,8 @@ class MonthsPage extends ConsumerStatefulWidget {
 
 class _MonthsPageState extends ConsumerState<MonthsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  
+  // --- INIZIALIZZAZIONE ---
   @override
   TickerProvider get vsync => this;
 
@@ -50,16 +54,12 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
     super.dispose();
   }
 
+  // --- BUILD UI ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final monthName = ReportDateUtils.getMonthNames(context)[widget.month - 1];
     final loc = AppLocalizations.of(context)!;
-
-    // --- RIVERPOD: Accesso ai dati ---
-    // watch(expenseProvider) assicura che se una spesa viene modificata/aggiunta,
-    // la lista si aggiorni automaticamente.
-
     final dailyExpenses = ref.watch(expensesByDayProvider)(widget.year, widget.month);
 
     return Scaffold(
@@ -79,13 +79,14 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
     );
   }
 
+  // --- COMPONENTI INTERNI ---
   Widget _buildBody(
     BuildContext context,
     Map<String, double> dailyExpenses,
     String monthName,
     AppLocalizations loc,
   ) {
-    // --- STATO VUOTO ---
+    // Gestione dello stato vuoto se non ci sono spese nel mese selezionato
     if (dailyExpenses.isEmpty) {
       return buildWithFadeAnimation(
         ReportEmptyState(
@@ -97,26 +98,25 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
       );
     }
 
-    final totalMonth = dailyExpenses.values.fold(0.0, (a, b) => a + b);
+    final totalMonthAmount = dailyExpenses.values.fold(0.0, (sum, val) => sum + val);
+    final localeStr = Localizations.localeOf(context).toString();
 
-    // --- CONTENUTO LISTA ---
     return buildWithFadeAnimation(
       Column(
         children: [
-          // Riepilogo Mese
+          // Pannello riassuntivo del mese
           ReportTotalCard(
             label: loc.totalMonthLabel(monthName),
-            totalAmount: totalMonth,
+            totalAmount: totalMonthAmount,
             icon: Icons.calendar_month_rounded,
             itemCount: dailyExpenses.length,
             itemLabel: loc.dayCountLabel(dailyExpenses.length),
           ),
 
           ReportSectionHeader(title: loc.dailyExpenses),
-
           SizedBox(height: 12.h),
 
-          // Lista Giorni
+          // Lista di distribuzione delle spese giornaliere
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
@@ -124,26 +124,23 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
               separatorBuilder: (_, _) => SizedBox(height: 6.h),
               itemBuilder: (context, index) {
                 final dayKey = dailyExpenses.keys.elementAt(index);
-                final total = dailyExpenses[dayKey]!;
+                final totalDayAmount = dailyExpenses[dayKey]!;
                 
-                // Parsing sicuro della chiave data (es. "dd/MM/yyyy")
+                // Parsing posizionale sicuro della chiave data (es. "dd/MM/yyyy")
                 final dateParts = dayKey.split('/');
                 final date = DateTime(
-                  int.parse(dateParts[2]),
-                  int.parse(dateParts[1]),
-                  int.parse(dateParts[0]),
+                  int.parse(dateParts[2]), // Anno
+                  int.parse(dateParts[1]), // Mese
+                  int.parse(dateParts[0]), // Giorno
                 );
 
                 return ReportPeriodListItem(
                   badgeText: "${date.day}",
-                  badgeSubtext: DateFormat(
-                    "MMM",
-                    Localizations.localeOf(context).toString(),
-                  ).format(date).toUpperCase(),
+                  badgeSubtext: DateFormat("MMM", localeStr).format(date).toUpperCase(),
                   title: ReportDateUtils.getDayOfWeek(context, date),
                   subtitle: ReportDateUtils.formatDate(context, date),
-                  totalAmount: total,
-                  percentage: totalMonth > 0 ? (total / totalMonth) * 100 : 0,
+                  totalAmount: totalDayAmount,
+                  percentage: totalMonthAmount > 0 ? (totalDayAmount / totalMonthAmount) * 100 : 0,
                   onTap: () {
                     Navigator.pushNamed(
                       context,
@@ -151,7 +148,7 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
                       arguments: {
                         'year': date.year,
                         'month': date.month,
-                        'day': date.day
+                        'day': date.day,
                       },
                     );
                   },

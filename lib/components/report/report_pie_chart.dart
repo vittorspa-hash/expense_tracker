@@ -1,7 +1,7 @@
 // FILE: report_pie_chart.dart
 // DESCRIZIONE: Widget che visualizza un grafico a torta per la ripartizione
 // delle spese per categoria in un anno. Segue lo stesso pattern di ReportBarChart:
-// Consumer<CurrencyProvider> per valuta, stile card coerente con il resto dei report.
+// Utilizza currencyNotifierProvider per la valuta corrente e mantiene uno stile card coerente.
 
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
@@ -13,9 +13,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ReportPieChart extends ConsumerStatefulWidget {
-  // --- PARAMETRI ---
   // Mappa categoria -> totale già convertito nella valuta corrente.
-  // Il filtraggio per anno è già avvenuto nel provider/calculator.
+  // Il filtraggio per arco temporale è delegato ai provider/calculator a monte.
   final Map<ExpenseCategory, double> data;
 
   const ReportPieChart({super.key, required this.data});
@@ -25,46 +24,39 @@ class ReportPieChart extends ConsumerStatefulWidget {
 }
 
 class _ReportPieChartState extends ConsumerState<ReportPieChart> {
-  // --- STATO LOCALE ---
-  // Indice della sezione "toccata" per il comportamento di espansione interattiva.
-  // -1 indica nessuna sezione selezionata.
+  // Indice della sezione selezionata per l'effetto di espansione interattiva.
+  // Il valore -1 indica che nessuna sezione è attualmente focalizzata.
   int _touchedIndex = -1;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
+    final currencyNotifier = ref.watch(currencyNotifierProvider);
 
-    // --- GUARD: DATI VUOTI ---
-    // Filtra le categorie con valore zero per evitare sezioni invisibili nel grafico.
-    final filteredData = Map.fromEntries(
-      widget.data.entries.where((e) => e.value > 0),
-    );
+    // --- GUARD & FILTER ---
+    // Estrae e filtra solo le voci con importo positivo per prevenire artefatti visivi nel grafico
+    final activeEntries = widget.data.entries.where((e) => e.value > 0).toList();
+    if (activeEntries.isEmpty) return const SizedBox.shrink();
 
-    if (filteredData.isEmpty) return const SizedBox.shrink();
+    // Calcolo del volume complessivo delle spese per determinare le percentuali di ripartizione
+    final double totalAmount = activeEntries.fold(0.0, (sum, entry) => sum + entry.value);
 
-    // --- CALCOLO TOTALE ---
-    // Necessario per calcolare le percentuali di ogni sezione.
-    final double total = filteredData.values.fold(0.0, (a, b) => a + b);
-
-    // --- COSTRUZIONE SEZIONI ---
-    // Una PieChartSectionData per ogni categoria con valore > 0.
-    // La sezione toccata si espande (radius maggiore) per feedback visivo.
-    final sections = filteredData.entries.toList().asMap().entries.map((entry) {
-      final i = entry.key;
+    // --- COSTRUZIONE SEZIONI GRAFICO ---
+    final pieSections = activeEntries.asMap().entries.map((entry) {
+      final index = entry.key;
       final category = entry.value.key;
-      final value = entry.value.value;
-      final isTouched = i == _touchedIndex;
+      final amount = entry.value.value;
+      final isTouched = index == _touchedIndex;
 
-      final double percentage = (value / total) * 100;
-      final double radius = isTouched ? 72.r : 60.r;
+      final double percentage = (amount / totalAmount) * 100;
+      final double sectionRadius = isTouched ? 72.r : 60.r;
 
       return PieChartSectionData(
-        value: value,
+        value: amount,
         color: category.color,
-        radius: radius,
-        // Mostra la percentuale solo se la sezione è abbastanza grande
-        // per evitare label sovrapposte su sezioni piccole.
+        radius: sectionRadius,
+        // Mostra la percentuale testuale solo per fette ampie (>= 5%) per evitare sovrapposizioni
         title: percentage >= 5 ? "${percentage.toStringAsFixed(0)}%" : "",
         titleStyle: TextStyle(
           fontSize: isTouched ? 13.sp : 11.sp,
@@ -92,17 +84,14 @@ class _ReportPieChartState extends ConsumerState<ReportPieChart> {
       ),
       child: Column(
         children: [
-          // --- GRAFICO ---
+          // --- ELEMENTO GRAFICO (PIE CHART) ---
           SizedBox(
             height: 200.h,
             child: PieChart(
               PieChartData(
-                sections: sections,
+                sections: pieSections,
                 centerSpaceRadius: 40.r,
-
-                // --- INTERAZIONE ---
-                // Al tocco aggiorna _touchedIndex per espandere la sezione.
-                // Al rilascio (index -1) resetta la selezione.
+                sectionsSpace: 2,
                 pieTouchData: PieTouchData(
                   touchCallback: (event, response) {
                     setState(() {
@@ -112,38 +101,31 @@ class _ReportPieChartState extends ConsumerState<ReportPieChart> {
                         _touchedIndex = -1;
                         return;
                       }
-                      _touchedIndex =
-                          response.touchedSection!.touchedSectionIndex;
+                      _touchedIndex = response.touchedSection!.touchedSectionIndex;
                     });
                   },
                 ),
-                sectionsSpace: 2,
               ),
             ),
           ),
 
           SizedBox(height: 20.h),
 
-          // --- LEGENDA ---
-          // Wrap a due colonne: ogni voce mostra dot colorato,
-          // nome localizzato della categoria e totale formattato.
+          // --- LEGENDA INTERATTIVA ---
           Wrap(
             spacing: 12.w,
             runSpacing: 8.h,
             alignment: WrapAlignment.center,
-            children: filteredData.entries.toList().asMap().entries.map((
-              entry,
-            ) {
-              final i = entry.key;
+            children: activeEntries.asMap().entries.map((entry) {
+              final index = entry.key;
               final category = entry.value.key;
-              final value = entry.value.value;
-              final isSelected = i == _touchedIndex;
+              final amount = entry.value.value;
+              final isSelected = index == _touchedIndex;
 
               return GestureDetector(
-                // Tap sulla legenda = stessa interazione della sezione del grafico
                 onTap: () {
                   setState(() {
-                    _touchedIndex = isSelected ? -1 : i;
+                    _touchedIndex = isSelected ? -1 : index;
                   });
                 },
                 child: AnimatedContainer(
@@ -158,7 +140,7 @@ class _ReportPieChartState extends ConsumerState<ReportPieChart> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Dot colorato
+                      // Indicatore cromatico della categoria
                       Container(
                         width: 10.w,
                         height: 10.w,
@@ -168,29 +150,25 @@ class _ReportPieChartState extends ConsumerState<ReportPieChart> {
                         ),
                       ),
                       SizedBox(width: 6.w),
-                      // Nome categoria localizzato
+                      
+                      // Etichetta testuale localizzata
                       Text(
                         category.label(loc),
                         style: TextStyle(
                           fontSize: 11.sp,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
-                          color: isDark
-                              ? AppColors.textLight
-                              : AppColors.textDark,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isDark ? AppColors.textLight : AppColors.textDark,
                         ),
                       ),
                       SizedBox(width: 4.w),
-                      // Importo formattato nella valuta corrente
+                      
+                      // Importo monetario formattato
                       Text(
-                        ref.watch(currencyNotifierProvider).formatAmount(value),
+                        currencyNotifier.formatAmount(amount),
                         style: TextStyle(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? AppColors.greyDark
-                              : AppColors.greyLight,
+                          color: isDark ? AppColors.greyDark : AppColors.greyLight,
                         ),
                       ),
                     ],

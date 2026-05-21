@@ -30,6 +30,7 @@ class EditExpensePage extends ConsumerStatefulWidget {
 
 class _EditExpensePageState extends ConsumerState<EditExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  
   // --- CONFIGURAZIONE ANIMAZIONE ---
   @override
   TickerProvider get vsync => this;
@@ -49,13 +50,17 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
     super.dispose();
   }
 
-  // --- HEADER CONVERSIONE VALUTA ---
+  // --- BANNER CONVERSIONE VALUTA (STRATEGIA SOFT FAIL) ---
+  /// Costruisce l'header dinamico per il tasso di cambio.
+  /// Compare solo se la valuta nativa della spesa differisce da quella globale dell'app.
+  /// Gestisce la variazione cromatica in base allo stato `isHovered` ereditato dall'area touch.
   Widget? _buildExchangeRateBanner(BuildContext context, bool isHovered) {
     final model = widget.expenseModel;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
     final currencyState = ref.watch(currencyNotifierProvider);
     final currentAppCurrency = currencyState.currentCurrency;
+    
     if (model.currency == currentAppCurrency) return null;
 
     final bool hasRate = model.exchangeRates.containsKey(currentAppCurrency.code);
@@ -89,9 +94,7 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            hasRate
-                ? Icons.currency_exchange_rounded
-                : Icons.warning_amber_rounded,
+            hasRate ? Icons.currency_exchange_rounded : Icons.warning_amber_rounded,
             color: iconColor,
             size: 26.sp,
           ),
@@ -134,10 +137,11 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
     );
   }
 
+  /// Renderizza le informazioni di conversione se il tasso di cambio storico è disponibile a database.
   Widget _buildSuccessContent(
     BuildContext context,
     ExpenseModel model,
-    ExpenseCurrency  targetCurrency,
+    ExpenseCurrency targetCurrency,
     CurrencyState cp,
     AppLocalizations loc,
     Color textColor,
@@ -168,6 +172,7 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
     );
   }
 
+  /// Fallback informativo nel caso in cui la transazione sia avvenuta offline senza sincronizzazione dei tassi.
   Widget _buildErrorContent(
     Color textColor,
     Color highlightColor,
@@ -196,28 +201,28 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
   }
 
   // --- SALVATAGGIO MODIFICHE ---
-  // Ora include il parametro category per aggiornare anche la categoria su Firestore.
+  /// Invia i dati aggiornati della spesa al notifier globale per la persistenza locale/remota.
   Future<void> onSubmit({
     required double value,
     required String? description,
     required DateTime date,
     required ExpenseCurrency currencyCode,
-    required ExpenseCategory category, // NUOVO
+    required ExpenseCategory category,
     required AppLocalizations l10n,
   }) async {
-
     await ref.read(expenseNotifierProvider.notifier).editExpense(
-      widget.expenseModel,
-      value: value,
-      description: description,
-      date: date,
-      currencyCode: currencyCode,
-      category: category, 
-      l10n: l10n,
-    );
+          widget.expenseModel,
+          value: value,
+          description: description,
+          date: date,
+          currencyCode: currencyCode,
+          category: category,
+          l10n: l10n,
+        );
   }
 
   // --- ELIMINAZIONE SPESA ---
+  /// Esegue la rimozione della spesa analizzando preventivamente lo stato di errore del provider.
   Future<ExpenseModel?> onDelete() async {
     final modelToDelete = widget.expenseModel;
 
@@ -230,7 +235,6 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
   }
 
   // --- COSTRUZIONE UI ---
-  // Passa initialCategory pre-popolata con la categoria della spesa esistente.
   @override
   Widget build(BuildContext context) {
     return buildWithFadeAnimation(
@@ -239,11 +243,8 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
         initialDescription: widget.expenseModel.description,
         initialDate: widget.expenseModel.createdOn,
         initialCurrencyCode: widget.expenseModel.currency.code,
-        initialCategory: widget.expenseModel.category, 
-
-        headerBuilder: (isHovered) =>
-            _buildExchangeRateBanner(context, isHovered),
-
+        initialCategory: widget.expenseModel.category,
+        headerBuilder: (isHovered) => _buildExchangeRateBanner(context, isHovered),
         floatingActionButtonIcon: Icons.delete,
         onFloatingActionButtonPressed: onDelete,
         onSubmit: onSubmit,

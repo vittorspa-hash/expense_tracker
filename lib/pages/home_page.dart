@@ -13,6 +13,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+/// FILE: home_page.dart
+/// DESCRIZIONE: Dashboard e schermata principale dell'applicazione.
+/// Gestisce la visualizzazione dell'elenco delle spese, la ricerca testuale, l'ordinamento,
+/// le animazioni di ingresso (Fade) e integra la logica di multi-selezione delegandola
+/// a multiSelectNotifierProvider di Riverpod per la cancellazione di massa.
+
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
@@ -23,6 +29,7 @@ class HomePage extends ConsumerStatefulWidget {
 class _HomePageState extends ConsumerState<HomePage>
     with TickerProviderStateMixin, FadeAnimationMixin {
 
+  // --- STATO LOCALE E CONTROLLER ---
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
   String _sortCriteria = "date_desc";
@@ -31,19 +38,21 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   TickerProvider get vsync => this;
 
+  // --- CICLO DI VITA E INIZIALIZZAZIONE ---
   @override
   void initState() {
     super.initState();
 
+    // Sottoscrizione alla ricerca testuale per l'aggiornamento in tempo reale.
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text;
       });
     });
 
+    // Caricamento dei dati utente asincroni locali e pianificazione notifiche post-build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        // ref è disponibile direttamente in ConsumerState
         ref.read(profileNotifierProvider.notifier).loadLocalData();
         final l10n = AppLocalizations.of(context);
         if (l10n != null) {
@@ -52,6 +61,7 @@ class _HomePageState extends ConsumerState<HomePage>
       }
     });
 
+    // Inizializzazione dei controller delle animazioni.
     initFadeAnimation();
     _listAnimationController = AnimationController(
       duration: const Duration(milliseconds: 600),
@@ -68,6 +78,8 @@ class _HomePageState extends ConsumerState<HomePage>
     super.dispose();
   }
 
+  // --- FILTRAGGIO DATI ---
+  /// Filtra localmente la lista delle spese in base alla query di ricerca inserita.
   List<ExpenseModel> _getFilteredExpenses(List<ExpenseModel> expenses) {
     final query = _searchQuery.toLowerCase();
     return expenses.where((expense) {
@@ -76,16 +88,17 @@ class _HomePageState extends ConsumerState<HomePage>
     }).toList();
   }
 
+  // --- COSTRUZIONE INTERFACCIA ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
 
-    // ref.watch nel build — sostituisce Consumer2
+    // ASCOLTO DEGLI STATI (RIVERPOD)
     final multiSelectState = ref.watch(multiSelectNotifierProvider);
     final expenseState = ref.watch(expenseNotifierProvider);
 
-    // Gestione errori UI
+    // Gestione degli errori derivati dallo stato globale delle spese
     if (expenseState.errorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showErrorSnackBar(context, expenseState.errorMessage!);
@@ -93,12 +106,14 @@ class _HomePageState extends ConsumerState<HomePage>
       });
     }
 
+    // Estrazione delle proprietà utili dello stato
     final isSelectionMode = multiSelectState.isSelectionMode;
     final selectedCount = multiSelectState.selectedCount;
     final filteredExpenses = _getFilteredExpenses(expenseState.expenses);
     final isLoading = expenseState.isLoading;
 
     return Scaffold(
+      // APP BAR CONDIZIONALE (Attiva solo in modalità selezione di massa)
       appBar: isSelectionMode
           ? CustomAppBar(
               appBarBackgroundColor: AppColors.primary,
@@ -115,6 +130,7 @@ class _HomePageState extends ConsumerState<HomePage>
             )
           : null,
 
+      // CORPO DELLA PAGINA (Dashboard, Header e Lista Spese)
       body: Stack(
         children: [
           Container(
@@ -146,6 +162,7 @@ class _HomePageState extends ConsumerState<HomePage>
               ],
             ),
           ),
+          // Indicatore di caricamento in overlay bloccante
           if (isLoading)
             Container(
               color: AppColors.backgroundDark.withValues(alpha: 0.3),
@@ -156,6 +173,7 @@ class _HomePageState extends ConsumerState<HomePage>
         ],
       ),
 
+      // AZIONE INSERIMENTO NUOVA SPESA
       floatingActionButton: !isSelectionMode && !isLoading
           ? Container(
               decoration: BoxDecoration(
@@ -186,11 +204,15 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
+  // --- LOGICA E METODI DI SUPPORTO ---
+
+  /// Pulisce il controller di ricerca e resetta lo stato della query locale.
   void _clearSearch() {
     _searchController.clear();
     setState(() => _searchQuery = "");
   }
 
+  /// Mostra un banner informativo sul fondo dello schermo in caso di errore.
   void _showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -206,6 +228,7 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
+  /// Esegue il refresh manuale svuotando la multi-selezione e reinizializzando il provider delle spese.
   Future<void> _refreshExpenses() async {
     ref.read(multiSelectNotifierProvider.notifier).deselectAll();
     _clearSearch();
@@ -215,6 +238,7 @@ class _HomePageState extends ConsumerState<HomePage>
     }
   }
 
+  /// Mostra la scheda del profilo utente mediante bottom sheet dedicato.
   Future<void> _showProfileSheet(BuildContext context) async {
     await DialogUtils.showProfileSheet(context, ref);
     _clearSearch();

@@ -102,7 +102,7 @@
     "expenseInstructionTitle": "Creación o modificación de un gasto",
     "expenseInstructionMessage": "Para confirmar la creación o modificación de un gasto, mantén pulsada la pantalla.",
     "profileTitle": "Perfil",
-    "dataUpdated": "Datos actualizados",
+    "dataUpdated": "Datos actualizados con éxito!",
     "refreshError": "Error de actualización: {error}",
     "@refreshError": {
         "placeholders": {
@@ -271,5 +271,6 @@
     "emptyExpensesTitle": "No hay gastos registrados",
     "emptyExpensesSubtitle": "Aquí aparecerán tus gastos. ¡Agrega uno con el botón de abajo!",
     "emptySearchTitle": "Sin resultados",
-    "emptySearchSubtitle": "No hay gastos que coincidan con tu búsqueda."
+    "emptySearchSubtitle": "No hay gastos que coincidan con tu búsqueda.",
+    "successTitle" : "¡Hecho!"
 }

@@ -5,6 +5,7 @@ import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/clipboard_utils.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
+import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,6 +19,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// Permette di visualizzare e modificare le informazioni personali (Avatar, Nome, Email, Password)
 /// e gestire la sicurezza dell'account (Eliminazione).
 /// Interagisce con ProfileProvider per la logica di business e AuthProvider per il reset password.
+/// Utilizza `SnackbarUtils` per standardizzare il feedback visivo delle operazioni.
 
 class ProfilePage extends ConsumerStatefulWidget {
   static const route = "/profile/page";
@@ -29,11 +31,9 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  // --- INIZIALIZZAZIONE ---
-  // Configura il picker immagini, le animazioni e richiede il caricamento
-  // dei dati locali del profilo all'avvio del widget.
   final ImagePicker _picker = ImagePicker();
 
+  // --- INIZIALIZZAZIONE ---
   @override
   TickerProvider get vsync => this;
 
@@ -56,10 +56,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   // --- BUILD UI ---
-  // Costruisce la lista scrollabile delle impostazioni.
-  // Include un RefreshIndicator per sincronizzare i dati con il server
-  // e sezioni distinte per Avatar, Dati Anagrafici e Azioni Critiche.
-  //
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -73,7 +69,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         icon: Icons.person_rounded,
         isDark: isDark,
       ),
-
       body: RefreshIndicator(
         backgroundColor: isDark
             ? AppColors.backgroundDark
@@ -82,14 +77,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         onRefresh: () async {
           try {
             await ref.read(profileNotifierProvider.notifier).refreshUser();
-            if (mounted) _showSnack(loc.dataUpdated);
+            if (context.mounted) {
+              SnackbarUtils.show(
+                context: context,
+                title: loc.successTitle,
+                message: loc.dataUpdated,
+              );
+            }
           } catch (e) {
-            if (mounted) {
-              _showSnack(loc.refreshError(e.toString()), isError: true);
+            if (context.mounted) {
+              SnackbarUtils.show(
+                context: context,
+                title: loc.errorTitle,
+                message: loc.refreshError(e.toString()),
+              );
             }
           }
         },
-
         child: Container(
           decoration: BoxDecoration(
             color: isDark
@@ -183,9 +187,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                         trailingIcon: Icons.content_copy_rounded,
                         tooltip: loc.copyIdTooltip,
                         onPressed: () async {
-                          final loc = AppLocalizations.of(context)!;
                           await ClipboardUtils.copy(user?.uid);
-                          _showSnack(loc.idCopied);
+                          if (context.mounted) {
+                            SnackbarUtils.show(
+                              context: context,
+                              title: loc.successTitle,
+                              message: loc.idCopied,
+                            );
+                          }
                         },
                         isLoading: profileState.isLoading,
                       ),
@@ -197,7 +206,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
                 // BOTTONE ELIMINAZIONE ACCOUNT
                 ElevatedButton(
-                  onPressed: profileState.isLoading ? null : _handleDeleteAccount,
+                  onPressed: profileState.isLoading
+                      ? null
+                      : _handleDeleteAccount,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: isDark
@@ -256,7 +267,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     );
   }
 
-  // Helper per divisori grafici
+  // --- ELEMENTI GRAFICI SECONDARI ---
   Widget _buildDivider(bool isDark) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -270,21 +281,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     );
   }
 
-  // --- HELPER LOGICA UI ---
-  // Funzioni di utilità per mostrare feedback all'utente (SnackBar).
-  void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.snackBar,
-        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
-      ),
-    );
-  }
-
   // --- GESTIONE AVATAR ---
-  // Logica per selezionare una nuova immagine dalla galleria o rimuovere quella esistente.
-  //
   Future<void> _handleChangePicture() async {
     final loc = AppLocalizations.of(context)!;
     final notifier = ref.read(profileNotifierProvider.notifier);
@@ -300,9 +297,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       if (!mounted) return;
 
       await notifier.setProfileImage(File(pickedFile.path));
-      _showSnack(loc.profilePictureUpdated);
+      if (mounted) {
+        SnackbarUtils.show(
+          context: context,
+          title: loc.successTitle,
+          message: loc.profilePictureUpdated,
+        );
+      }
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      if (mounted) {
+        SnackbarUtils.show(
+          context: context,
+          title: loc.errorTitle,
+          message: e.toString(),
+        );
+      }
     }
   }
 
@@ -323,16 +332,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     try {
       await notifier.deleteProfileImage();
-      _showSnack(loc.pictureRemoved);
+      if (mounted) {
+        SnackbarUtils.show(
+          context: context,
+          title: loc.successTitle,
+          message: loc.pictureRemoved,
+        );
+      }
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      if (mounted) {
+        SnackbarUtils.show(
+          context: context,
+          title: loc.errorTitle,
+          message: e.toString(),
+        );
+      }
     }
   }
 
   // --- MODIFICA DATI UTENTE ---
-  // Serie di metodi che aprono dialoghi di input specifici (Nome, Email, Password),
-  // validano i dati inseriti e invocano i metodi di aggiornamento del Provider.
-  //
   Future<void> _handleChangeDisplayName() async {
     final loc = AppLocalizations.of(context)!;
 
@@ -342,7 +360,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       fields: [
         {
           "hintText": loc.newNameHint,
-          "initialValue": ref.read(profileNotifierProvider).user?.displayName ?? "",
+          "initialValue":
+              ref.read(profileNotifierProvider).user?.displayName ?? "",
           "obscureText": false,
         },
       ],
@@ -352,10 +371,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
     if (result != null && result.isNotEmpty && result.first.isNotEmpty) {
       try {
-        await ref.read(profileNotifierProvider.notifier).updateDisplayName(result.first);
-        _showSnack(loc.nameUpdated);
+        await ref
+            .read(profileNotifierProvider.notifier)
+            .updateDisplayName(result.first);
+        if (mounted) {
+          SnackbarUtils.show(
+            context: context,
+            title: loc.successTitle,
+            message: loc.nameUpdated,
+          );
+        }
       } catch (e) {
-        _showSnack(e.toString(), isError: true);
+        if (mounted) {
+          SnackbarUtils.show(
+            context: context,
+            title: loc.errorTitle,
+            message: e.toString(),
+          );
+        }
       }
     }
   }
@@ -384,19 +417,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final newEmail = result[0].trim();
     final password = result[1];
 
-    if (newEmail.isEmpty || password.isEmpty) {
-      _showSnack(loc.invalidData, isError: true);
+    if ((newEmail.isEmpty || password.isEmpty) && mounted) {
+      SnackbarUtils.show(
+        context: context,
+        title: loc.errorTitle,
+        message: loc.invalidData,
+      );
       return;
     }
 
     try {
-      await ref.read(profileNotifierProvider.notifier).updateEmail(newEmail: newEmail, password: password);
+      await ref
+          .read(profileNotifierProvider.notifier)
+          .updateEmail(newEmail: newEmail, password: password);
       if (!mounted) return;
 
-      _showSnack(loc.emailUpdateSent);
+      SnackbarUtils.show(
+        context: context,
+        title: loc.successTitle,
+        message: loc.emailUpdateSent,
+      );
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      if (mounted) {
+        SnackbarUtils.show(
+          context: context,
+          title: loc.errorTitle,
+          message: e.toString(),
+        );
+      }
     }
   }
 
@@ -414,16 +463,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       ],
       confirmText: loc.save,
       cancelText: loc.cancel,
-      // Callback per AuthProvider
       onForgotPassword: () async {
         try {
-          await ref.read(authNotifierProvider.notifier).resetPassword(email: userEmail);
+          await ref
+              .read(authNotifierProvider.notifier)
+              .resetPassword(email: userEmail);
           if (mounted) {
-            _showSnack(loc.recoveryEmailSent(userEmail.toString()));
+            SnackbarUtils.show(
+              context: context,
+              title: loc.successTitle,
+              message: loc.recoveryEmailSent(userEmail.toString()),
+            );
           }
         } catch (e) {
           if (mounted) {
-            _showSnack(e.toString(), isError: true);
+            SnackbarUtils.show(
+              context: context,
+              title: loc.errorTitle,
+              message: e.toString(),
+            );
           }
         }
       },
@@ -435,24 +493,38 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final newPass = result[1].trim();
     final confirmPass = result[2].trim();
 
-    if (newPass != confirmPass) {
-      _showSnack(loc.passwordsDoNotMatch, isError: true);
+    if (newPass != confirmPass && mounted) {
+      SnackbarUtils.show(
+        context: context,
+        title: loc.errorTitle,
+        message: loc.passwordsDoNotMatch,
+      );
       return;
     }
 
     try {
-      await ref.read(profileNotifierProvider.notifier).updatePassword(
-        currentPassword: currentPass,
-        newPassword: newPass,
-      );
-      _showSnack(loc.passwordUpdated);
+      await ref
+          .read(profileNotifierProvider.notifier)
+          .updatePassword(currentPassword: currentPass, newPassword: newPass);
+      if (mounted) {
+        SnackbarUtils.show(
+          context: context,
+          title: loc.successTitle,
+          message: loc.passwordUpdated,
+        );
+      }
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      if (mounted) {
+        SnackbarUtils.show(
+          context: context,
+          title: loc.errorTitle,
+          message: e.toString(),
+        );
+      }
     }
   }
 
   // --- CANCELLAZIONE ACCOUNT ---
-  // Flusso critico per l'eliminazione definitiva dell'utente.
   Future<void> _handleDeleteAccount() async {
     final loc = AppLocalizations.of(context)!;
 
@@ -464,7 +536,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       cancelText: loc.cancel,
     );
 
-   
     if (confirm == true) {
       if (!mounted) return;
       final confirm2 = await DialogUtils.showConfirmDialog(
@@ -472,7 +543,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         title: loc.warningTitle,
         content: loc.deleteAccountMessageConfirm,
         confirmText: loc.delete,
-        cancelText: loc.cancel
+        cancelText: loc.cancel,
       );
 
       if (confirm2 == true) {
@@ -480,10 +551,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         try {
           await ref.read(profileNotifierProvider.notifier).deleteAccount();
           if (!mounted) return;
-          _showSnack(loc.accountDeleted);
+          SnackbarUtils.show(
+            context: context,
+            title: loc.successTitle,
+            message: loc.accountDeleted,
+          );
           Navigator.of(context).popUntil((route) => route.isFirst);
         } catch (e) {
-          _showSnack(e.toString(), isError: true);
+          if (mounted) {
+            SnackbarUtils.show(
+              context: context,
+              title: loc.errorTitle,
+              message: e.toString(),
+            );
+          }
         }
       }
     }

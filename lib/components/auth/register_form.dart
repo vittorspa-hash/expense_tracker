@@ -3,7 +3,8 @@ import 'package:expense_tracker/components/auth/auth_text_field.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/config/app_colors.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
+import 'package:expense_tracker/utils/snackbar_utils.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,7 +13,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 /// FILE: register_form.dart
 /// DESCRIZIONE: Widget contenente il form di registrazione. Raccoglie i dati dell'utente
 /// (Nome, Email, Password), gestisce la validazione dei campi e comunica con il
-/// Provider di autenticazione per la creazione di un nuovo account Firebase.
+/// provider authNotifierProvider di Riverpod per la creazione di un nuovo account Firebase.
 
 class RegisterForm extends ConsumerStatefulWidget {
   const RegisterForm({super.key});
@@ -23,8 +24,8 @@ class RegisterForm extends ConsumerStatefulWidget {
 
 class _RegisterFormState extends ConsumerState<RegisterForm> {
   // --- GESTIONE STATO E CONTROLLER ---
-  // Controller per l'input testuale, nodi per la gestione del focus
-  // e variabili per la visibilità delle password.
+  // Definizioni per la validazione del form, focus dei campi, input testuale
+  // e parametri di visibilità del testo della password.
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
@@ -41,7 +42,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   bool _obscure2 = true;
 
   // --- PULIZIA RISORSE ---
-  // Rilascio dei controller alla distruzione del widget.
   @override
   void dispose() {
     _nameController.dispose();
@@ -55,10 +55,10 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     super.dispose();
   }
 
-  // --- BUILD UI ---
-  // Costruzione interfaccia con adattamento al tema e ascolto dello stato di loading.
+  // --- COSTRUZIONE INTERFACCIA ---
   @override
   Widget build(BuildContext context) {
+    // Rilevamento del tema corrente e ascolto dello stato di caricamento dal provider.
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = ref.watch(authNotifierProvider).isLoading;
     final loc = AppLocalizations.of(context)!;
@@ -69,8 +69,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
         key: _formKey,
         child: Column(
           children: [
-            // --- CARD INSERIMENTO DATI ---
-            // Contenitore stilizzato con ombra e campi di input.
+            // SCHEDA DEL FORM DI REGISTRAZIONE
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -99,7 +98,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                   ),
                   SizedBox(height: 18.h),
 
-                  // Input Nome
+                  // CAMPO DI INPUT NOME
                   AuthTextField(
                     controller: _nameController,
                     focusNode: _nameFocus,
@@ -111,10 +110,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     validator: (v) =>
                         v!.trim().isEmpty ? loc.nameRequired : null,
                   ),
-
                   SizedBox(height: 8.h),
 
-                  // Input Email
+                  // CAMPO DI INPUT EMAIL
                   AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
@@ -131,10 +129,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                       return null;
                     },
                   ),
-
                   SizedBox(height: 8.h),
 
-                  // Input Password
+                  // CAMPO DI INPUT PASSWORD
                   AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
@@ -155,10 +152,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                       return null;
                     },
                   ),
-
                   SizedBox(height: 8.h),
 
-                  // Input Conferma Password
+                  // CAMPO DI INPUT CONFERMA PASSWORD
                   AuthTextField(
                     controller: _confirmController,
                     focusNode: _confirmFocus,
@@ -182,11 +178,9 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                 ],
               ),
             ),
-
             SizedBox(height: 10.h),
 
-            // --- AZIONE DI REGISTRAZIONE ---
-            // Bottone principale per inviare il form.
+            // BOTTONE DI REGISTRAZIONE
             AuthButton(
               onPressed: isLoading ? null : _handleRegister,
               icon: isLoading ? null : FontAwesomeIcons.userPlus,
@@ -204,7 +198,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
                     )
                   : null,
             ),
-
             SizedBox(height: 18.h),
           ],
         ),
@@ -212,33 +205,17 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
     );
   }
 
-  // --- FEEDBACK UTENTE ---
-  // Helper per mostrare messaggi tramite SnackBar.
-  void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.snackBar,
-        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
-      ),
-    );
-  }
+  // --- LOGICA DI CREAZIONE ACCOUNT ---
 
-  // --- LOGICA DI REGISTRAZIONE ---
-  // Gestisce la validazione dei dati, la corrispondenza delle password,
-  // la chiamata al servizio di registrazione e la visualizzazione del dialog di successo.
+  /// Valida il form ed esegue l'operazione di sign up, mostrando infine il prompt di verifica mail.
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
     final loc = AppLocalizations.of(context)!;
 
-    if (_passwordController.text != _confirmController.text) {
-      _showSnack(loc.passwordsDoNotMatch, isError: true);
-      return;
-    }
-
     final auth = ref.read(authNotifierProvider.notifier);
 
     try {
+      // Invia la richiesta di registrazione a Firebase tramite l'AuthNotifier.
       await auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -247,15 +224,19 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
       if (!mounted) return;
 
-      // Successo: Informa l'utente della verifica email necessaria
+      // Mostra un dialogo informativo per spiegare la necessità di convalidare l'indirizzo email.
       await DialogUtils.showInfoDialog(
         context,
         title: loc.verifyEmailTitle,
         content: loc.verifyEmailContent,
       );
-
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      if (!mounted) return;
+      SnackbarUtils.show(
+        context: context,
+        title: loc.errorTitle,
+        message: e.toString(),
+      );
     }
   }
 }

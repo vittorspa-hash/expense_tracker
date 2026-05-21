@@ -7,17 +7,22 @@ import 'package:expense_tracker/utils/snackbar_utils.dart';
 
 /// FILE: expense_action_handler.dart
 /// DESCRIZIONE: Helper statico per centralizzare le azioni complesse sulle spese.
-/// Gestisce flussi che coinvolgono più provider e interazioni UI (Dialoghi, Snackbar),
-/// come l'eliminazione multipla, mantenendo i widget della vista più puliti.
+/// Gestisce i flussi operativi che coinvolgono l'interazione coordinata di più provider
+/// (multiSelectNotifierProvider ed expenseNotifierProvider) e componenti della UI (Dialog, SnackBar),
+/// liberando i widget delle pagine dalla logica di orchestrazione.
 
 class ExpenseActionHandler {
-  // --- ELIMINAZIONE BATCH ---
-  // Gestisce il flusso completo per l'eliminazione di uno o più elementi selezionati:
-  // Dialogo Conferma -> Reset Selezione -> Chiamata al Provider -> Feedback/Undo.
+  
+  // --- ELIMINAZIONE BATCH E COORDiNAZIONE PROVIDER ---
+  
+  /// Gestisce il flusso atomico di rimozione di massa delle spese selezionate.
+  /// Mostra il prompt di conferma, svuota lo stato di selezione, esegue l'eliminazione 
+  /// su Firestore e offre un'azione di "Undo" tramite SnackBar per l'eventuale ripristino.
   static Future<void> handleDeleteSelected(
     BuildContext context,
     WidgetRef ref,
   ) async {
+    // Recupero dei controller e degli stati correnti dai provider di Riverpod
     final multiSelectState = ref.read(multiSelectNotifierProvider);
     final multiSelect = ref.read(multiSelectNotifierProvider.notifier);
     final expenseState = ref.read(expenseNotifierProvider);
@@ -25,8 +30,10 @@ class ExpenseActionHandler {
     final count = multiSelectState.selectedCount;
     final loc = AppLocalizations.of(context)!;
 
+    // Clausola di salvaguardia se non ci sono elementi marcati per l'eliminazione
     if (count == 0) return;
 
+    // INTERFACCIA: Dialogo di conferma adattivo (singolo o multiplo)
     final confirm = await DialogUtils.showConfirmDialog(
       context,
       title: count == 1
@@ -39,22 +46,26 @@ class ExpenseActionHandler {
 
     if (confirm != true) return;
 
+    // Estrazione delle spese da rimuovere confrontando gli UUID selezionati
     final expensesToDelete = expenseState.expenses
         .where((e) => multiSelectState.selectedIds.contains(e.uuid))
         .toList();
 
+    // Reset immediato della UI di selezione prima dell'operazione asincrona
     multiSelect.deselectAll();
 
+    // Esecuzione della rimozione fisica o logica tramite il notifier delle spese
     await expense.deleteExpenses(expensesToDelete);
 
+    // Controllo di sicurezza per evitare operazioni su contesti non più validi
     if (!context.mounted) return;
 
+    // Interruzione in caso di fallimento registrato nello stato globale delle spese
     if (ref.read(expenseNotifierProvider).errorMessage != null) return;
 
-    // Salva loc di nuovo dopo il check mounted, è ancora valido qui
-    // perché abbiamo verificato context.mounted appena sopra
     final locAfter = AppLocalizations.of(context)!;
 
+    // INTERFACCIA: Feedback finale di successo con opzione di ripristino (Undo)
     SnackbarUtils.show(
       context: context,
       title: count == 1
@@ -65,7 +76,7 @@ class ExpenseActionHandler {
       deletedItem: expensesToDelete,
       onDelete: (_) {},
       onRestore: (_) async {
-        // expense è già salvato prima di qualsiasi await, è sicuro usarlo qui
+        // Invoca l'operazione contraria sul notifier reinserendo il blocco di spese rimosse
         await expense.restoreExpenses(expensesToDelete, locAfter);
       },
     );

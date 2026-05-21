@@ -3,9 +3,16 @@ import 'package:expense_tracker/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// FILE: auth_notifier.dart
+/// DESCRIZIONE: Gestisce lo stato globale di autenticazione dell'applicazione.
+/// Ascolta in tempo reale i cambiamenti di sessione da Firebase Auth e coordina
+/// le operazioni di Login, Registrazione, Logout e recupero credenziali,
+/// esponendo uno stato immutabile (AuthState) alla UI.
+
 enum AuthStatus { unknown, authenticated, unauthenticated, unverified }
 
 // --- STATO ---
+/// Rappresentazione immutabile dello stato di autenticazione e caricamento.
 class AuthState {
   final AuthStatus authStatus;
   final bool isLoading;
@@ -15,6 +22,7 @@ class AuthState {
     this.isLoading = false,
   });
 
+  /// Metodo per generare una nuova istanza dello stato modificandone selettivamente i parametri.
   AuthState copyWith({AuthStatus? authStatus, bool? isLoading}) {
     return AuthState(
       authStatus: authStatus ?? this.authStatus,
@@ -24,20 +32,23 @@ class AuthState {
 }
 
 // --- NOTIFIER ---
+/// Controller reattivo dello stato di autenticazione che estende la classe Notifier di Riverpod.
 class AuthNotifier extends Notifier<AuthState> {
+  
   @override
   AuthState build() {
     final firebaseAuth = ref.watch(firebaseAuthProvider);
 
-    // ref.listen dentro build() sostituisce il StreamSubscription.
-    // Riverpod gestisce automaticamente la cancellazione quando il provider
-    // viene dismesso, eliminando il rischio di memory leak.
+    // Sottoscrizione allo stream dei token per monitorare lo stato utente.
+    // La cancellazione (cancel) viene gestita manualmente al dispose del provider per prevenire leak.
     final sub = firebaseAuth.idTokenChanges().listen(_onAuthStateChanged);
     ref.onDispose(() => sub.cancel());
 
     return const AuthState();
   }
 
+  // --- GESTORE CAMBIAMENTI DI STATO ---
+  /// Intercetta le variazioni di Firebase User e aggiorna l'AuthStatus dello stato.
   void _onAuthStateChanged(User? user) {
     if (user == null) {
       state = state.copyWith(authStatus: AuthStatus.unauthenticated);
@@ -48,11 +59,16 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  // Getter di convenienza
+  // --- GETTER DI CONVENIENZA ---
+  /// Restituisce l'utente Firebase correntemente in sessione.
   User? get currentUser => ref.read(firebaseAuthProvider).currentUser;
+  
+  /// Riferimento interno al servizio di autenticazione business.
   AuthService get _authService => ref.read(authServiceProvider);
 
-  // --- REGISTRAZIONE ---
+  // --- OPERAZIONI DI AUTENTICAZIONE ---
+
+  /// Avvia la procedura di registrazione di un nuovo utente.
   Future<void> signUp({
     required String email,
     required String password,
@@ -68,7 +84,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  // --- LOGIN ---
+  /// Esegue l'accesso dell'utente tramite email e password.
   Future<User> signIn({required String email, required String password}) async {
     state = state.copyWith(isLoading: true);
     try {
@@ -80,7 +96,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  // --- LOGOUT ---
+  /// Disconnette l'utente corrente chiudendo la sessione attiva su Firebase.
   Future<void> signOut() async {
     try {
       await _authService.signOut();
@@ -90,6 +106,8 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   // --- GESTIONE ACCOUNT ---
+
+  /// Invia un'email per il ripristino o la reimpostazione della password.
   Future<void> resetPassword({String? email}) async {
     state = state.copyWith(isLoading: true);
     try {
@@ -101,6 +119,7 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  /// Invia una nuova email contenente il link di verifica dell'account.
   Future<void> sendVerificationEmail(User user) async {
     state = state.copyWith(isLoading: true);
     try {

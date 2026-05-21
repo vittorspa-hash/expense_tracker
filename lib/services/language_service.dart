@@ -23,6 +23,7 @@ class LanguageService {
     }
   }
 
+  /// Recupera il codice lingua dalle preferenze
   String? getSavedLanguageCode() {
     try {
       return _prefs.getString(_languageKey);

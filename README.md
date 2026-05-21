@@ -10,12 +10,12 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES, DE, PT
 
 ## 🎯 Obiettivi del progetto
 - Monitorare le spese personali in modo semplice e veloce.
+- Supportare autenticazione sicura tramite Firebase Auth.
 - Sincronizzare i dati su cloud (Firestore) per garantirne l'accesso da qualsiasi dispositivo.
 - Visualizzare resoconti giornalieri, mensili e annuali.
 - Inviare notifiche giornaliere e avvisi di superamento limite spesa.
-- Offrire un'esperienza responsive e adaptive su dispositivi mobili.
-- Supportare autenticazione sicura tramite Firebase Auth.
 - Garantire accessibilità internazionale tramite supporto multilingua e multivaluta.
+- Offrire un'esperienza responsive e adaptive su dispositivi mobili.
 
 ---
 
@@ -40,10 +40,13 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES, DE, PT
     - GBP (£),
     - JPY (¥).
   - Conversione in tempo reale basata su API (Frankfurter).
+- **Categorie spese**:
+  - Classificazione delle spese per categoria
+  - Visualizzazione della distribuzione tramite grafico a torta nella YearsPage
 - **Resoconti**:
   - DaysPage → Riepilogo giornaliero
   - MonthsPage → Riepilogo mensile
-  - YearsPage → Riepilogo annuale con grafico 
+  - YearsPage → Riepilogo annuale con grafico a barre e grafico a torta per categoria
 - **Pagine principali**:
   - AuthPage → Login e registrazione
   - HomePage → Overview delle spese recenti
@@ -85,26 +88,25 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 ---
 
 ## 🗂️ Struttura del progetto
-- `lib/main.dart` → Entry Point: Configurazione ambiente, inizializzazione Firebase e avvio dell'applicazione
+- `lib/main.dart` → Entry Point: Configurazione ambiente, inizializzazione Firebase e avvio dell'applicazione all'interno di un ProviderScope
 - `lib/app.dart` → App Configuration: Tema, localizzazione, routing e gestione lifecycle
 - `lib/components/` →  UI Components: Widget UI riutilizzabili divisi per contesto
 - `lib/config/` → Configuration: File di configurazione centralizzati (di, tema, lingue, routing)
-  - `lib/config/di` → Dependency Injection: Setup GetIt e inizializzazione Provider
+  - `lib/config/di` → **Dependency Injection Layer**: definizione, configurazione ed esportazione dei provider di Riverpod
 - `lib/l10n/` → Localization: File .arb con stringhe tradotte in 6 lingue
 - `lib/models/` → Domain Models: Data classes e modelli di dominio
 - `lib/pages/` → Screens: Schermate dell'applicazione
-- `lib/providers/` → **State Management Layer**: Gestiscono lo stato UI e orchestrano chiamate ai service. Estendono ChangeNotifier per notificare la UI delle modifiche
+- `lib/notifiers/` → **State Management Layer**: Gestiscono lo stato UI e orchestrano chiamate ai service. 
 - `lib/repositories/` → **Data Access Layer**: Accesso diretto ai dati (Firestore CRUD operations)
-- `lib/services/` → **Business Logic Layer**: Contengono tutta la logica applicativa iniettata tramite GetIt
+- `lib/services/` → **Business Logic Layer**: Servizi core delegati alla logica applicativa pura, orchestrati dai Notifier
 - `lib/utils/` → Utilities: Motore di calcolo, sistema dialoghi adattivi, gestione snackbar e animazioni
 
 ---
 
 ## 🧱 Stack Tecnologico
 - **Framework:** Flutter & Dart  
-- **Architecture:** Layered Architecture (UI ↔ Provider ↔ Service ↔ Repository)
-- **State Management:** Provider
-- **Dependency Injection:** GetIt 
+- **Architecture:** Layered Architecture (UI ↔ Riverpod Notifier ↔ Service ↔ Repository)
+- **State Management & DI:** Riverpod
 - **Database:** Firebase Firestore  
 - **Autenticazione:** Firebase Auth  
 - **UI/UX Pattern:** Adaptive Design (Material per Android, Cupertino per iOS)
@@ -119,7 +121,7 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 
 ## 🧪 Testing
 
-Il progetto include una test suite  di **108 unit test** con **~93.7%% di coverage** sui componenti core.
+Il progetto include una test suite  di **108 unit test** con **~93.7% di coverage** sui componenti core.
 
 ### 📊 Coverage Breakdown
 
@@ -127,7 +129,7 @@ Il progetto include una test suite  di **108 unit test** con **~93.7%% di covera
 |------------|------|----------|-------------|
 | **ExpenseModel** | 13 | 100% | Serializzazione, conversione multi-valuta, copyWith, edge cases |
 | **ExpenseCalculator** | 25 | 100% | Calcoli temporali, aggregazioni per grafici, ordinamento |
-| **ExpenseProvider** | 28 | 89.2% | State management, orchestrazione service, gestione loading/errori, warning offline, notifiche budget |
+| **ExpenseNotifier** | 28 | 89.2% | State management, orchestrazione service, gestione loading/errori, warning offline, notifiche budget |
 | **ExpenseService** | 28 | 93.8% | CRUD operations, soft-fail strategy, smart-update logic, budget checks |
 | **CurrencyService** | 14 | 94.1% | Persistenza, HTTP mocking, network-cache strategy, multi-valuta |
 
@@ -150,12 +152,12 @@ Installa le dipendenze Flutter:
 flutter pub get
 ```
 Configura Firebase:
-- Scarica i file:
-- `GoogleService-Info.plist` → iOS
-- `google-services.json` → Android
-- Posizionali nelle rispettive cartelle:
-- `ios/Runner/`
-- `android/app/`
+ - Scarica i file:
+  - `GoogleService-Info.plist` → iOS
+  - `google-services.json` → Android
+ - Posizionali nelle rispettive cartelle:
+  - `ios/Runner/`
+  - `android/app/`
 
 Avvia l'app:
 ```bash

@@ -38,8 +38,7 @@ class ExpenseEdit extends ConsumerStatefulWidget {
     required ExpenseCurrency currencyCode,
     required ExpenseCategory category,
     required AppLocalizations l10n,
-  })
-  onSubmit;
+  }) onSubmit;
 
   const ExpenseEdit({
     super.key,
@@ -64,7 +63,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
   bool isTappedDown = false;
   late DateTime selectedDate;
   late ExpenseCurrency _selectedCurrency;
-  late ExpenseCategory _selectedCategory; // NUOVO
+  late ExpenseCategory _selectedCategory;
 
   // --- INIZIALIZZAZIONE ---
   @override
@@ -80,7 +79,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
       _selectedCurrency = ref.read(currencyNotifierProvider).currentCurrency;
     }
 
-    // Categoria: usa quella passata oppure default a "other"
+    // Configurazione iniziale della categoria (Fallback su 'other' se non specificata)
     _selectedCategory = widget.initialCategory ?? ExpenseCategory.other;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,9 +99,9 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
       backgroundColor: isDark
           ? AppColors.editPageBackgroundDark
           : AppColors.editPageBackgroundLight,
-
       body: Stack(
         children: [
+          // Area interattiva di sfondo per la rimozione del focus dai campi di testo al tap
           InkWell(
             onLongPress: isLoading ? null : onSubmit,
             onHighlightChanged: (highlighted) {
@@ -113,9 +112,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
                 : AppColors.editPageBackgroundLight,
             focusColor: Colors.transparent,
             highlightColor: AppColors.primary,
-            onTap: () {
-              FocusScope.of(context).unfocus();
-            },
+            onTap: () => FocusScope.of(context).unfocus(),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -126,11 +123,12 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
                 SizedBox(height: 20.h),
                 inputDate(),
                 SizedBox(height: 24.h),
-                inputCategory(isDark), // NUOVO
+                inputCategory(isDark),
               ],
             ),
           ),
 
+          // Overlay di caricamento bloccante durante le operazioni asincrone
           if (isLoading)
             Container(
               color: AppColors.backgroundDark.withValues(alpha: 0.3),
@@ -140,9 +138,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
             ),
         ],
       ),
-
-      floatingActionButton:
-          (widget.floatingActionButtonIcon == null || isLoading)
+      floatingActionButton: (widget.floatingActionButtonIcon == null || isLoading)
           ? null
           : floatingActionButton(context, isDark),
     );
@@ -150,18 +146,15 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
   // --- INPUT PREZZO E VALUTA ---
   Widget inputPrice(bool isDark) {
-    final String hintText = _selectedCurrency == ExpenseCurrency.jpy
-        ? "0"
-        : "0.00";
-    final textColor = isTappedDown
-        ? AppColors.textLight
-        : AppColors.textTappedDown;
+    final String hintText = _selectedCurrency == ExpenseCurrency.jpy ? "0" : "0.00";
+    final textColor = isTappedDown ? AppColors.textLight : AppColors.textTappedDown;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Selettore della valuta (Codice monetario e simbolo)
           GestureDetector(
             onTap: () => _showCurrencyPicker(isDark),
             child: Container(
@@ -178,6 +171,8 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
             ),
           ),
           SizedBox(width: 10.w),
+          
+          // Campo di input numerico per l'ammontare speso
           Flexible(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -185,9 +180,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
               child: IntrinsicWidth(
                 child: TextField(
                   controller: priceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   cursorColor: textColor,
                   style: TextStyle(
                     fontSize: 50.sp,
@@ -196,6 +189,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
                   ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
+                    // Normalizzazione automatica della virgola in punto decimale
                     TextInputFormatter.withFunction((oldValue, newValue) {
                       final text = newValue.text.replaceAll(',', '.');
                       return newValue.copyWith(
@@ -243,28 +237,26 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
   // --- INPUT DESCRIZIONE ---
   Widget inputDescription() => Padding(
-    padding: EdgeInsets.symmetric(horizontal: 24.w),
-    child: TextField(
-      keyboardType: TextInputType.text,
-      maxLines: null,
-      controller: descriptionController,
-      cursorColor: isTappedDown
-          ? AppColors.textLight
-          : AppColors.textTappedDown,
-      textAlign: TextAlign.center,
-      textCapitalization: TextCapitalization.sentences,
-      style: TextStyle(
-        fontSize: 20.sp,
-        color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-        fontWeight: FontWeight.w600,
-      ),
-      decoration: InputDecoration(
-        hintText: AppLocalizations.of(context)!.descriptionHint,
-        border: InputBorder.none,
-        hintStyle: TextStyle(color: AppColors.secondaryDark, fontSize: 18.sp),
-      ),
-    ),
-  );
+        padding: EdgeInsets.symmetric(horizontal: 24.w),
+        child: TextField(
+          keyboardType: TextInputType.text,
+          maxLines: null,
+          controller: descriptionController,
+          cursorColor: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+          textAlign: TextAlign.center,
+          textCapitalization: TextCapitalization.sentences,
+          style: TextStyle(
+            fontSize: 20.sp,
+            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context)!.descriptionHint,
+            border: InputBorder.none,
+            hintStyle: TextStyle(color: AppColors.secondaryDark, fontSize: 18.sp),
+          ),
+        ),
+      );
 
   // --- INPUT DATA ---
   Widget inputDate() {
@@ -279,9 +271,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
         children: [
           Icon(
             Icons.calendar_today,
-            color: isTappedDown
-                ? AppColors.textLight
-                : AppColors.textTappedDown,
+            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
             size: 24.sp,
           ),
           SizedBox(width: 10.w),
@@ -289,9 +279,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
             displayDate,
             style: TextStyle(
               fontSize: 18.sp,
-              color: isTappedDown
-                  ? AppColors.textLight
-                  : AppColors.textTappedDown,
+              color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -301,8 +289,8 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
   }
 
   // --- SELETTORE CATEGORIA ---
-  // Mostra una griglia scrollabile di chip per selezionare la categoria.
-  // Il chip selezionato è evidenziato con il colore primario dell'app.
+  /// Renderizza una griglia adattiva di chip per la selezione della categoria merceologica.
+  /// Il chip attivo riflette lo stato evidenziandosi con il colore primario del brand.
   Widget inputCategory(bool isDark) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 24.w),
@@ -313,8 +301,6 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
         children: ExpenseCategory.values.map((category) {
           final isSelected = _selectedCategory == category;
           final loc = AppLocalizations.of(context)!;
-
-          // Recupero il nome localizzato della categoria
           final label = category.label(loc);
 
           return GestureDetector(
@@ -326,13 +312,11 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
                 color: isSelected
                     ? AppColors.primary
                     : (isDark
-                          ? AppColors.primary.withValues(alpha: 0.1)
-                          : AppColors.primary.withValues(alpha: 0.07)),
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : AppColors.primary.withValues(alpha: 0.07)),
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
-                  color: isSelected
-                      ? AppColors.primary
-                      : AppColors.primary.withValues(alpha: 0.25),
+                  color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.25),
                   width: 1.2,
                 ),
               ),
@@ -344,9 +328,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
                     size: 16.sp,
                     color: isSelected
                         ? AppColors.textLight
-                        : (isTappedDown
-                              ? AppColors.textLight
-                              : AppColors.textTappedDown),
+                        : (isTappedDown ? AppColors.textLight : AppColors.textTappedDown),
                   ),
                   SizedBox(width: 6.w),
                   Text(
@@ -356,9 +338,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
                       fontWeight: FontWeight.w600,
                       color: isSelected
                           ? AppColors.textLight
-                          : (isTappedDown
-                                ? AppColors.textLight
-                                : AppColors.textTappedDown),
+                          : (isTappedDown ? AppColors.textLight : AppColors.textTappedDown),
                     ),
                   ),
                 ],
@@ -370,7 +350,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
     );
   }
 
-  // --- GESTIONE ELIMINAZIONE ---
+  // --- GESTIONE ELIMINAZIONE DIRETTATE ---
   Widget floatingActionButton(BuildContext context, bool isDark) {
     final loc = AppLocalizations.of(context)!;
 
@@ -394,6 +374,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
           final currentState = ref.read(expenseNotifierProvider);
 
+          // Gestione degli errori derivati dal tentativo di cancellazione
           if (currentState.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -407,6 +388,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
           if (deletedExpense != null) {
             final expenseNotifier = ref.read(expenseNotifierProvider.notifier);
             final locCopy = loc;
+            
             SnackbarUtils.show(
               context: context,
               title: loc.deletedTitleSingle,
@@ -427,11 +409,14 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
   }
 
   // --- SALVATAGGIO (ON SUBMIT) ---
+  /// Sottomette le modifiche o la nuova istanza validando i vincoli di business logic
+  /// (es. impedire il salvataggio di transazioni con valore nullo).
   Future<void> onSubmit() async {
     final loc = AppLocalizations.of(context)!;
     final value = double.tryParse(priceController.text.trim()) ?? 0.0;
     final description = descriptionController.text.trim();
 
+    // Validazione preliminare: l'importo deve essere strettamente positivo
     if (value == 0) {
       SnackbarUtils.show(
         context: context,
@@ -446,7 +431,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
       description: description.isEmpty ? null : description,
       date: selectedDate,
       currencyCode: _selectedCurrency,
-      category: _selectedCategory, // NUOVO
+      category: _selectedCategory,
       l10n: loc,
     );
 
@@ -454,7 +439,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
     final currentState = ref.read(expenseNotifierProvider);
 
-    // 1. GESTIONE ERRORE BLOCCANTE
+    // 1. GESTIONE ERRORE BLOCCANTE SUL SALVATAGGIO
     if (currentState.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -465,7 +450,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
       return;
     }
 
-    // 2. GESTIONE WARNING vs SUCCESSO
+    // 2. DISPATCH FEEDBACK VISIVO: WARNING (es. Offline) vs SUCCESSO STANDARD
     if (currentState.warningMessage != null) {
       SnackbarUtils.show(
         context: context,
@@ -476,9 +461,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
       SnackbarUtils.show(
         context: context,
         title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
-        message: widget.initialValue == null
-            ? loc.expenseCreated
-            : loc.expenseEdited,
+        message: widget.initialValue == null ? loc.expenseCreated : loc.expenseEdited,
       );
     }
 
@@ -503,6 +486,8 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
   }
 
   // --- UTILITY FORMATTAZIONE ---
+  /// Capitalizza forzatamente la prima lettera del mese (es. da "19 maggio 2026" a "19 Maggio 2026")
+  /// per mantenere l'uniformità con la visualizzazione standard del resto dell'applicazione.
   String capitalizeMonth(String date) {
     final parts = date.split(' ');
     if (parts.length < 3) return date;
@@ -512,7 +497,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
     return "$day $month $year";
   }
 
-  // --- ISTRUZIONI UTENTE ---
+  // --- ISTRUZIONI UTENTE ONBOARDING ---
   Future<void> _showInstructionDialogIfNeeded() async {
     final prefs = await ref.read(sharedPreferencesProvider.future);
     final uid = ref.read(firebaseAuthProvider).currentUser?.uid ?? "guest";

@@ -102,7 +102,7 @@
     "expenseInstructionTitle": "Criação ou edição de despesa",
     "expenseInstructionMessage": "Para confirmar a criação ou edição de uma despesa, mantenha a tela pressionada.",
     "profileTitle": "Perfil",
-    "dataUpdated": "Dados atualizados",
+    "dataUpdated": "Dados atualizados com sucesso!",
     "refreshError": "Erro ao atualizar: {error}",
     "@refreshError": {
         "placeholders": {
@@ -271,5 +271,6 @@
     "emptyExpensesTitle": "Nenhuma despesa registrada",
     "emptyExpensesSubtitle": "As despesas que adicionar irão aparecer aqui. Adicione uma com o botão abaixo!",
     "emptySearchTitle": "Nenhum resultado",
-    "emptySearchSubtitle": "Nenhuma despesa corresponde à sua pesquisa."
+    "emptySearchSubtitle": "Nenhuma despesa corresponde à sua pesquisa.",
+    "successTitle" : "Feito!"
 }

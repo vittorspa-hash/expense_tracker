@@ -38,6 +38,7 @@ class HomeContentList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final loc = AppLocalizations.of(context)!;
 
+    // --- ASCOLTO STATI GLOBALI ---
     final expenseState = ref.watch(expenseNotifierProvider);
     final multiSelectState = ref.watch(multiSelectNotifierProvider);
 
@@ -58,12 +59,9 @@ class HomeContentList extends ConsumerWidget {
       // --- GESTIONE SCROLL & REFRESH ---
       // Struttura a Sliver per gestire header persistenti e liste performanti.
       child: RefreshIndicator(
-        backgroundColor: isDark
-            ? AppColors.backgroundDark
-            : AppColors.backgroundLight,
+        backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         color: AppColors.primary,
         onRefresh: onRefreshExpenses,
-
         child: SafeArea(
           top: false,
           child: CustomScrollView(
@@ -75,12 +73,9 @@ class HomeContentList extends ConsumerWidget {
                 delegate: SearchHeaderDelegate(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.backgroundDark
-                          : AppColors.backgroundLight,
+                      color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
                     ),
                     padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 16.h),
-
                     child: Row(
                       children: [
                         // Campo di input per la ricerca testuale
@@ -88,9 +83,7 @@ class HomeContentList extends ConsumerWidget {
                           child: Container(
                             height: 50.h,
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppColors.cardDark
-                                  : AppColors.cardLight,
+                              color: isDark ? AppColors.cardDark : AppColors.cardLight,
                               borderRadius: BorderRadius.circular(16.r),
                               boxShadow: [
                                 BoxShadow(
@@ -110,16 +103,12 @@ class HomeContentList extends ConsumerWidget {
                                 hintText: loc.searchHint,
                                 hintStyle: TextStyle(
                                   fontSize: 14.sp,
-                                  color: isDark
-                                      ? AppColors.greyDark
-                                      : AppColors.greyLight,
+                                  color: isDark ? AppColors.greyDark : AppColors.greyLight,
                                 ),
                                 prefixIcon: Icon(
                                   Icons.search_rounded,
                                   size: 22.sp,
-                                  color: isDark
-                                      ? AppColors.greyDark
-                                      : AppColors.greyLight,
+                                  color: isDark ? AppColors.greyDark : AppColors.greyLight,
                                 ),
                                 filled: false,
                                 border: InputBorder.none,
@@ -131,7 +120,6 @@ class HomeContentList extends ConsumerWidget {
                             ),
                           ),
                         ),
-
                         SizedBox(width: 12.w),
 
                         // Pulsante per aprire il menu di ordinamento
@@ -142,39 +130,23 @@ class HomeContentList extends ConsumerWidget {
                               isDark: isDark,
                               title: loc.sortTitle,
                               options: [
-                                {
-                                  "title": loc.sortDateNewest,
-                                  "criteria": "date_desc",
-                                },
-                                {
-                                  "title": loc.sortDateOldest,
-                                  "criteria": "date_asc",
-                                },
-                                {
-                                  "title": loc.sortAmountHighest,
-                                  "criteria": "amount_desc",
-                                },
-                                {
-                                  "title": loc.sortAmountLowest,
-                                  "criteria": "amount_asc",
-                                },
+                                {"title": loc.sortDateNewest, "criteria": "date_desc"},
+                                {"title": loc.sortDateOldest, "criteria": "date_asc"},
+                                {"title": loc.sortAmountHighest, "criteria": "amount_desc"},
+                                {"title": loc.sortAmountLowest, "criteria": "amount_asc"},
                               ],
                             );
 
                             if (selected != null) {
                               onSortChanged(selected);
-                              ref
-                                  .read(expenseNotifierProvider.notifier)
-                                  .sortBy(selected);
+                              ref.read(expenseNotifierProvider.notifier).sortBy(selected);
                             }
                           },
                           child: Container(
                             width: 50.w,
                             height: 50.h,
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? AppColors.cardDark
-                                  : AppColors.cardLight,
+                              color: isDark ? AppColors.cardDark : AppColors.cardLight,
                               borderRadius: BorderRadius.circular(16.r),
                               boxShadow: [
                                 BoxShadow(
@@ -189,9 +161,7 @@ class HomeContentList extends ConsumerWidget {
                             child: Icon(
                               Icons.sort_rounded,
                               size: 24.sp,
-                              color: isDark
-                                  ? AppColors.greyDark
-                                  : AppColors.greyLight,
+                              color: isDark ? AppColors.greyDark : AppColors.greyLight,
                             ),
                           ),
                         ),
@@ -202,9 +172,7 @@ class HomeContentList extends ConsumerWidget {
               ),
 
               // --- LISTA SPESE / STATO VUOTO ---
-              // Se la lista filtrata è vuota, mostra uno stato contestuale:
-              // - nessuna spesa registrata (prima apertura o lista vuota)
-              // - nessun risultato per la ricerca corrente
+              // Se la lista filtrata è vuota, mostra uno stato vuoto contestuale
               if (filteredExpenses.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
@@ -215,41 +183,27 @@ class HomeContentList extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            searchQuery.isNotEmpty
-                                ? Icons.search_off_rounded
-                                : Icons.receipt_long_outlined,
+                            searchQuery.isNotEmpty ? Icons.search_off_rounded : Icons.receipt_long_outlined,
                             size: 56.sp,
-                            color: isDark
-                                ? AppColors.greyDark
-                                : AppColors.greyLight,
+                            color: isDark ? AppColors.greyDark : AppColors.greyLight,
                           ),
                           SizedBox(height: 16.h),
                           Text(
-                            searchQuery.isNotEmpty
-                                ? loc.emptySearchTitle
-                                : loc.emptyExpensesTitle,
+                            searchQuery.isNotEmpty ? loc.emptySearchTitle : loc.emptyExpensesTitle,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? AppColors.greyDark
-                                  : AppColors.greyLight,
+                              color: isDark ? AppColors.greyDark : AppColors.greyLight,
                             ),
                           ),
                           SizedBox(height: 8.h),
                           Text(
-                            searchQuery.isNotEmpty
-                                ? loc.emptySearchSubtitle
-                                : loc.emptyExpensesSubtitle,
+                            searchQuery.isNotEmpty ? loc.emptySearchSubtitle : loc.emptyExpensesSubtitle,
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13.sp,
-                              color:
-                                  (isDark
-                                          ? AppColors.greyDark
-                                          : AppColors.greyLight)
-                                      .withValues(alpha: 0.7),
+                              color: (isDark ? AppColors.greyDark : AppColors.greyLight).withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -259,33 +213,24 @@ class HomeContentList extends ConsumerWidget {
                 )
               else
                 SliverPadding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 16.w,
-                    vertical: 8.h,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                   sliver: SliverList.separated(
                     itemCount: filteredExpenses.length,
                     separatorBuilder: (_, _) => SizedBox(height: 4.h),
-
                     itemBuilder: (context, index) {
                       final expense = filteredExpenses[index];
-                      final isSelected = multiSelectState.isSelected(
-                        expense.uuid,
-                      );
+                      final isSelected = multiSelectState.isSelected(expense.uuid);
 
                       return Dismissible(
                         key: Key(expense.uuid),
-                        direction: isSelectionMode
-                            ? DismissDirection.none
-                            : DismissDirection.endToStart,
+                        direction: isSelectionMode ? DismissDirection.none : DismissDirection.endToStart,
 
-                        // --- LOGICA DISMISS ---
-                        // Gestisce il flusso di eliminazione: Conferma UI -> Chiamata Provider ->
-                        // Check Errori -> Feedback Visivo. Blocca l'animazione se c'è errore.
+                        // --- LOGICA DISMISS (SWIPE TO DELETE) ---
+                        // Gestisce il flusso: Conferma UI -> Chiamata Provider -> Check Errori -> Feedback Visivo.
                         confirmDismiss: (_) async {
                           if (isSelectionMode) return false;
 
-                          // 1. Dialogo di conferma
+                          // 1. Dialogo di conferma rimozione
                           final confirm = await DialogUtils.showConfirmDialog(
                             context,
                             title: loc.deleteDialogTitleSingle,
@@ -296,18 +241,14 @@ class HomeContentList extends ConsumerWidget {
 
                           if (confirm != true) return false;
 
-                          // 2. Operazione asincrona
-                          await ref
-                              .read(expenseNotifierProvider.notifier)
-                              .deleteExpenses([expense]);
+                          // 2. Operazione asincrona di cancellazione
+                          await ref.read(expenseNotifierProvider.notifier).deleteExpenses([expense]);
 
-                          // 3. Verifica errori
+                          // 3. Verifica fallimenti nello stato globale
                           final currentState = ref.read(expenseNotifierProvider);
-                          if (currentState.errorMessage != null) {
-                            return false;
-                          }
+                          if (currentState.errorMessage != null) return false;
 
-                          // 4. Feedback successo (Snackbar)
+                          // 4. Feedback di successo con opzione Undo
                           if (context.mounted) {
                             SnackbarUtils.show(
                               context: context,
@@ -321,10 +262,8 @@ class HomeContentList extends ConsumerWidget {
                                   .restoreExpenses([exp], loc),
                             );
                           }
-
                           return true;
                         },
-
                         background: Container(
                           margin: EdgeInsets.symmetric(vertical: 4.h),
                           decoration: BoxDecoration(
@@ -344,19 +283,13 @@ class HomeContentList extends ConsumerWidget {
                             size: 28.sp,
                           ),
                         ),
-
                         onDismissed: (_) {},
-
                         child: ExpenseTile(
                           expense,
                           isSelectionMode: isSelectionMode,
                           isSelected: isSelected,
-                          onLongPress: () => ref
-                              .read(multiSelectNotifierProvider.notifier)
-                              .onLongPress(expense),
-                          onSelectToggle: () => ref
-                              .read(multiSelectNotifierProvider.notifier)
-                              .onToggleSelect(expense),
+                          onLongPress: () => ref.read(multiSelectNotifierProvider.notifier).onLongPress(expense),
+                          onSelectToggle: () => ref.read(multiSelectNotifierProvider.notifier).onToggleSelect(expense),
                           onReturn: onReturn,
                         ),
                       );
@@ -372,7 +305,8 @@ class HomeContentList extends ConsumerWidget {
 }
 
 // --- DELEGATE HEADER ---
-// Classe di utilità per gestire il rendering dell'header persistente all'interno della CustomScrollView.
+/// Classe di utilità per gestire il rendering e le dimensioni dell'header persistente (barra di ricerca)
+/// all'interno del flusso CustomScrollView.
 class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   const SearchHeaderDelegate({required this.child});
@@ -381,13 +315,10 @@ class SearchHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => 86.h;
   @override
   double get maxExtent => 86.h;
+  
   @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) => child;
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => child;
+  
   @override
-  bool shouldRebuild(covariant SearchHeaderDelegate oldDelegate) =>
-      oldDelegate.child != child;
+  bool shouldRebuild(covariant SearchHeaderDelegate oldDelegate) => oldDelegate.child != child;
 }

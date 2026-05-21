@@ -86,7 +86,7 @@ class ReportTotalCard extends ConsumerWidget {
                 SizedBox(height: 4.h),
 
                 // --- FORMATTAZIONE VALUTA ---
-                // Utilizza il CurrencyProvider per formattare correttamente l'importo
+                // Utilizza il currencyNotifierProvider per formattare l'importo
                 // (simbolo e posizione) in base alle impostazioni globali.
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,

@@ -15,7 +15,11 @@ import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-// ... (import identici) ...
+/// FILE: years_page.dart
+/// DESCRIZIONE: Schermata dei report annuali delle spese.
+/// Permette l'aggregazione dei dati su base annua, la navigazione interattiva
+/// fra gli anni registrati tramite selettore adattivo e la visualizzazione di grafici
+/// dedicati tramite un carosello di componenti analitici.
 
 class YearsPage extends ConsumerStatefulWidget {
   static const route = "/years";
@@ -27,10 +31,10 @@ class YearsPage extends ConsumerStatefulWidget {
 
 class _YearsPageState extends ConsumerState<YearsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
-  String? selectedYear;
-  final monthListKey = GlobalKey();
+  String? _selectedYear;
+  final _monthListKey = GlobalKey();
 
+  // --- INIZIALIZZAZIONE ---
   @override
   TickerProvider get vsync => this;
 
@@ -46,29 +50,33 @@ class _YearsPageState extends ConsumerState<YearsPage>
     super.dispose();
   }
 
+  // --- BUILD UI ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
-
     final monthlyExpenses = ref.watch(expensesByMonthProvider);
 
-    // --- LOGICA DI FILTRAGGIO ---
+    // Estratta e ordinata cronologicamente la lista degli anni disponibili
     final years = monthlyExpenses.keys
         .map((key) => key.split('-')[0])
         .toSet()
         .toList()
       ..sort();
 
-    // Se i dati cambiano e l'anno selezionato sparisce, resettiamo
-    if (selectedYear != null && !years.contains(selectedYear)) {
-      selectedYear = null;
+    // Reset dello stato se l'anno selezionato non è più presente a database
+    if (_selectedYear != null && !years.contains(_selectedYear)) {
+      _selectedYear = null;
     }
 
-    // Stato Vuoto
+    // Gestione dello stato vuoto nel caso in cui non vi siano spese registrate
     if (years.isEmpty) {
       return Scaffold(
-        appBar: CustomAppBar(title: loc.yearsPageTitle, isDark: isDark, icon: Icons.bar_chart_rounded),
+        appBar: CustomAppBar(
+          title: loc.yearsPageTitle,
+          isDark: isDark,
+          icon: Icons.bar_chart_rounded,
+        ),
         body: ReportEmptyState(
           title: loc.noExpensesTitle,
           subtitle: loc.noExpensesSubtitle,
@@ -78,21 +86,19 @@ class _YearsPageState extends ConsumerState<YearsPage>
       );
     }
 
-    // Default all'ultimo anno disponibile
-    selectedYear ??= years.last;
+    // Default iniziale impostato sull'ultimo anno disponibile
+    _selectedYear ??= years.last;
+    final activeYear = _selectedYear!;
 
-    // Dati per il grafico a barre
-    final List<double> values = List.generate(12, (i) {
-      final monthKey = "$selectedYear-${(i + 1).toString().padLeft(2, '0')}";
+    // Generazione della distribuzione mensile dei costi (12 mesi)
+    final List<double> monthlyValues = List.generate(12, (index) {
+      final monthKey = "$activeYear-${(index + 1).toString().padLeft(2, '0')}";
       return monthlyExpenses[monthKey] ?? 0.0;
     });
 
-    final double totalYear = values.fold(0, (a, b) => a + b);
-
-    // Recupera aggregazione per categoria (Metodo del notifier o dello stato)
-    // Nota: Assicurati che expensesByCategoryForYear sia accessibile. 
-    // Se è un metodo del Notifier, usa ref.read(expenseProvider.notifier).
-    final categoryData = ref.watch(expensesByCategoryForYearProvider)(selectedYear!);
+    final double totalYearAmount = monthlyValues.fold(0.0, (sum, val) => sum + val);
+    final categoryData = ref.watch(expensesByCategoryForYearProvider)(activeYear);
+    final monthNames = ReportDateUtils.getMonthNames(context);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -120,29 +126,29 @@ class _YearsPageState extends ConsumerState<YearsPage>
                         final year = await DialogUtils.showYearPickerAdaptive(
                           context,
                           years: years,
-                          selectedYear: selectedYear!,
+                          selectedYear: activeYear,
                         );
 
-                        if (year != null && year != selectedYear) {
-                          setState(() => selectedYear = year);
+                        if (year != null && year != activeYear) {
+                          setState(() => _selectedYear = year);
                         }
                       },
                       borderRadius: BorderRadius.circular(16.r),
-                      child: _buildYearBadge(isDark, selectedYear!),
+                      child: _buildYearBadge(isDark, activeYear),
                     ),
                   ),
 
                   // --- TOTALE ANNUO ---
                   ReportTotalCard(
-                    label: loc.totalYearLabel(selectedYear!),
-                    totalAmount: totalYear,
+                    label: loc.totalYearLabel(activeYear),
+                    totalAmount: totalYearAmount,
                     icon: Icons.bar_chart_rounded,
                   ),
 
                   // --- CAROUSEL GRAFICI ---
                   ReportChartsCarousel(
-                    barValues: values,
-                    monthNames: ReportDateUtils.getMonthNames(context),
+                    barValues: monthlyValues,
+                    monthNames: monthNames,
                     categoryData: categoryData,
                   ),
 
@@ -152,25 +158,25 @@ class _YearsPageState extends ConsumerState<YearsPage>
 
                   // --- LISTA MESI ---
                   Column(
-                    key: monthListKey,
+                    key: _monthListKey,
                     children: List.generate(12, (index) {
                       final monthNum = index + 1;
-                      final total = values[index];
-                      final currentMonthName = ReportDateUtils.getMonthNames(context)[index];
+                      final totalMonthAmount = monthlyValues[index];
+                      final currentMonthName = monthNames[index];
 
                       return Padding(
-                        padding: EdgeInsets.only(bottom: 6.h, left: 20.w, right: 20.w),
+                        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 3.h),
                         child: ReportPeriodListItem(
                           badgeText: "$monthNum",
                           title: currentMonthName,
-                          totalAmount: total,
-                          percentage: totalYear > 0 ? (total / totalYear) * 100 : 0,
+                          totalAmount: totalMonthAmount,
+                          percentage: totalYearAmount > 0 ? (totalMonthAmount / totalYearAmount) * 100 : 0,
                           onTap: () {
                             Navigator.pushNamed(
                               context,
                               MonthsPage.route,
                               arguments: {
-                                'year': int.parse(selectedYear!),
+                                'year': int.parse(activeYear),
                                 'month': monthNum,
                               },
                             );
@@ -179,6 +185,7 @@ class _YearsPageState extends ConsumerState<YearsPage>
                       );
                     }),
                   ),
+                  SizedBox(height: 20.h),
                 ],
               ),
             ),
@@ -188,12 +195,16 @@ class _YearsPageState extends ConsumerState<YearsPage>
     );
   }
 
-  // Piccolo refactor per pulizia: estrazione del widget badge
+  // --- ELEMENTI GRAFICI SECONDARI ---
+  /// Costruisce il badge interattivo per la selezione e visualizzazione dell'anno fiscale.
   Widget _buildYearBadge(bool isDark, String year) {
+    final chipColor = isDark ? AppColors.secondaryDark : AppColors.secondaryLight;
+    final contentColor = isDark ? AppColors.textDark : AppColors.primary;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.secondaryDark : AppColors.secondaryLight,
+        color: chipColor,
         borderRadius: BorderRadius.circular(14.r),
         border: Border.all(
           color: AppColors.primary.withValues(alpha: 0.3),
@@ -211,23 +222,27 @@ class _YearsPageState extends ConsumerState<YearsPage>
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today_rounded, 
-               color: isDark ? AppColors.textDark : AppColors.primary, 
-               size: 16.sp),
+          Icon(
+            Icons.calendar_today_rounded, 
+            color: contentColor, 
+            size: 16.sp,
+          ),
           SizedBox(width: 12.w),
           Text(
             year,
             style: TextStyle(
-              color: isDark ? AppColors.textDark : AppColors.primary,
+              color: contentColor,
               fontSize: 16.sp,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.5,
             ),
           ),
           SizedBox(width: 8.w),
-          Icon(Icons.arrow_drop_down_rounded, 
-               color: isDark ? AppColors.textDark : AppColors.primary, 
-               size: 26.sp),
+          Icon(
+            Icons.arrow_drop_down_rounded, 
+            color: contentColor, 
+            size: 26.sp,
+          ),
         ],
       ),
     );

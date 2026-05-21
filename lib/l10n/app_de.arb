@@ -102,7 +102,7 @@
     "expenseInstructionTitle": "Ausgabe erstellen oder bearbeiten",
     "expenseInstructionMessage": "Halte den Bildschirm gedrückt, um das Erstellen oder Bearbeiten einer Ausgabe zu bestätigen.",
     "profileTitle": "Profil",
-    "dataUpdated": "Daten aktualisiert",
+    "dataUpdated": "Daten aktualisiert erfolgreich!",
     "refreshError": "Aktualisierungsfehler: {error}",
     "@refreshError": {
         "placeholders": {
@@ -271,5 +271,6 @@
     "emptyExpensesTitle": "Keine Ausgaben registriert",
     "emptyExpensesSubtitle": "Hier werden deine Ausgaben angezeigt. Füge eine mit dem unteren Button hinzu!",
     "emptySearchTitle": "Keine Ergebnisse", 
-    "emptySearchSubtitle": "Keine Ausgaben entsprechen deiner Suche."
+    "emptySearchSubtitle": "Keine Ausgaben entsprechen deiner Suche.",
+    "successTitle": "Erfolg"
 }

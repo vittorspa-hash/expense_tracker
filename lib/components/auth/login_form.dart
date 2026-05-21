@@ -3,7 +3,8 @@ import 'package:expense_tracker/components/auth/auth_text_field.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/config/app_colors.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart'; 
+import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
+import 'package:expense_tracker/utils/snackbar_utils.dart'; 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,8 +12,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// FILE: login_form.dart
 /// DESCRIZIONE: Widget contenente il form di accesso. Gestisce l'input utente,
-/// la validazione dei campi, la chiamata al Provider di autenticazione e
-/// la logica di verifica email/recupero password.
+/// la validazione dei campi, l'interazione con authNotifierProvider di Riverpod
+/// e la logica di verifica della mail o del recupero password.
 
 class LoginForm extends ConsumerStatefulWidget {
   const LoginForm({super.key});
@@ -23,8 +24,7 @@ class LoginForm extends ConsumerStatefulWidget {
 
 class _LoginFormState extends ConsumerState<LoginForm> {
   // --- GESTIONE STATO E CONTROLLER ---
-  // Definizione delle chiavi per la validazione del form e dei controller
-  // per gestire l'input testuale e il focus dei campi.
+  // Definizioni per la validazione del form, focus dei campi e input testuale.
   final _formKey = GlobalKey<FormState>();
 
   final _emailController = TextEditingController();
@@ -36,7 +36,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   bool _obscure = true;
 
   // --- PULIZIA RISORSE ---
-  // Rilascio dei controller e focus node alla chiusura del widget per evitare memory leak.
   @override
   void dispose() {
     _emailController.dispose();
@@ -46,11 +45,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     super.dispose();
   }
 
-  // --- BUILD UI ---
-  // Costruzione dell'interfaccia con gestione adattiva del tema (Light/Dark)
-  // e monitoraggio dello stato di caricamento dal Provider.
+  // --- COSTRUZIONE INTERFACCIA ---
   @override
   Widget build(BuildContext context) {
+    // Rilevamento del tema e dello stato di caricamento dal provider di autenticazione.
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = ref.watch(authNotifierProvider).isLoading;
     final loc = AppLocalizations.of(context)!;
@@ -61,6 +59,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         key: _formKey,
         child: Column(
           children: [
+            // SCHEDA DEL FORM DI LOGIN
             Container(
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
@@ -89,9 +88,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                   ),
                   SizedBox(height: 18.h),
 
-                  // --- CAMPI DI INPUT ---
-                  // Componenti personalizzati per l'inserimento di Email e Password
-                  // con validazione integrata.
+                  // CAMPO DI INPUT EMAIL
                   AuthTextField(
                     controller: _emailController,
                     focusNode: _emailFocus,
@@ -110,9 +107,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                       return null;
                     },
                   ),
-
                   SizedBox(height: 8.h),
 
+                  // CAMPO DI INPUT PASSWORD
                   AuthTextField(
                     controller: _passwordController,
                     focusNode: _passwordFocus,
@@ -129,11 +126,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                       return null;
                     },
                   ),
-
                   SizedBox(height: 8.h),
 
-                  // --- LINK AZIONI SECONDARIE ---
-                  // Pulsante per avviare il flusso di reset della password.
+                  // PULSANTE RECUPERO PASSWORD
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -148,22 +143,14 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                         loc.forgotPassword,
                         style: TextStyle(
                           color: isLoading
-                              ? (isDark
-                                    ? AppColors.greyDark
-                                    : AppColors.greyLight)
-                              : (isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textDark),
+                              ? (isDark ? AppColors.greyDark : AppColors.greyLight)
+                              : (isDark ? AppColors.textLight : AppColors.textDark),
                           fontWeight: FontWeight.w600,
                           fontSize: 12.sp,
                           decoration: TextDecoration.underline,
                           decorationColor: isLoading
-                              ? (isDark
-                                    ? AppColors.greyDark
-                                    : AppColors.greyLight)
-                              : (isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textDark),
+                              ? (isDark ? AppColors.greyDark : AppColors.greyLight)
+                              : (isDark ? AppColors.textLight : AppColors.textDark),
                         ),
                       ),
                     ),
@@ -171,11 +158,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                 ],
               ),
             ),
-
             SizedBox(height: 10.h),
 
-            // --- AZIONI PRINCIPALI ---
-            // Bottone di Login che mostra un indicatore di caricamento durante l'attesa.
+            // BOTTONE DI ACCESSO PRINCIPALE
             AuthButton(
               onPressed: isLoading ? null : _handleLogin,
               icon: isLoading ? null : FontAwesomeIcons.rightToBracket,
@@ -193,7 +178,6 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                     )
                   : null,
             ),
-
             SizedBox(height: 18.h),
           ],
         ),
@@ -201,21 +185,9 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     );
   }
 
-  // --- FEEDBACK UTENTE ---
-  // Metodo helper per mostrare messaggi (errori o conferme) tramite SnackBar.
-  void _showSnack(String msg, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.snackBar,
-        content: Text(msg, style: TextStyle(color: AppColors.textLight)),
-      ),
-    );
-  }
+  // --- LOGICA DI AUTENTICAZIONE E ACCESSO ---
 
-  // --- LOGICA DI LOGIN ---
-  // Coordina la validazione del form, l'autenticazione tramite Provider,
-  // la gestione degli errori e il controllo obbligatorio della verifica email.
+  /// Avvia l'autenticazione, verifica lo stato dell'email ed esegue l'eventuale re-invio.
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -223,7 +195,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
     final loc = AppLocalizations.of(context)!;
 
     try {
-      // 1. Chiamata al Provider (Logica Pura)
+      // Esegue il login tramite l'AuthNotifier di Riverpod.
       final user = await auth.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -231,9 +203,8 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
       if (!mounted) return;
 
-      // 2. Controllo Email Verificata (Logica UI)
+      // Verifica se l'indirizzo email dell'utente è già stato confermato.
       if (!user.emailVerified) {
-        // 2a. Mostra Dialogo
         final confirm = await DialogUtils.showConfirmDialog(
           context,
           title: loc.emailNotVerifiedTitle,
@@ -245,44 +216,70 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         if (!mounted) return;
 
         if (confirm == true) {
-          // 2b. Invia Email Verifica (se richiesto)
           try {
             await auth.sendVerificationEmail(user);
-            _showSnack(loc.verificationEmailSent);
+            if (!mounted) return;
+            SnackbarUtils.show(
+              context: context,
+              title: loc.successTitle,
+              message: loc.verificationEmailSent,
+            );
           } catch (e) {
-            _showSnack(e.toString(), isError: true);
+            if (!mounted) return;
+            SnackbarUtils.show(
+              context: context,
+              title: loc.errorTitle,
+              message: e.toString(),
+            );
           }
         }
 
-        // 2c. Forza il Logout perché l'accesso è bloccato
+        // Impedisce l'accesso forzando il logout se l'email non è verificata.
         await auth.signOut();
         return;
       }
-
-      // 3. Successo -> Navigazione (Es. alla Dashboard)
-      // Qui dovresti gestire la navigazione, esempio:
-      // Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
-      // 4. Gestione Errori Login
-      _showSnack(e.toString(), isError: true);
+      if (!mounted) return;
+      SnackbarUtils.show(
+        context: context,
+        title: loc.errorTitle,
+        message: e.toString(),
+      );
     }
   }
 
   // --- RECUPERO PASSWORD ---
-  // Gestisce l'invio dell'email di reset password tramite il Provider.
+
+  /// Gestisce la richiesta di reset password inviando la mail all'indirizzo inserito.
   Future<void> _handleResetPassword() async {
     final loc = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
+    
     if (email.isEmpty) {
-      _showSnack(loc.insertEmailForRecovery, isError: true);
+      if (!mounted) return;
+      SnackbarUtils.show(
+        context: context,
+        title: loc.errorTitle,
+        message: loc.insertEmailForRecovery,
+      );
       return;
     }
 
     try {
       await ref.read(authNotifierProvider.notifier).resetPassword(email: email);
-      _showSnack(loc.recoveryEmailSent(email));
+      if (!mounted) return;
+      SnackbarUtils.show(
+        context: context,
+        title: loc.successTitle,
+        message: loc.recoveryEmailSent(email),
+      );
     } catch (e) {
-      _showSnack(e.toString(), isError: true);
+      if (!mounted) return;
+      SnackbarUtils.show(
+        context: context,
+        title: loc.errorTitle,
+        message: e.toString(),
+      );
     }
   }
 }

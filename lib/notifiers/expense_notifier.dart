@@ -10,9 +10,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+// FILE: expense_notifier.dart
+// DESCRIZIONE: Gestore dello stato globale (Notifier) per i movimenti di spesa.
+// Si occupa della sincronizzazione con ExpenseService, del ricalcolo dei
+// totali convertiti in valuta corrente e del trigger degli avvisi di budget.
+
 enum ExpenseInitStatus { initial, loading, initialized, error }
 
-// --- STATO ---
+// --- STATO IMMUTABILE ---
 class ExpenseState {
   final List<ExpenseModel> expenses;
   final ExpenseInitStatus initStatus;
@@ -34,7 +39,7 @@ class ExpenseState {
     ExpenseTotals? totals,
   }) : totals = totals ?? ExpenseTotals(today: 0, week: 0, month: 0, year: 0);
 
-  // Getters di convenienza per la UI (stesso identici a prima)
+  // Getters di convenienza per rendere la UI snella e leggibile
   double get totalExpenseToday => totals.today;
   double get totalExpenseWeek => totals.week;
   double get totalExpenseMonth => totals.month;
@@ -59,9 +64,7 @@ class ExpenseState {
       initStatus: initStatus ?? this.initStatus,
       initError: clearInitError ? null : (initError ?? this.initError),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      warningMessage: clearWarning
-          ? null
-          : (warningMessage ?? this.warningMessage),
+      warningMessage: clearWarning ? null : (warningMessage ?? this.warningMessage),
       isLoading: isLoading ?? this.isLoading,
       appCurrency: appCurrency ?? this.appCurrency,
       totals: totals ?? this.totals,
@@ -69,25 +72,21 @@ class ExpenseState {
   }
 }
 
-// --- NOTIFIER ---
+// --- NOTIFIER (RIVERPOD) ---
 class ExpenseNotifier extends Notifier<ExpenseState> {
   @override
   ExpenseState build() {
     return ExpenseState();
   }
 
-  // Getters privati per le dipendenze (lette da ref al momento dell'uso)
+  // Dipendenze lette a runtime tramite il BuildContext del container di Riverpod (ref)
   FirebaseAuth get _auth => ref.read(firebaseAuthProvider);
   ExpenseService get _expenseService => ref.read(expenseServiceProvider);
-  NotificationNotifier get _notificationNotifier =>
-      ref.read(notificationNotifierProvider.notifier);
+  NotificationNotifier get _notificationNotifier => ref.read(notificationNotifierProvider.notifier);
   NotificationState get _notificationState => ref.read(notificationNotifierProvider);
 
   // --- HELPERS PRIVATI ---
-  ExpenseTotals _refreshTotals(
-    List<ExpenseModel> expenses,
-    ExpenseCurrency currency,
-  ) {
+  ExpenseTotals _refreshTotals(List<ExpenseModel> expenses, ExpenseCurrency currency) {
     return _expenseService.calculateTotals(expenses, currency);
   }
 
@@ -103,11 +102,10 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
       clearInitError: true,
     );
 
-    final user = _auth.currentUser;
-
     try {
-      final expenses = await _expenseService.loadUserExpenses(user: user);
+      final expenses = await _expenseService.loadUserExpenses(user: _auth.currentUser);
       final totals = _refreshTotals(expenses, state.appCurrency);
+      
       state = state.copyWith(
         expenses: expenses,
         totals: totals,
@@ -138,7 +136,7 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
     state = state.copyWith(appCurrency: newCurrency, totals: totals);
   }
 
-  // --- CREAZIONE ---
+  // --- SCRITTURA / CREAZIONE ---
   Future<void> createExpense({
     required double value,
     required String? description,
@@ -153,8 +151,6 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
       clearWarning: true,
     );
 
-    final user = _auth.currentUser;
-
     try {
       final result = await _expenseService.createExpense(
         value: value,
@@ -162,7 +158,7 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
         date: date,
         currency: currencyCode,
         category: category,
-        user: user,
+        user: _auth.currentUser,
       );
 
       final updatedExpenses = _expenseService.sortExpenses(
@@ -175,9 +171,7 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
       state = state.copyWith(
         expenses: updatedExpenses,
         totals: totals,
-        warningMessage: result.warning != null
-            ? l10n.warningOfflineCurrencyCreate
-            : null,
+        warningMessage: result.warning != null ? l10n.warningOfflineCurrencyCreate : null,
       );
 
       await _checkBudget(dateToCheck: date, l10n: l10n);
@@ -190,7 +184,7 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
     }
   }
 
-  // --- MODIFICA ---
+  // --- AGGIORNAMENTO / MODIFICA ---
   Future<void> editExpense(
     ExpenseModel expenseModel, {
     required double value,
@@ -206,8 +200,6 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
       clearWarning: true,
     );
 
-    final user = _auth.currentUser;
-
     try {
       final result = await _expenseService.editExpense(
         expenseModel,
@@ -216,35 +208,26 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
         date: date,
         currency: currencyCode,
         category: category,
-        user: user,
+        user: _auth.currentUser,
       );
 
       final updatedExpenses = List<ExpenseModel>.from(state.expenses);
-      final index = updatedExpenses.indexWhere(
-        (e) => e.uuid == expenseModel.uuid,
-      );
+      final index = updatedExpenses.indexWhere((e) => e.uuid == expenseModel.uuid);
+      
       if (index != -1) {
         updatedExpenses[index] = result.expense;
       } else {
-        debugPrint(
-          '⚠️ Warning: Expense ${expenseModel.uuid} not found in list',
-        );
+        debugPrint('⚠️ Warning: Expense ${expenseModel.uuid} not found in list');
         updatedExpenses.add(result.expense);
       }
 
-      final sorted = _expenseService.sortExpenses(
-        updatedExpenses,
-        "date_desc",
-        null,
-      );
+      final sorted = _expenseService.sortExpenses(updatedExpenses, "date_desc", null);
       final totals = _refreshTotals(sorted, state.appCurrency);
 
       state = state.copyWith(
         expenses: sorted,
         totals: totals,
-        warningMessage: result.warning != null
-            ? l10n.warningOfflineCurrencyEdit
-            : null,
+        warningMessage: result.warning != null ? l10n.warningOfflineCurrencyEdit : null,
       );
 
       await _checkBudget(dateToCheck: date, l10n: l10n);
@@ -257,7 +240,7 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
     }
   }
 
-  // --- ELIMINAZIONE ---
+  // --- RIMOZIONE BATCH / SINGOLA ---
   Future<void> deleteExpenses(List<ExpenseModel> expensesToDelete) async {
     if (expensesToDelete.isEmpty) return;
 
@@ -275,41 +258,31 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
         eagerError: false,
       );
 
-      final succeeded = results
-          .where((r) => r.error == null)
-          .map((r) => r.expense)
-          .toList();
+      final succeeded = results.where((r) => r.error == null).map((r) => r.expense).toList();
       final failed = results.where((r) => r.error != null).toList();
 
       if (succeeded.isNotEmpty) {
         final idsRemoved = succeeded.map((e) => e.uuid).toSet();
-        final updatedExpenses = state.expenses
-            .where((e) => !idsRemoved.contains(e.uuid))
-            .toList();
+        final updatedExpenses = state.expenses.where((e) => !idsRemoved.contains(e.uuid)).toList();
         final totals = _refreshTotals(updatedExpenses, state.appCurrency);
+        
         state = state.copyWith(expenses: updatedExpenses, totals: totals);
       }
 
       if (failed.isNotEmpty) {
         state = state.copyWith(
-          errorMessage:
-              "Deletion failed for ${failed.length} of ${expensesToDelete.length} expenses.",
+          errorMessage: "Deletion failed for ${failed.length} of ${expensesToDelete.length} expenses.",
         );
       }
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: "Unexpected error during deletion: $e",
-      );
+      state = state.copyWith(errorMessage: "Unexpected error during deletion: $e");
     } finally {
       state = state.copyWith(isLoading: false);
     }
   }
 
-  // --- RIPRISTINO ---
-  Future<void> restoreExpenses(
-    List<ExpenseModel> expensesToRestore,
-    AppLocalizations l10n,
-  ) async {
+  // --- RIPRISTINO BATCH / SINGOLO ---
+  Future<void> restoreExpenses(List<ExpenseModel> expensesToRestore, AppLocalizations l10n) async {
     if (expensesToRestore.isEmpty) return;
 
     state = state.copyWith(isLoading: true, clearError: true);
@@ -320,16 +293,13 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
         expensesToRestore.map(
           (e) => _expenseService
               .restoreExpense(e, user: user)
-              .then((_) => (expense: e, error: null as Object?))
+              .then((restored) => (expense: restored, error: null as Object?))
               .catchError((err) => (expense: e, error: err as Object?)),
         ),
         eagerError: false,
       );
 
-      final succeeded = results
-          .where((r) => r.error == null)
-          .map((r) => r.expense)
-          .toList();
+      final succeeded = results.where((r) => r.error == null).map((r) => r.expense).toList();
       final failed = results.where((r) => r.error != null).toList();
 
       if (succeeded.isNotEmpty) {
@@ -339,26 +309,24 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
           null,
         );
         final totals = _refreshTotals(updatedExpenses, state.appCurrency);
+        
         state = state.copyWith(expenses: updatedExpenses, totals: totals);
         await _checkBudgetForList(succeeded, l10n);
       }
 
       if (failed.isNotEmpty) {
         state = state.copyWith(
-          errorMessage:
-              "Restore failed for ${failed.length} of ${expensesToRestore.length} expenses.",
+          errorMessage: "Restore failed for ${failed.length} of ${expensesToRestore.length} expenses.",
         );
       }
     } catch (e) {
-      state = state.copyWith(
-        errorMessage: "Unexpected error during restore: $e",
-      );
+      state = state.copyWith(errorMessage: "Unexpected error during restore: $e");
     } finally {
       state = state.copyWith(isLoading: false);
     }
   }
 
-  // --- BUDGET ---
+  // --- VERIFICA SOGLIE BUDGET ---
   Future<void> _checkBudget({
     required DateTime dateToCheck,
     required AppLocalizations l10n,
@@ -373,17 +341,14 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
 
     if (result.shouldNotify) {
       await _notificationNotifier.checkBudgetLimit(
-        result.currentTotal,
-        l10n,
-        state.appCurrency.symbol,
+        currentMonthlySpent: result.currentTotal,
+        l10n: l10n,
+        currencySymbol: state.appCurrency.symbol,
       );
     }
   }
 
-  Future<void> _checkBudgetForList(
-    List<ExpenseModel> expenses,
-    AppLocalizations l10n,
-  ) async {
+  Future<void> _checkBudgetForList(List<ExpenseModel> expenses, AppLocalizations l10n) async {
     final result = _expenseService.checkBudgetStatusForList(
       allExpenses: state.expenses,
       newExpenses: expenses,
@@ -394,23 +359,17 @@ class ExpenseNotifier extends Notifier<ExpenseState> {
 
     if (result.shouldNotify) {
       await _notificationNotifier.checkBudgetLimit(
-        result.currentTotal,
-        l10n,
-        state.appCurrency.symbol,
+        currentMonthlySpent: result.currentTotal,
+        l10n: l10n,
+        currencySymbol: state.appCurrency.symbol,
       );
     }
   }
 
-  // --- ORDINAMENTO ---
+  // --- ORDINAMENTO ELEMENTI ---
   void sortBy(String criteria) {
-    final targetCurrency = criteria.contains("amount")
-        ? state.appCurrency
-        : null;
-    final sorted = _expenseService.sortExpenses(
-      state.expenses,
-      criteria,
-      targetCurrency,
-    );
+    final targetCurrency = criteria.contains("amount") ? state.appCurrency : null;
+    final sorted = _expenseService.sortExpenses(state.expenses, criteria, targetCurrency);
     state = state.copyWith(expenses: sorted);
   }
 }

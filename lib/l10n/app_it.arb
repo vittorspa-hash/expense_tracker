@@ -102,7 +102,7 @@
     "expenseInstructionTitle": "Creazione o modifica di una spesa",
     "expenseInstructionMessage": "Per confermare la creazione o la modifica di una spesa, tieni premuto sullo schermo.",
     "profileTitle": "Profilo",
-    "dataUpdated": "Dati aggiornati",
+    "dataUpdated": "Dati aggiornati con successo!",
     "refreshError": "Errore refresh: {error}",
     "@refreshError": {
         "placeholders": {
@@ -280,5 +280,6 @@
     "emptyExpensesTitle": "Nessuna spesa registrata",
     "emptyExpensesSubtitle": "Qui appariranno le tue spese. Aggiungine una con il pulsante in basso!",
     "emptySearchTitle": "Nessun risultato",
-    "emptySearchSubtitle": "Nessuna spesa corrisponde alla tua ricerca."
+    "emptySearchSubtitle": "Nessuna spesa corrisponde alla tua ricerca.",
+    "successTitle" : "Fatto!"
 }

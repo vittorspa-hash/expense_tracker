@@ -18,10 +18,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: days_page.dart
-/// DESCRIZIONE: Pagina di dettaglio giornaliero (View).
-/// Mostra l'elenco delle spese per un giorno specifico. Permette di selezionare
-/// elementi multipli (MultiSelect) per l'eliminazione batch o di eliminare
-/// singole spese tramite swipe (Dismissible).
+/// DESCRIZIONE: Pagina di dettaglio giornaliero dei report.
+/// Mostra la lista analitica delle spese effettuate in una data specifica.
+/// Supporta la selezione multipla (MultiSelect) per cancellazioni massive,
+/// l'eliminazione a scorrimento (Dismissible) e i ripristini tramite Snackbar.
 
 class DaysPage extends ConsumerStatefulWidget {
   static const route = "/days";
@@ -43,6 +43,8 @@ class DaysPage extends ConsumerStatefulWidget {
 
 class _DaysPageState extends ConsumerState<DaysPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
+  
+  // --- INIZIALIZZAZIONE ---
   @override
   TickerProvider get vsync => this;
 
@@ -64,8 +66,7 @@ class _DaysPageState extends ConsumerState<DaysPage>
     super.dispose();
   }
 
-  // --- UTILITY UI ---
-  // Mostra una SnackBar di errore generica in caso di problemi (es. backend offline).
+  // --- NOTIFICHE ERRORI ---
   void _showErrorSnackBar(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -83,19 +84,20 @@ class _DaysPageState extends ConsumerState<DaysPage>
     );
   }
 
+  // --- BUILD UI ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final date = DateTime(widget.year, widget.month, widget.day);
+    
     final dateLabel = ReportDateUtils.formatDate(context, date);
     final dayOfWeek = ReportDateUtils.getDayOfWeek(context, date);
 
-    // --- GESTIONE ERRORI ---
-    // Ascolta cambiamenti nello stato degli errori del provider e notifica l'utente.
-    // Pulisce l'errore subito dopo per evitare loop di visualizzazione.
     final expenseState = ref.watch(expenseNotifierProvider);
     final multiSelectState = ref.watch(multiSelectNotifierProvider);
+    final expensesList = ref.watch(expensesOfDayProvider)(widget.year, widget.month, widget.day);
 
+    // Listener per la gestione degli errori asincroni a database
     ref.listen(expenseNotifierProvider.select((s) => s.errorMessage), (previous, next) {
       if (next != null) {
         _showErrorSnackBar(context, next);
@@ -103,36 +105,21 @@ class _DaysPageState extends ConsumerState<DaysPage>
       }
     });
 
-    final expensesList = ref.watch(expensesOfDayProvider)(
-      widget.year,
-      widget.month,
-      widget.day,
-    );
-
     final isSelectionMode = multiSelectState.isSelectionMode;
-    final selectedCount = multiSelectState.selectedCount;
-    final isLoading = expenseState.isLoading;
 
     return Scaffold(
       appBar: isSelectionMode
           ? CustomAppBar(
-              appBarBackgroundColor: isDark
-                  ? AppColors.backgroundDark
-                  : AppColors.backgroundLight,
+              appBarBackgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
               appBarTextColor: AppColors.primary,
               title: "",
               isDark: isDark,
               isSelectionMode: true,
-              selectedCount: selectedCount,
+              selectedCount: multiSelectState.selectedCount,
               totalCount: expensesList.length,
-              onCancelSelection: ref
-                  .read(multiSelectNotifierProvider.notifier)
-                  .deselectAll,
-              onDeleteSelected: () =>
-                  ExpenseActionHandler.handleDeleteSelected(context, ref),
-              onSelectAll: () => ref
-                  .read(multiSelectNotifierProvider.notifier)
-                  .selectAll(expensesList),
+              onCancelSelection: ref.read(multiSelectNotifierProvider.notifier).deselectAll,
+              onDeleteSelected: () => ExpenseActionHandler.handleDeleteSelected(context, ref),
+              onSelectAll: () => ref.read(multiSelectNotifierProvider.notifier).selectAll(expensesList),
               onDeselectAll: ref.read(multiSelectNotifierProvider.notifier).deselectAll,
             )
           : CustomAppBar(
@@ -141,29 +128,26 @@ class _DaysPageState extends ConsumerState<DaysPage>
               isDark: isDark,
               icon: Icons.calendar_today_rounded,
             ),
-
       body: Stack(
         children: [
           Container(
             decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.backgroundDark
-                  : AppColors.backgroundLight,
+              color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
             ),
             child: SafeArea(
               child: _buildBody(
-                context,
-                expensesList,
-                isSelectionMode,
-                multiSelectState,
-                expenseState,
+                context, 
+                expensesList, 
+                isSelectionMode, 
+                multiSelectState, 
+                expenseState, 
                 isDark,
               ),
             ),
           ),
 
-          // Overlay per il loading durante operazioni asincrone
-          if (isLoading)
+          // Schermata di blocco per caricamento/eliminazioni batch in corso
+          if (expenseState.isLoading)
             Container(
               color: AppColors.backgroundDark.withValues(alpha: 0.3),
               child: Center(
@@ -175,15 +159,13 @@ class _DaysPageState extends ConsumerState<DaysPage>
     );
   }
 
-  // --- CORPO PAGINA ---
-  // Costruisce la lista o lo stato vuoto se non ci sono spese.
-  // Integra animazioni di fade-in per un'esperienza utente più fluida.
+  // --- COMPONENTI INTERNI ---
   Widget _buildBody(
     BuildContext context,
     List<dynamic> expensesList,
     bool isSelectionMode,
     MultiSelectState multiSelectState,
-    ExpenseState expenseproviderState,
+    ExpenseState expenseState,
     bool isDark,
   ) {
     final loc = AppLocalizations.of(context)!;
@@ -192,17 +174,17 @@ class _DaysPageState extends ConsumerState<DaysPage>
       return buildWithFadeAnimation(
         ReportEmptyState(
           title: loc.noExpensesDayTitle,
-          subtitle: loc.noExpensesSubtitle, // Riutilizzo
+          subtitle: loc.noExpensesSubtitle,
           icon: Icons.receipt_long_rounded,
           useCircleBackground: true,
         ),
       );
     }
 
-    final totalDay = expensesList.fold<double>(
+    // Calcolo del valore aggregato convertito nella valuta corrente
+    final totalDayAmount = expensesList.fold<double>(
       0.0,
-      (sum, expense) =>
-          sum + expense.getValueIn(expenseproviderState.appCurrency),
+      (sum, expense) => sum + expense.getValueIn(expenseState.appCurrency),
     );
 
     return buildWithFadeAnimation(
@@ -210,21 +192,18 @@ class _DaysPageState extends ConsumerState<DaysPage>
         children: [
           ReportTotalCard(
             label: loc.totalDayLabel,
-            totalAmount: totalDay,
+            totalAmount: totalDayAmount,
             icon: Icons.receipt_rounded,
             itemCount: expensesList.length,
             itemLabel: loc.expenseCountLabel(expensesList.length),
           ),
 
           ReportSectionHeader(title: loc.allExpenses),
-
           SizedBox(height: 12.h),
 
           Expanded(
             child: RefreshIndicator(
-              backgroundColor: isDark
-                  ? AppColors.backgroundDark
-                  : AppColors.backgroundLight,
+              backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
               color: AppColors.primary,
               onRefresh: () async {
                 ref.read(multiSelectNotifierProvider.notifier).deselectAll();
@@ -236,31 +215,20 @@ class _DaysPageState extends ConsumerState<DaysPage>
                 separatorBuilder: (_, _) => SizedBox(height: 4.h),
                 itemBuilder: (context, index) {
                   final expense = expensesList[index];
-                  final isSelected = multiSelectState.selectedIds.contains(
-                    expense.uuid,
-                  );
+                  final isSelected = multiSelectState.selectedIds.contains(expense.uuid);
 
                   return Dismissible(
                     key: Key(expense.uuid),
-                    direction: isSelectionMode
-                        ? DismissDirection.none
-                        : DismissDirection.endToStart,
-
-                    // --- LOGICA DISMISS ---
-                    // Gestisce l'eliminazione via swipe. Richiede conferma, esegue l'azione
-                    // sul Provider e mostra una Snackbar con opzione Undo.
-                    // Se l'eliminazione fallisce, l'elemento torna al suo posto.
+                    direction: isSelectionMode ? DismissDirection.none : DismissDirection.endToStart,
+                    background: _buildDismissibleBackground(),
                     confirmDismiss: (_) async {
                       if (isSelectionMode) return false;
 
-                      // Salva PRIMA di qualsiasi await
-                      final expenseNotifier = ref.read(
-                        expenseNotifierProvider.notifier,
-                      );
+                      // Cache preventiva dei riferimenti asincroni
+                      final expenseNotifier = ref.read(expenseNotifierProvider.notifier);
                       final locCopy = loc;
 
-                      // 1. Dialogo conferma
-                      final confirm = await DialogUtils.showConfirmDialog(
+                      final isConfirmed = await DialogUtils.showConfirmDialog(
                         context,
                         title: loc.deleteConfirmTitle,
                         content: loc.deleteConfirmMessageSwipe,
@@ -268,20 +236,15 @@ class _DaysPageState extends ConsumerState<DaysPage>
                         cancelText: loc.cancel,
                       );
 
-                      if (confirm != true) return false;
+                      if (isConfirmed != true) return false;
 
-                      // 2. Esecuzione DB
-                      await ref.read(expenseNotifierProvider.notifier).deleteExpenses([
-                        expense,
-                      ]);
+                      // Esecuzione eliminazione logica/fisica a database
+                      await expenseNotifier.deleteExpenses([expense]);
 
-                      // 3. Controllo Esito
+                      // Annulla il dismiss se l'operazione ha riscontrato errori di persistenza
                       final currentState = ref.read(expenseNotifierProvider);
-                      if (currentState.errorMessage != null) {
-                        return false;
-                      }
+                      if (currentState.errorMessage != null) return false;
 
-                      // 4. Feedback Utente
                       if (context.mounted) {
                         SnackbarUtils.show(
                           context: context,
@@ -290,28 +253,18 @@ class _DaysPageState extends ConsumerState<DaysPage>
                           undo: loc.undo,
                           deletedItem: expense,
                           onDelete: (_) {},
-                          onRestore: (exp) =>
-                              expenseNotifier.restoreExpenses([exp], locCopy),
+                          onRestore: (exp) => expenseNotifier.restoreExpenses([exp], locCopy),
                         );
                       }
 
                       return true;
                     },
-
-                    background: _buildDismissibleBackground(),
-
-                    onDismissed: (_) {},
-
                     child: ExpenseTile(
                       expense,
                       isSelectionMode: isSelectionMode,
                       isSelected: isSelected,
-                      onLongPress: () => ref
-                          .read(multiSelectNotifierProvider.notifier)
-                          .onLongPress(expense),
-                      onSelectToggle: () => ref
-                          .read(multiSelectNotifierProvider.notifier)
-                          .onToggleSelect(expense),
+                      onLongPress: () => ref.read(multiSelectNotifierProvider.notifier).onLongPress(expense),
+                      onSelectToggle: () => ref.read(multiSelectNotifierProvider.notifier).onToggleSelect(expense),
                       onReturn: () {},
                     ),
                   );
@@ -329,7 +282,10 @@ class _DaysPageState extends ConsumerState<DaysPage>
       margin: EdgeInsets.symmetric(vertical: 4.h),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.delete.withValues(alpha: 0.8), AppColors.delete],
+          colors: [
+            AppColors.delete.withValues(alpha: 0.8), 
+            AppColors.delete,
+          ],
         ),
         borderRadius: BorderRadius.circular(16.r),
       ),

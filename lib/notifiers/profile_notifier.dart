@@ -5,15 +5,29 @@ import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/painting.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// FILE: profile_notifier.dart
+/// DESCRIZIONE: Gestore dello stato del profilo utente (ProfileState).
+/// Coordina la business logic per il caricamento dell'avatar locale, il refresh
+/// dei dati da Firebase e l'aggiornamento sicuro di credenziali o eliminazione account.
+
 // --- STATO ---
 class ProfileState {
   final fb_auth.User? user;
   final File? localImage;
   final bool isLoading;
 
-  const ProfileState({this.user,this.localImage, this.isLoading = false});
+  const ProfileState({
+    this.user,
+    this.localImage,
+    this.isLoading = false,
+  });
 
-  ProfileState copyWith({fb_auth.User? user,File? localImage, bool? isLoading, bool clearImage = false}) {
+  ProfileState copyWith({
+    fb_auth.User? user,
+    File? localImage,
+    bool? isLoading,
+    bool clearImage = false,
+  }) {
     return ProfileState(
       user: user ?? this.user,
       localImage: clearImage ? null : (localImage ?? this.localImage),
@@ -44,7 +58,6 @@ class ProfileNotifier extends Notifier<ProfileState> {
   Future<void> refreshUser() async {
     try {
       await _profileService.reloadUser();
-      // Forza rebuild della UI notificando un nuovo state identico
       state = state.copyWith(user: _profileService.currentUser);
     } catch (e) {
       rethrow;
@@ -56,9 +69,12 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true);
     try {
       final savedFile = await _profileService.saveLocalImage(imageFile);
+      
+      // Sfratta l'immagine precedente dalla cache di Flutter per forzare il refresh visivo
       await FileImage(savedFile).evict();
       PaintingBinding.instance.imageCache.clear();
       PaintingBinding.instance.imageCache.clearLiveImages();
+      
       state = state.copyWith(localImage: savedFile, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false);
@@ -83,7 +99,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true);
     try {
       await _profileService.updateDisplayName(newName);
-      state = state.copyWith(user: _profileService.currentUser, isLoading: false,);
+      state = state.copyWith(user: _profileService.currentUser, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false);
       rethrow;
@@ -97,7 +113,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(isLoading: true);
     try {
       await _profileService.updateEmail(newEmail: newEmail, password: password);
-      state = state.copyWith(user: _profileService.currentUser,isLoading: false);
+      state = state.copyWith(user: _profileService.currentUser, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false);
       rethrow;

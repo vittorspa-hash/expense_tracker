@@ -102,7 +102,7 @@
     "expenseInstructionTitle": "Creating or editing an expense",
     "expenseInstructionMessage": "To confirm the creation or editing of an expense, press and hold on the screen.",
     "profileTitle": "Profile",
-    "dataUpdated": "Data updated",
+    "dataUpdated": "Data updated successfully!",
     "refreshError": "Refresh error: {error}",
     "@refreshError": {
         "placeholders": {
@@ -271,5 +271,6 @@
     "emptyExpensesTitle": "No expenses registered",
     "emptyExpensesSubtitle": "Expenses you add will appear here. Add one with the button below!",
     "emptySearchTitle": "No results",
-    "emptySearchSubtitle": "No expenses match your search."
+    "emptySearchSubtitle": "No expenses match your search.",
+    "successTitle" : "Done!"
 }
