@@ -290,26 +290,16 @@ class DialogUtils {
     // -- Logica di Navigazione --
     Future<void> handleNav(
       String routeName,
-      Future<void> Function()? reload,
     ) async {
       Navigator.pop(context);
       await Future.delayed(Duration.zero);
       if (context.mounted) await Navigator.pushNamed(context, routeName);
-      if (reload != null && context.mounted) {
-        try {
-          await reload();
-        } catch (e) {
-          debugPrint('⚠️ Errore reload avatar: $e');
-        }
-      }
     }
 
     // -- Logica di Logout --
     Future<void> handleLogout() async {
       // RIVERPOD: Usiamo il ref passato al metodo
       final auth = ref.read(authNotifierProvider.notifier);
-
-      Navigator.pop(context);
 
       if (!context.mounted) return;
       final confirm = await showConfirmDialog(
@@ -322,6 +312,7 @@ class DialogUtils {
       if (confirm == true && context.mounted) {
         try {
           await auth.signOut();
+          if (context.mounted) Navigator.pop(context);
         } catch (e) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -340,14 +331,9 @@ class DialogUtils {
     Widget sheetBuilder(BuildContext _) => Consumer(
       builder: (ctx, ref, _) {
         // Ascoltiamo il profilo tramite Riverpod
-        final profileState = ref.watch(profileNotifierProvider);
-        final user = profileState.user;
-        final localAvatar = profileState.localImage;
-        final profileNotifier = ref.read(profileNotifierProvider.notifier);
-
-        // Metodo per ricaricare i dati
-        Future<void> reload() =>
-            profileNotifier.loadLocalData();
+        final profileState = ref.watch(profileNotifierProvider).value;
+        final user = profileState?.user;
+        final localAvatar = profileState?.localImage;
 
         if (DialogStyles.isIOS) {
           return CupertinoActionSheet(
@@ -357,13 +343,13 @@ class DialogUtils {
                 ctx,
                 text: loc.profileTitle,
                 isDark: isDark,
-                onPressed: () => handleNav(ProfilePage.route, reload),
+                onPressed: () => handleNav(ProfilePage.route),
               ),
               DialogStyles.buildSheetAction(
                 ctx,
                 text: loc.settingsTitle,
                 isDark: isDark,
-                onPressed: () => handleNav(SettingsPage.route, null),
+                onPressed: () => handleNav(SettingsPage.route),
               ),
               DialogStyles.buildSheetAction(
                 ctx,
@@ -394,12 +380,12 @@ class DialogUtils {
                   MaterialProfileTile(
                     icon: Icons.person,
                     text: loc.profileTitle,
-                    onTap: () => handleNav(ProfilePage.route, reload),
+                    onTap: () => handleNav(ProfilePage.route),
                   ),
                   MaterialProfileTile(
                     icon: Icons.settings,
                     text: loc.settingsTitle,
-                    onTap: () => handleNav(SettingsPage.route, null),
+                    onTap: () => handleNav(SettingsPage.route),
                   ),
                   MaterialProfileTile(
                     icon: Icons.logout,

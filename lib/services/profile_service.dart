@@ -13,8 +13,6 @@ class ProfileService {
   ProfileService({required fb_auth.FirebaseAuth firebaseAuth})
       : _firebaseAuth = firebaseAuth;
 
-  fb_auth.User? get currentUser => _firebaseAuth.currentUser;
-
   // --- GESTIONE FILE LOCALE ---
   // Genera il percorso del file immagine basandosi sull'UID dell'utente corrente.
   // Questo previene conflitti di sovrascrittura tra utenti diversi sullo stesso dispositivo.

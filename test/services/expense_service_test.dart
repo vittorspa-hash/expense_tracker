@@ -448,41 +448,31 @@ void main() {
     });
 
     // =================================================================
-    // TEST 16: Get Expenses by Month (Aggregation)
+    // TEST 16: Sort Expenses by Amount (Descending)
     // =================================================================
-    test('Should aggregate expenses by month for current year', () {
+    test('Should delegate sorting to ExpenseCalculator when criteria contains amount', () {
       // ARRANGE
-      final now = DateTime.now();
+      // Creiamo due spese con valori diversi per l'ordinamento
       final expenses = [
-        sampleExpense.copyWith(
-          createdOn: DateTime(now.year, 1, 15),
-          value: 100.0,
-        ),
-        sampleExpense.copyWith(
-          createdOn: DateTime(now.year, 1, 20),
-          value: 50.0,
-        ),
-        sampleExpense.copyWith(
-          createdOn: DateTime(now.year, 2, 10),
-          value: 75.0,
-        ),
+        sampleExpense.copyWith(uuid: 'exp-low', value: 10.0),
+        sampleExpense.copyWith(uuid: 'exp-high', value: 150.0),
       ];
 
       // ACT
-      final byMonth = expenseService.getExpensesByMonth(
+      // Usiamo un criterio che contiene "amount" per attivare la riga rossa
+      final sorted = expenseService.sortExpenses(
         expenses,
+        'amount_desc',
         ExpenseCurrency.euro,
       );
 
       // ASSERT
-      final totalValues = byMonth.values.fold<double>(
-        0,
-        (sum, val) => sum + val,
-      );
-
-      expect(byMonth['${now.year}-01'], closeTo(150.0, 0.01));
-      expect(byMonth['${now.year}-02'], closeTo(75.0, 0.01));
-      expect(totalValues, closeTo(225.0, 0.01));
+      // Verifichiamo che l'ordinamento per importo decrescente sia avvenuto
+      expect(sorted[0].value, 150.0);
+      expect(sorted[1].value, 10.0);
+      
+      // Verifica immutabilità della lista originale
+      expect(expenses[0].value, 10.0);
     });
 
     // =================================================================
@@ -635,52 +625,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 24: Get Expenses by Category For Year (Aggregation)
-    // =================================================================
-    test('Should aggregate expenses by category for a specific year', () {
-      // ARRANGE
-      final expenses = [
-        sampleExpense.copyWith(
-          createdOn: DateTime(2024, 3, 10),
-          value: 100.0,
-          category: ExpenseCategory.food,
-        ),
-        sampleExpense.copyWith(
-          createdOn: DateTime(2024, 6, 5),
-          value: 50.0,
-          category: ExpenseCategory.food,
-        ),
-        sampleExpense.copyWith(
-          createdOn: DateTime(2024, 2, 1),
-          value: 200.0,
-          category: ExpenseCategory.transport,
-        ),
-        // Anno diverso: deve essere esclusa
-        sampleExpense.copyWith(
-          createdOn: DateTime(2023, 12, 31),
-          value: 999.0,
-          category: ExpenseCategory.food,
-        ),
-      ];
-
-      // ACT
-      final byCategory = expenseService.getExpensesByCategoryForYear(
-        expenses,
-        '2024',
-        ExpenseCurrency.euro,
-      );
-
-      // ASSERT
-      expect(
-        byCategory[ExpenseCategory.food],
-        closeTo(150.0, 0.01),
-      ); // 100 + 50
-      expect(byCategory[ExpenseCategory.transport], closeTo(200.0, 0.01));
-      expect(byCategory.length, 2); // la spesa 2023 non genera una terza entry
-    });
-
-    // =================================================================
-    // TEST 25: Edit Expense - Smart Update (Repair Fails with Empty Rates)
+    // TEST 24: Edit Expense - Smart Update (Repair Fails with Empty Rates)
     // =================================================================
     test(
       'Should set fallback 1:1 when repair fails and rates are empty',
@@ -710,7 +655,7 @@ void main() {
     );
 
     // =================================================================
-    // TEST 26: Delete Expense - Permission Denied with Null User
+    // TEST 25: Delete Expense - Permission Denied with Null User
     // =================================================================
     test('Should throw when deleting without authentication', () async {
       await expectLater(
@@ -721,7 +666,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 27: Edit Expense - Permission Denied with Null User
+    // TEST 26: Edit Expense - Permission Denied with Null User
     // =================================================================
     test('Should throw when editing without authentication', () async {
       await expectLater(
@@ -740,7 +685,7 @@ void main() {
     });
 
     // =================================================================
-    // TEST 28: Load User Expenses - Empty List
+    // TEST 27: Load User Expenses - Empty List
     // =================================================================
     test('Should return empty list when user has no expenses', () async {
       when(

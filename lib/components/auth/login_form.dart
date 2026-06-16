@@ -50,7 +50,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   Widget build(BuildContext context) {
     // Rilevamento del tema e dello stato di caricamento dal provider di autenticazione.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoading = ref.watch(authNotifierProvider).isLoading;
+    final isLoading = ref.watch(authNotifierProvider).value?.isLoading ?? false;
     final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
@@ -196,15 +196,17 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
     try {
       // Esegue il login tramite l'AuthNotifier di Riverpod.
-      final user = await auth.signIn(
+       await auth.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (!mounted) return;
 
+      final user = ref.read(authNotifierProvider).value?.user;
+
       // Verifica se l'indirizzo email dell'utente è già stato confermato.
-      if (!user.emailVerified) {
+      if (user != null && !user.emailVerified) {
         final confirm = await DialogUtils.showConfirmDialog(
           context,
           title: loc.emailNotVerifiedTitle,

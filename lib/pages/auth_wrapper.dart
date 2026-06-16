@@ -1,22 +1,19 @@
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/notifiers/auth_notifier.dart';
 import 'package:expense_tracker/pages/auth_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
-import 'package:expense_tracker/notifiers/auth_notifier.dart';
-import 'package:expense_tracker/utils/repository_failure.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/pages/home_page.dart';
-import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: auth_wrapper.dart
-/// DESCRIZIONE: Orchestratore della navigazione principale.
-/// Gestisce il flusso di accesso basandosi su due stati:
-/// 1. Lo stato di autenticazione dell'utente (Firebase Auth).
-/// 2. Lo stato di inizializzazione dei dati (Firestore).
-/// Utilizza una logica reattiva per mostrare la pagina di Login, lo spinner di caricamento,
-/// la schermata di errore o l'applicazione vera e propria (HomePage).
+/// DESCRIZIONE: Orchestratore della navigazione principale basato sullo stato reattivo
+/// di Riverpod. Osserva authNotifierProvider (StreamNotifier su Firebase) e, una volta
+/// autenticato, espande il watch su expenseNotifierProvider per attendere il caricamento
+/// dei dati. Gestisce esplicitamente i casi loading, error e data di entrambi i provider,
+/// mostrando spinner, schermata di errore con retry, o HomePage a seconda dello stato.
 
 class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
@@ -27,55 +24,44 @@ class AuthWrapper extends ConsumerWidget {
     // Rilevamento del tema corrente per l'adattamento dinamico dei colori UI.
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // --- RECOVERY STATI (RIVERPOD) ---
-    // Ascolto reattivo degli stati di autenticazione e delle spese.
+    // --- STATO DI AUTENTICAZIONE ---
+    // authNotifierProvider è uno StreamNotifier: riflette direttamente lo stream
+    // Firebase senza essere inquinato dagli stati dei form di autenticazione.
     final authState = ref.watch(authNotifierProvider);
-    final expenseState = ref.watch(expenseNotifierProvider);
 
-    // --- GESTIONE FLUSSO DI AUTENTICAZIONE ---
-    // Determina la macro-area dell'app in base alla sessione utente.
-    switch (authState.authStatus) {
-      case AuthStatus.unknown:
-        // Stato di transizione iniziale di Firebase Auth all'avvio dell'app.
-        return _buildLoadingScreen();
-
-      case AuthStatus.unauthenticated:
-      case AuthStatus.unverified:
-        // Utente non autenticato o non verificato: reset del notifier e redirect al login.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          ref.read(expenseNotifierProvider.notifier).clear();
-        });
-        return const AuthPage();
-
-      case AuthStatus.authenticated:
-        // --- GESTIONE INIZIALIZZAZIONE DATI ---
-        // Ad autenticazione avvenuta, orchestrerà il caricamento dei dati da Firestore.
-        switch (expenseState.initStatus) {
-          case ExpenseInitStatus.initial:
-            // Avvia il fetch automatico dei dati utente al primo accesso valido.
-            WidgetsBinding.instance.addPostFrameCallback(
-              (_) => ref.read(expenseNotifierProvider.notifier).initialise(),
+    // --- ROUTING REATTIVO ---
+    // Determina la macro-area dell'app in base allo stato di autenticazione,
+    // espandendo il watch sulle spese solo dopo l'autenticazione avvenuta.
+    return authState.when(
+      loading: () => _buildLoadingScreen(),
+      error: (e, _) => _buildErrorScreen(
+        context: context,
+        isDark: isDark,
+        onRetry: () => ref.invalidate(authNotifierProvider),
+      ),
+      data: (auth) {
+        switch (auth.authStatus) {
+          case AuthStatus.unauthenticated:
+          case AuthStatus.unverified:
+            return const AuthPage();
+          case AuthStatus.authenticated:
+            final expenseState = ref.watch(expenseNotifierProvider);
+            return expenseState.when(
+              loading: () => _buildLoadingScreen(),
+              error: (error, _) => _buildErrorScreen(
+                context: context,
+                isDark: isDark,
+                // Invalida il provider per rieseguire build() e ritentare il caricamento
+                onRetry: () => ref.invalidate(expenseNotifierProvider),
+              ),
+              data: (state) {
+                // Dati pronti: mostra la HomePage
+                return const HomePage();
+              },
             );
-            return _buildLoadingScreen();
-
-          case ExpenseInitStatus.loading:
-            // Schermata di attesa durante il caricamento di spese, tassi di cambio e categorie.
-            return _buildLoadingScreen();
-
-          case ExpenseInitStatus.error:
-            // Intercettazione di fallimenti critici nel recupero dei dati.
-            return _buildErrorScreen(
-              context,
-              ref,
-              expenseState.initError,
-              isDark,
-            );
-
-          case ExpenseInitStatus.initialized:
-            // Inizializzazione completata con successo: sblocco della dashboard.
-            return const HomePage();
         }
-    }
+      },
+    );
   }
 
   // --- COMPONENTI UI PRIVATI ---
@@ -88,17 +74,15 @@ class AuthWrapper extends ConsumerWidget {
   }
 
   /// Costruisce la schermata di errore bloccante con pulsante di ripristino.
-  Widget _buildErrorScreen(
-    BuildContext context,
-    WidgetRef ref,
-    Object? error,
-    bool isDark,
-  ) {
+  /// Il callback onRetry invalida il provider fallito per rieseguirne la build().
+  Widget _buildErrorScreen({
+    required BuildContext context,
+    required bool isDark,
+    required VoidCallback onRetry,
+  }) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
-      backgroundColor: isDark
-          ? AppColors.backgroundDark
-          : AppColors.backgroundLight,
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Center(
         child: Padding(
           padding: EdgeInsets.all(24.r),
@@ -120,9 +104,7 @@ class AuthWrapper extends ConsumerWidget {
               ),
               SizedBox(height: 8.h),
               Text(
-                (error is RepositoryFailure)
-                    ? error.message
-                    : loc.appInitErrorMessage,
+                loc.appInitErrorMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isDark ? AppColors.greyDark : AppColors.greyLight,
@@ -140,18 +122,13 @@ class AuthWrapper extends ConsumerWidget {
                 label: Text(loc.retry, style: TextStyle(fontSize: 16.sp)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: isDark
-                      ? AppColors.textDark
-                      : AppColors.textLight,
+                  foregroundColor: isDark ? AppColors.textDark : AppColors.textLight,
                   minimumSize: Size(double.infinity, 50.h),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16.r),
                   ),
                 ),
-                onPressed: () async {
-                  // Tenta nuovamente l'inizializzazione del notifier dello stato delle spese.
-                  await ref.read(expenseNotifierProvider.notifier).initialise();
-                },
+                onPressed: onRetry,
               ),
             ],
           ),

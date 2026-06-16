@@ -41,12 +41,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   void initState() {
     super.initState();
     initFadeAnimation();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        ref.read(profileNotifierProvider.notifier).loadLocalData();
-      }
-    });
   }
 
   @override
@@ -59,8 +53,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final profileState = ref.watch(profileNotifierProvider);
-    final user = profileState.user;
+    final profileState = ref.watch(profileNotifierProvider).value;
+    final user = profileState?.user;
     final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -114,9 +108,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                     borderRadius: BorderRadius.circular(24.r),
                   ),
                   child: ProfileAvatar(
-                    key: ObjectKey(profileState.localImage),
-                    image: profileState.localImage,
-                    isUploading: profileState.isLoading,
+                    key: ObjectKey(profileState?.localImage),
+                    image: profileState?.localImage,
+                    isUploading: profileState?.isLoading ?? false,
                     onChangePicture: _handleChangePicture,
                     onRemovePicture: _handleRemovePicture,
                   ),
@@ -150,7 +144,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                         value: user?.displayName,
                         tooltip: loc.editNameTooltip,
                         onPressed: _handleChangeDisplayName,
-                        isLoading: profileState.isLoading,
+                        isLoading: profileState?.isLoading ?? false,
                       ),
 
                       _buildDivider(isDark),
@@ -162,7 +156,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                         value: user?.email,
                         tooltip: loc.editEmailTooltip,
                         onPressed: _handleChangeEmail,
-                        isLoading: profileState.isLoading,
+                        isLoading: profileState?.isLoading ?? false,
                       ),
 
                       _buildDivider(isDark),
@@ -174,7 +168,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                         value: "••••••••••",
                         tooltip: loc.editPasswordTooltip,
                         onPressed: _handleChangePassword,
-                        isLoading: profileState.isLoading,
+                        isLoading: profileState?.isLoading ?? false,
                       ),
 
                       _buildDivider(isDark),
@@ -196,7 +190,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                             );
                           }
                         },
-                        isLoading: profileState.isLoading,
+                        isLoading: profileState?.isLoading ?? false,
                       ),
                     ],
                   ),
@@ -206,7 +200,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
                 // BOTTONE ELIMINAZIONE ACCOUNT
                 ElevatedButton(
-                  onPressed: profileState.isLoading
+                  onPressed: profileState?.isLoading ?? false
                       ? null
                       : _handleDeleteAccount,
                   style: ElevatedButton.styleFrom(
@@ -224,7 +218,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (profileState.isLoading)
+                      if (profileState?.isLoading ?? false)
                         Padding(
                           padding: EdgeInsets.only(right: 12.w),
                           child: SizedBox(
@@ -361,7 +355,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         {
           "hintText": loc.newNameHint,
           "initialValue":
-              ref.read(profileNotifierProvider).user?.displayName ?? "",
+              ref.read(profileNotifierProvider).value?.user?.displayName ?? "",
           "obscureText": false,
         },
       ],
@@ -402,7 +396,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       fields: [
         {
           "hintText": loc.newEmailHint,
-          "initialValue": ref.read(profileNotifierProvider).user?.email ?? "",
+          "initialValue": ref.read(profileNotifierProvider).value?.user?.email ?? "",
           "keyboardType": TextInputType.emailAddress,
           "obscureText": false,
         },
@@ -450,7 +444,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
   }
 
   Future<void> _handleChangePassword() async {
-    final userEmail = ref.read(profileNotifierProvider).user?.email;
+    final userEmail = ref.read(profileNotifierProvider).value?.user?.email;
     final loc = AppLocalizations.of(context)!;
 
     final result = await DialogUtils.showInputDialogAdaptive(

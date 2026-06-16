@@ -121,7 +121,7 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 
 ## 🧪 Testing
 
-Il progetto include una test suite  di **108 unit test** con **~93.7% di coverage** sui componenti core.
+Il progetto include una test suite  di **78 unit test** con **~99.1% di coverage** sui componenti core.
 
 ### 📊 Coverage Breakdown
 
@@ -129,8 +129,7 @@ Il progetto include una test suite  di **108 unit test** con **~93.7% di coverag
 |------------|------|----------|-------------|
 | **ExpenseModel** | 13 | 100% | Serializzazione, conversione multi-valuta, copyWith, edge cases |
 | **ExpenseCalculator** | 25 | 100% | Calcoli temporali, aggregazioni per grafici, ordinamento |
-| **ExpenseNotifier** | 28 | 89.2% | State management, orchestrazione service, gestione loading/errori, warning offline, notifiche budget |
-| **ExpenseService** | 28 | 93.8% | CRUD operations, soft-fail strategy, smart-update logic, budget checks |
+| **ExpenseService** | 26 | 100% | CRUD operations, soft-fail strategy, smart-update logic, budget checks |
 | **CurrencyService** | 14 | 94.1% | Persistenza, HTTP mocking, network-cache strategy, multi-valuta |
 
 

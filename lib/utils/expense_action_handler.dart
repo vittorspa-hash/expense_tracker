@@ -1,5 +1,6 @@
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
@@ -12,11 +13,10 @@ import 'package:expense_tracker/utils/snackbar_utils.dart';
 /// liberando i widget delle pagine dalla logica di orchestrazione.
 
 class ExpenseActionHandler {
-  
   // --- ELIMINAZIONE BATCH E COORDiNAZIONE PROVIDER ---
-  
+
   /// Gestisce il flusso atomico di rimozione di massa delle spese selezionate.
-  /// Mostra il prompt di conferma, svuota lo stato di selezione, esegue l'eliminazione 
+  /// Mostra il prompt di conferma, svuota lo stato di selezione, esegue l'eliminazione
   /// su Firestore e offre un'azione di "Undo" tramite SnackBar per l'eventuale ripristino.
   static Future<void> handleDeleteSelected(
     BuildContext context,
@@ -25,7 +25,8 @@ class ExpenseActionHandler {
     // Recupero dei controller e degli stati correnti dai provider di Riverpod
     final multiSelectState = ref.read(multiSelectNotifierProvider);
     final multiSelect = ref.read(multiSelectNotifierProvider.notifier);
-    final expenseState = ref.read(expenseNotifierProvider);
+    final expenseState =
+        ref.read(expenseNotifierProvider).value ?? ExpenseState();
     final expense = ref.read(expenseNotifierProvider.notifier);
     final count = multiSelectState.selectedCount;
     final loc = AppLocalizations.of(context)!;
@@ -61,7 +62,9 @@ class ExpenseActionHandler {
     if (!context.mounted) return;
 
     // Interruzione in caso di fallimento registrato nello stato globale delle spese
-    if (ref.read(expenseNotifierProvider).errorMessage != null) return;
+    final currentState =
+        ref.read(expenseNotifierProvider).value ?? ExpenseState();
+    if (currentState.errorMessage != null) return;
 
     final locAfter = AppLocalizations.of(context)!;
 

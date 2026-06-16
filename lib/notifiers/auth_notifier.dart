@@ -4,130 +4,131 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// FILE: auth_notifier.dart
-/// DESCRIZIONE: Gestisce lo stato globale di autenticazione dell'applicazione.
-/// Ascolta in tempo reale i cambiamenti di sessione da Firebase Auth e coordina
-/// le operazioni di Login, Registrazione, Logout e recupero credenziali,
-/// esponendo uno stato immutabile (AuthState) alla UI.
+/// DESCRIZIONE: Gestore dello stato di autenticazione (AuthState) basato sullo stream
+/// di Firebase. Utilizza StreamNotifier per mappare i cambiamenti di sessione in uno
+/// dei tre stati possibili: authenticated, unverified, unauthenticated.
+/// Le azioni (signIn, signUp, signOut, ecc.) delegano la logica ad AuthService e
+/// gestiscono il flag isLoading senza interrompere lo stream sottostante.
 
-enum AuthStatus { unknown, authenticated, unauthenticated, unverified }
+enum AuthStatus { authenticated, unauthenticated, unverified }
 
 // --- STATO ---
-/// Rappresentazione immutabile dello stato di autenticazione e caricamento.
 class AuthState {
   final AuthStatus authStatus;
+  final User? user;
   final bool isLoading;
 
   const AuthState({
-    this.authStatus = AuthStatus.unknown,
+    required this.authStatus,
+    this.user,
     this.isLoading = false,
   });
 
-  /// Metodo per generare una nuova istanza dello stato modificandone selettivamente i parametri.
-  AuthState copyWith({AuthStatus? authStatus, bool? isLoading}) {
+  /// Crea una copia dello stato modificando solo i campi necessari.
+  /// Preserva l'utente corrente proveniente dallo stream anche durante le azioni.
+  AuthState copyWith({
+    AuthStatus? authStatus,
+    User? user,
+    bool? isLoading,
+  }) {
     return AuthState(
       authStatus: authStatus ?? this.authStatus,
+      user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
     );
   }
 }
 
 // --- NOTIFIER ---
-/// Controller reattivo dello stato di autenticazione che estende la classe Notifier di Riverpod.
-class AuthNotifier extends Notifier<AuthState> {
-  
+/// StreamNotifier che espone lo stato di autenticazione derivato dallo stream
+/// idTokenChanges() di Firebase. Ogni emissione del token aggiorna automaticamente
+/// lo stato; le azioni usano _setLoading per segnalare operazioni in corso
+/// senza interrompere o sostituire lo stream attivo.
+class AuthNotifier extends StreamNotifier<AuthState> {
+  AuthService get _authService => ref.read(authServiceProvider);
+
   @override
-  AuthState build() {
-    final firebaseAuth = ref.watch(firebaseAuthProvider);
-
-    // Sottoscrizione allo stream dei token per monitorare lo stato utente.
-    // La cancellazione (cancel) viene gestita manualmente al dispose del provider per prevenire leak.
-    final sub = firebaseAuth.idTokenChanges().listen(_onAuthStateChanged);
-    ref.onDispose(() => sub.cancel());
-
-    return const AuthState();
+  Stream<AuthState> build() {
+    return ref.watch(firebaseAuthProvider).idTokenChanges().map((user) {
+      if (user == null) {
+        return const AuthState(authStatus: AuthStatus.unauthenticated);
+      }
+      if (!user.emailVerified) {
+        return AuthState(authStatus: AuthStatus.unverified, user: user);
+      }
+      return AuthState(authStatus: AuthStatus.authenticated, user: user);
+    });
   }
 
-  // --- GESTORE CAMBIAMENTI DI STATO ---
-  /// Intercetta le variazioni di Firebase User e aggiorna l'AuthStatus dello stato.
-  void _onAuthStateChanged(User? user) {
-    if (user == null) {
-      state = state.copyWith(authStatus: AuthStatus.unauthenticated);
-    } else if (!user.emailVerified) {
-      state = state.copyWith(authStatus: AuthStatus.unverified);
-    } else {
-      state = state.copyWith(authStatus: AuthStatus.authenticated);
+  // --- HELPERS PRIVATI ---
+  /// Aggiorna il flag isLoading preservando lo stato corrente dello stream.
+  /// Usa AsyncData invece di AsyncLoading per evitare di distruggere lo stato esistente.
+  void _setLoading(bool loading) {
+    state = AsyncData(state.value!.copyWith(isLoading: loading));
+  }
+
+  // --- AZIONI ED OPERAZIONI ---
+  /// Effettua il login delegando ad AuthService; rilancia l'eccezione alla UI in caso di errore.
+  Future<void> signIn({required String email, required String password}) async {
+    _setLoading(true);
+    try {
+      await _authService.signIn(email: email, password: password);
+    } catch (e) {
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // --- GETTER DI CONVENIENZA ---
-  /// Restituisce l'utente Firebase correntemente in sessione.
-  User? get currentUser => ref.read(firebaseAuthProvider).currentUser;
-  
-  /// Riferimento interno al servizio di autenticazione business.
-  AuthService get _authService => ref.read(authServiceProvider);
-
-  // --- OPERAZIONI DI AUTENTICAZIONE ---
-
-  /// Avvia la procedura di registrazione di un nuovo utente.
+  /// Registra un nuovo utente delegando ad AuthService; rilancia l'eccezione alla UI in caso di errore.
   Future<void> signUp({
     required String email,
     required String password,
     required String nome,
   }) async {
-    state = state.copyWith(isLoading: true);
+    _setLoading(true);
     try {
       await _authService.signUp(email: email, password: password, nome: nome);
     } catch (e) {
       rethrow;
     } finally {
-      state = state.copyWith(isLoading: false);
+      _setLoading(false);
     }
   }
 
-  /// Esegue l'accesso dell'utente tramite email e password.
-  Future<User> signIn({required String email, required String password}) async {
-    state = state.copyWith(isLoading: true);
-    try {
-      return await _authService.signIn(email: email, password: password);
-    } catch (e) {
-      rethrow;
-    } finally {
-      state = state.copyWith(isLoading: false);
-    }
-  }
-
-  /// Disconnette l'utente corrente chiudendo la sessione attiva su Firebase.
+  /// Termina la sessione corrente delegando ad AuthService; rilancia l'eccezione alla UI in caso di errore.
   Future<void> signOut() async {
+    _setLoading(true);
     try {
       await _authService.signOut();
     } catch (e) {
       rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // --- GESTIONE ACCOUNT ---
-
-  /// Invia un'email per il ripristino o la reimpostazione della password.
+  /// Invia l'email di reset password delegando ad AuthService; rilancia l'eccezione alla UI in caso di errore.
   Future<void> resetPassword({String? email}) async {
-    state = state.copyWith(isLoading: true);
+    _setLoading(true);
     try {
       await _authService.resetPassword(email);
     } catch (e) {
       rethrow;
     } finally {
-      state = state.copyWith(isLoading: false);
+      _setLoading(false);
     }
   }
 
-  /// Invia una nuova email contenente il link di verifica dell'account.
+  /// Invia nuovamente l'email di verifica all'utente specificato; rilancia l'eccezione alla UI in caso di errore.
   Future<void> sendVerificationEmail(User user) async {
-    state = state.copyWith(isLoading: true);
+    _setLoading(true);
     try {
       await _authService.sendVerificationEmail(user);
     } catch (e) {
       rethrow;
     } finally {
-      state = state.copyWith(isLoading: false);
+      _setLoading(false);
     }
   }
 }

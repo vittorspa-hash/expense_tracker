@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// FILE: notification_notifier.dart
 /// DESCRIZIONE: Gestore dello stato delle notifiche e dei promemoria (NotificationState).
-/// Gestisce la pianificazione dei promemoria giornalieri di inserimento spese,
-/// gli avvisi di superamento del budget mensile e la persistenza delle preferenze.
+/// Utilizza un Notifier sincrono di Riverpod, reso possibile dall'iniezione di
+/// SharedPreferences tramite override in main.dart. La build() inizializza il plugin
+/// e carica le preferenze persistite; le azioni successive gestiscono la pianificazione
+/// dei promemoria giornalieri e gli avvisi di superamento del budget mensile.
 
 // --- STATO ---
 class NotificationState {
@@ -38,33 +40,41 @@ class NotificationState {
 }
 
 // --- NOTIFIER ---
+/// Controller sincrono dello stato delle notifiche. La build() inizializza il plugin
+/// e legge le preferenze persistite; in caso di errore (plugin non disponibile o
+/// preferenze corrotte) ricade su uno stato di default con tutte le notifiche disabilitate.
 class NotificationNotifier extends Notifier<NotificationState> {
   @override
   NotificationState build() {
-    return const NotificationState();
-  }
-
-  // --- INIZIALIZZAZIONE ---
-  /// Inizializza il canale di notifica nativo e carica le impostazioni salvate.
-  Future<void> initialize() async {
     try {
-      final notificationService = await ref.read(notificationServiceProvider.future);
-      await notificationService.initialize();
-      await _loadSettings();
+      final notificationService = ref.watch(notificationServiceProvider);
+      notificationService.initialize();
+      final hour = notificationService.getReminderHour();
+      final minute = notificationService.getReminderMinute();
+      return NotificationState(
+        dailyReminderEnabled: notificationService.getDailyReminderEnabled(),
+        reminderTime: TimeOfDay(hour: hour, minute: minute),
+        limitAlertEnabled: notificationService.getLimitAlertEnabled(),
+        monthlyLimit: notificationService.getMonthlyLimit(),
+      );
     } catch (e) {
-      state = const NotificationState(
+      // Fallback: notifiche disabilitate se il plugin non è disponibile
+      return const NotificationState(
         dailyReminderEnabled: false,
         limitAlertEnabled: false,
       );
     }
   }
 
-  /// Rischedula il promemoria attivo per allinearlo alla nuova lingua dell'applicazione.
+  // --- RIPIANIFICAZIONE ---
+  /// Ripianifica il promemoria giornaliero con le impostazioni correnti.
+  /// Tipicamente chiamato al cambio di lingua per aggiornare i testi localizzati.
   Future<void> rescheduleNotifications(AppLocalizations l10n) async {
-    if (state.dailyReminderEnabled) {
-      final notificationService = await ref.read(notificationServiceProvider.future);
+    final current = state;
+    if (current.dailyReminderEnabled) {
+      final notificationService = ref.read(notificationServiceProvider);
       await notificationService.scheduleDailyReminder(
-        time: state.reminderTime,
+        time: current.reminderTime,
         title: l10n.notificationDailyTitle,
         body: l10n.notificationDailyBody,
       );
@@ -72,40 +82,25 @@ class NotificationNotifier extends Notifier<NotificationState> {
   }
 
   // --- PERSISTENZA ---
-  Future<void> _loadSettings() async {
-    final notificationService = await ref.read(notificationServiceProvider.future);
-    final hour = notificationService.getReminderHour();
-    final minute = notificationService.getReminderMinute();
-
-    state = state.copyWith(
-      dailyReminderEnabled: notificationService.getDailyReminderEnabled(),
-      reminderTime: TimeOfDay(hour: hour, minute: minute),
-      limitAlertEnabled: notificationService.getLimitAlertEnabled(),
-      monthlyLimit: notificationService.getMonthlyLimit(),
-    );
-  }
-
+  /// Salva tutte le preferenze di notifica correnti tramite NotificationService.
   Future<void> _saveSettings() async {
-    try {
-      final notificationService = await ref.read(notificationServiceProvider.future);
-      await notificationService.saveDailyReminderEnabled(state.dailyReminderEnabled);
-      await notificationService.saveReminderTime(
-        state.reminderTime.hour,
-        state.reminderTime.minute,
-      );
-      await notificationService.saveLimitAlertEnabled(state.limitAlertEnabled);
-      await notificationService.saveMonthlyLimit(state.monthlyLimit);
-    } catch (e) {
-      rethrow;
-    }
+    final current = state;
+    final notificationService = ref.read(notificationServiceProvider);
+    await notificationService.saveDailyReminderEnabled(current.dailyReminderEnabled);
+    await notificationService.saveReminderTime(
+      current.reminderTime.hour,
+      current.reminderTime.minute,
+    );
+    await notificationService.saveLimitAlertEnabled(current.limitAlertEnabled);
+    await notificationService.saveMonthlyLimit(current.monthlyLimit);
   }
 
-  // --- GESTIONE PROMEMORIA GIORNALIERO ---
-  /// Attiva o disattiva il promemoria locale giornaliero richiedendo i permessi di sistema se necessario.
+  // --- AZIONI ED OPERAZIONI ---
+  /// Abilita o disabilita il promemoria giornaliero. Se abilitato, richiede i permessi
+  /// di sistema: in caso di diniego ripristina lo stato a disabilitato senza pianificare.
   Future<void> toggleDailyReminder(bool enabled, AppLocalizations l10n) async {
     state = state.copyWith(dailyReminderEnabled: enabled);
-    final notificationService = await ref.read(notificationServiceProvider.future);
-
+    final notificationService = ref.read(notificationServiceProvider);
     if (enabled) {
       final hasPermission = await notificationService.requestPermissions();
       if (hasPermission) {
@@ -120,63 +115,61 @@ class NotificationNotifier extends Notifier<NotificationState> {
     } else {
       await notificationService.cancelDailyReminder();
     }
-
     await _saveSettings();
   }
 
-  /// Aggiorna l'orario del promemoria e ne pianifica nuovamente l'esecuzione se attivo.
+  /// Aggiorna l'orario del promemoria e, se il reminder è attivo,
+  /// ripianifica immediatamente la notifica con il nuovo orario.
   Future<void> setReminderTime(TimeOfDay time, AppLocalizations l10n) async {
     state = state.copyWith(reminderTime: time);
-
     if (state.dailyReminderEnabled) {
-      final notificationService = await ref.read(notificationServiceProvider.future);
+      final notificationService = ref.read(notificationServiceProvider);
       await notificationService.scheduleDailyReminder(
         time: time,
         title: l10n.notificationDailyTitle,
         body: l10n.notificationDailyBody,
       );
     }
-
     await _saveSettings();
   }
 
-  // --- GESTIONE LIMITE BUDGET ---
+  /// Abilita o disabilita l'avviso di superamento del budget mensile.
   Future<void> toggleLimitAlert(bool enabled) async {
     state = state.copyWith(limitAlertEnabled: enabled);
     await _saveSettings();
   }
 
+  /// Aggiorna la soglia del budget mensile utilizzata per gli avvisi.
   Future<void> setMonthlyLimit(double limit) async {
     state = state.copyWith(monthlyLimit: limit);
     await _saveSettings();
   }
 
-  // --- VERIFICA BUDGET ---
-  /// Confronta la spesa attuale con la soglia limite impostata ed emette una notifica se necessario.
+  /// Verifica se la spesa mensile corrente supera il limite impostato
+  /// e, se gli avvisi sono abilitati, invia una notifica localizzata.
   Future<void> checkBudgetLimit({
     required double currentMonthlySpent,
     required AppLocalizations l10n,
     required String currencySymbol,
   }) async {
-    final title = l10n.notificationBudgetTitle;
-    final spentString = "$currencySymbol${currentMonthlySpent.toStringAsFixed(2)}";
-    final limitString = "$currencySymbol${state.monthlyLimit.toStringAsFixed(2)}";
-    final body = l10n.notificationBudgetBody(spentString, limitString);
-
-    final notificationService = await ref.read(notificationServiceProvider.future);
+    final current = state;
+    final notificationService = ref.read(notificationServiceProvider);
     await notificationService.checkAndNotifyBudgetLimit(
       currentMonthlySpent: currentMonthlySpent,
-      monthlyLimit: state.monthlyLimit,
-      alertEnabled: state.limitAlertEnabled,
-      title: title,
-      body: body,
+      monthlyLimit: current.monthlyLimit,
+      alertEnabled: current.limitAlertEnabled,
+      title: l10n.notificationBudgetTitle,
+      body: l10n.notificationBudgetBody(
+        "$currencySymbol${currentMonthlySpent.toStringAsFixed(2)}",
+        "$currencySymbol${current.monthlyLimit.toStringAsFixed(2)}",
+      ),
     );
   }
 
-  // --- RESET ---
-  /// Ripristina lo stato predefinito cancellando ogni notifica schedulata dal sistema.
+  /// Annulla tutte le notifiche attive e ripristina lo stato ai valori di default,
+  /// persistendo il reset tramite _saveSettings().
   Future<void> resetSettings() async {
-    final notificationService = await ref.read(notificationServiceProvider.future);
+    final notificationService = ref.read(notificationServiceProvider);
     await notificationService.cancelAllNotifications();
     state = const NotificationState();
     await _saveSettings();

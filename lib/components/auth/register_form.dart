@@ -60,7 +60,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   Widget build(BuildContext context) {
     // Rilevamento del tema corrente e ascolto dello stato di caricamento dal provider.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoading = ref.watch(authNotifierProvider).isLoading;
+    final isLoading = ref.watch(authNotifierProvider).value?.isLoading ?? false;
     final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(

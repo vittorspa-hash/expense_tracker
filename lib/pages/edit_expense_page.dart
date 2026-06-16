@@ -5,6 +5,7 @@ import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/notifiers/currency_notifier.dart';
 import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/components/expense/expense_edit.dart';
@@ -225,11 +226,12 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
   /// Esegue la rimozione della spesa analizzando preventivamente lo stato di errore del provider.
   Future<ExpenseModel?> onDelete() async {
     final modelToDelete = widget.expenseModel;
+    final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
 
     await ref.read(expenseNotifierProvider.notifier).deleteExpenses([modelToDelete]);
 
     if (!mounted) return null;
-    if (ref.read(expenseNotifierProvider).errorMessage != null) return null;
+    if (currentState.errorMessage != null) return null;
 
     return modelToDelete;
   }

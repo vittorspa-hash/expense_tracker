@@ -1,5 +1,6 @@
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -30,13 +31,13 @@ class HomeHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // --- RECOVERY STATI (RIVERPOD) ---
     // Sottoscrizione ai provider per l'aggiornamento in tempo reale di spese, profilo e valuta.
-    final expenseState = ref.watch(expenseNotifierProvider);
-    final profileState = ref.watch(profileNotifierProvider);
+    final expenseState = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
+    final profileState = ref.watch(profileNotifierProvider).value;
     final currencyState = ref.watch(currencyNotifierProvider);
     
     // Estrazione dati del profilo utente
-    final user = profileState.user;
-    final localAvatar = profileState.localImage;
+    final user = profileState?.user;
+    final localAvatar = profileState?.localImage;
     final loc = AppLocalizations.of(context)!;
 
     return FadeTransition(

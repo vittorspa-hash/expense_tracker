@@ -4,16 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// FILE: currency_notifier.dart
 /// DESCRIZIONE: Gestore dello stato della valuta dell'applicazione (CurrencyState).
-/// Espone utility per la formattazione degli importi monetari e persiste la scelta
-/// della valuta preferita (Euro, Dollaro, ecc.) tramite il servizio locale dedicato.
+/// Utilizza un Notifier sincrono di Riverpod, reso possibile dall'iniezione di
+/// SharedPreferences tramite override in main.dart. Espone utility per la
+/// formattazione degli importi monetari e persiste la valuta preferita tramite
+/// il servizio locale dedicato; in caso di errore ricade su Euro come default.
 
 // --- STATO ---
 class CurrencyState {
   final ExpenseCurrency currentCurrency;
 
-  const CurrencyState({
-    this.currentCurrency = ExpenseCurrency.euro,
-  });
+  const CurrencyState({this.currentCurrency = ExpenseCurrency.euro});
 
   // Shortcut di convenienza per l'accesso rapido alle proprietà della valuta
   String get currencySymbol => currentCurrency.symbol;
@@ -25,9 +25,7 @@ class CurrencyState {
     return currentCurrency.format(amount, showSymbol: showSymbol);
   }
 
-  CurrencyState copyWith({
-    ExpenseCurrency? currentCurrency,
-  }) {
+  CurrencyState copyWith({ExpenseCurrency? currentCurrency}) {
     return CurrencyState(
       currentCurrency: currentCurrency ?? this.currentCurrency,
     );
@@ -35,31 +33,28 @@ class CurrencyState {
 }
 
 // --- NOTIFIER ---
+/// Controller sincrono dello stato della valuta. La build() legge la preferenza
+/// persistita tramite CurrencyService; in caso di errore ricade su ExpenseCurrency.euro.
 class CurrencyNotifier extends Notifier<CurrencyState> {
   @override
   CurrencyState build() {
-    return const CurrencyState();
-  }
-
-  // --- CARICAMENTO E SALVATAGGIO ---
-  /// Recupera la valuta memorizzata sul dispositivo o effettua il fallback sull'Euro.
-  Future<void> loadCurrency() async {
     try {
-      final currencyService = await ref.read(currencyServiceProvider.future);
+      final currencyService = ref.watch(currencyServiceProvider);
       final currency = currencyService.getCurrency();
-      state = state.copyWith(currentCurrency: currency);
+      return CurrencyState(currentCurrency: currency);
     } catch (e) {
-      state = state.copyWith(currentCurrency: ExpenseCurrency.euro);
+      // Fallback: Euro se la preferenza non è leggibile
+      return const CurrencyState(currentCurrency: ExpenseCurrency.euro);
     }
   }
 
-  /// Cambia reattivamente la valuta di sistema e ne persiste la preferenza.
+  // --- AZIONI ED OPERAZIONI ---
+  /// Aggiorna la valuta attiva solo se diversa da quella corrente,
+  /// poi persiste la scelta tramite CurrencyService.
   Future<void> setCurrency(ExpenseCurrency currency) async {
     if (state.currentCurrency == currency) return;
-
     state = state.copyWith(currentCurrency: currency);
-    
-    final currencyService = await ref.read(currencyServiceProvider.future);
+    final currencyService = ref.read(currencyServiceProvider);
     await currencyService.saveCurrency(currency);
   }
 }

@@ -43,7 +43,6 @@ class DaysPage extends ConsumerStatefulWidget {
 
 class _DaysPageState extends ConsumerState<DaysPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- INIZIALIZZAZIONE ---
   @override
   TickerProvider get vsync => this;
@@ -89,16 +88,24 @@ class _DaysPageState extends ConsumerState<DaysPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final date = DateTime(widget.year, widget.month, widget.day);
-    
+
     final dateLabel = ReportDateUtils.formatDate(context, date);
     final dayOfWeek = ReportDateUtils.getDayOfWeek(context, date);
 
-    final expenseState = ref.watch(expenseNotifierProvider);
+    final expenseState =
+        ref.watch(expenseNotifierProvider).value ?? ExpenseState();
     final multiSelectState = ref.watch(multiSelectNotifierProvider);
-    final expensesList = ref.watch(expensesOfDayProvider)(widget.year, widget.month, widget.day);
+    final expensesList = ref.watch(expensesOfDayProvider)(
+      widget.year,
+      widget.month,
+      widget.day,
+    );
 
     // Listener per la gestione degli errori asincroni a database
-    ref.listen(expenseNotifierProvider.select((s) => s.errorMessage), (previous, next) {
+    ref.listen(expenseNotifierProvider.select((s) => s.value?.errorMessage), (
+      previous,
+      next,
+    ) {
       if (next != null) {
         _showErrorSnackBar(context, next);
         ref.read(expenseNotifierProvider.notifier).clearError();
@@ -110,17 +117,26 @@ class _DaysPageState extends ConsumerState<DaysPage>
     return Scaffold(
       appBar: isSelectionMode
           ? CustomAppBar(
-              appBarBackgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+              appBarBackgroundColor: isDark
+                  ? AppColors.backgroundDark
+                  : AppColors.backgroundLight,
               appBarTextColor: AppColors.primary,
               title: "",
               isDark: isDark,
               isSelectionMode: true,
               selectedCount: multiSelectState.selectedCount,
               totalCount: expensesList.length,
-              onCancelSelection: ref.read(multiSelectNotifierProvider.notifier).deselectAll,
-              onDeleteSelected: () => ExpenseActionHandler.handleDeleteSelected(context, ref),
-              onSelectAll: () => ref.read(multiSelectNotifierProvider.notifier).selectAll(expensesList),
-              onDeselectAll: ref.read(multiSelectNotifierProvider.notifier).deselectAll,
+              onCancelSelection: ref
+                  .read(multiSelectNotifierProvider.notifier)
+                  .deselectAll,
+              onDeleteSelected: () =>
+                  ExpenseActionHandler.handleDeleteSelected(context, ref),
+              onSelectAll: () => ref
+                  .read(multiSelectNotifierProvider.notifier)
+                  .selectAll(expensesList),
+              onDeselectAll: ref
+                  .read(multiSelectNotifierProvider.notifier)
+                  .deselectAll,
             )
           : CustomAppBar(
               title: dayOfWeek,
@@ -132,15 +148,17 @@ class _DaysPageState extends ConsumerState<DaysPage>
         children: [
           Container(
             decoration: BoxDecoration(
-              color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+              color: isDark
+                  ? AppColors.backgroundDark
+                  : AppColors.backgroundLight,
             ),
             child: SafeArea(
               child: _buildBody(
-                context, 
-                expensesList, 
-                isSelectionMode, 
-                multiSelectState, 
-                expenseState, 
+                context,
+                expensesList,
+                isSelectionMode,
+                multiSelectState,
+                expenseState,
                 isDark,
               ),
             ),
@@ -203,11 +221,14 @@ class _DaysPageState extends ConsumerState<DaysPage>
 
           Expanded(
             child: RefreshIndicator(
-              backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+              backgroundColor: isDark
+                  ? AppColors.backgroundDark
+                  : AppColors.backgroundLight,
               color: AppColors.primary,
               onRefresh: () async {
                 ref.read(multiSelectNotifierProvider.notifier).deselectAll();
-                await ref.read(expenseNotifierProvider.notifier).initialise();
+                ref.invalidate(expenseNotifierProvider);
+                await ref.read(expenseNotifierProvider.future);
               },
               child: ListView.separated(
                 padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
@@ -215,17 +236,23 @@ class _DaysPageState extends ConsumerState<DaysPage>
                 separatorBuilder: (_, _) => SizedBox(height: 4.h),
                 itemBuilder: (context, index) {
                   final expense = expensesList[index];
-                  final isSelected = multiSelectState.selectedIds.contains(expense.uuid);
+                  final isSelected = multiSelectState.selectedIds.contains(
+                    expense.uuid,
+                  );
 
                   return Dismissible(
                     key: Key(expense.uuid),
-                    direction: isSelectionMode ? DismissDirection.none : DismissDirection.endToStart,
+                    direction: isSelectionMode
+                        ? DismissDirection.none
+                        : DismissDirection.endToStart,
                     background: _buildDismissibleBackground(),
                     confirmDismiss: (_) async {
                       if (isSelectionMode) return false;
 
                       // Cache preventiva dei riferimenti asincroni
-                      final expenseNotifier = ref.read(expenseNotifierProvider.notifier);
+                      final expenseNotifier = ref.read(
+                        expenseNotifierProvider.notifier,
+                      );
                       final locCopy = loc;
 
                       final isConfirmed = await DialogUtils.showConfirmDialog(
@@ -242,7 +269,7 @@ class _DaysPageState extends ConsumerState<DaysPage>
                       await expenseNotifier.deleteExpenses([expense]);
 
                       // Annulla il dismiss se l'operazione ha riscontrato errori di persistenza
-                      final currentState = ref.read(expenseNotifierProvider);
+                      final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
                       if (currentState.errorMessage != null) return false;
 
                       if (context.mounted) {
@@ -253,7 +280,8 @@ class _DaysPageState extends ConsumerState<DaysPage>
                           undo: loc.undo,
                           deletedItem: expense,
                           onDelete: (_) {},
-                          onRestore: (exp) => expenseNotifier.restoreExpenses([exp], locCopy),
+                          onRestore: (exp) =>
+                              expenseNotifier.restoreExpenses([exp], locCopy),
                         );
                       }
 
@@ -263,8 +291,12 @@ class _DaysPageState extends ConsumerState<DaysPage>
                       expense,
                       isSelectionMode: isSelectionMode,
                       isSelected: isSelected,
-                      onLongPress: () => ref.read(multiSelectNotifierProvider.notifier).onLongPress(expense),
-                      onSelectToggle: () => ref.read(multiSelectNotifierProvider.notifier).onToggleSelect(expense),
+                      onLongPress: () => ref
+                          .read(multiSelectNotifierProvider.notifier)
+                          .onLongPress(expense),
+                      onSelectToggle: () => ref
+                          .read(multiSelectNotifierProvider.notifier)
+                          .onToggleSelect(expense),
                       onReturn: () {},
                     ),
                   );
@@ -282,10 +314,7 @@ class _DaysPageState extends ConsumerState<DaysPage>
       margin: EdgeInsets.symmetric(vertical: 4.h),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            AppColors.delete.withValues(alpha: 0.8), 
-            AppColors.delete,
-          ],
+          colors: [AppColors.delete.withValues(alpha: 0.8), AppColors.delete],
         ),
         borderRadius: BorderRadius.circular(16.r),
       ),

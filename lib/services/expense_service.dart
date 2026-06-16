@@ -279,60 +279,6 @@ class ExpenseService {
 
     return sorted;
   }
-
-  // --- BUSINESS LOGIC: AGGREGAZIONI PER GRAFICI ---
-  // Le seguenti funzioni forniscono dati aggregati per la visualizzazione grafica.
-  // Tutti i calcoli sono delegati a ExpenseCalculator per mantenere questo servizio
-  // focalizzato sull'orchestrazione delle operazioni.
-
-  // Aggregazione per grafici mensili (anno corrente).
-  // Restituisce una mappa mese -> totale spese convertite nella valuta target.
-  Map<String, double> getExpensesByMonth(
-    List<ExpenseModel> expenses,
-    ExpenseCurrency targetCurrency,
-  ) {
-    return ExpenseCalculator.expensesByMonth(expenses, targetCurrency);
-  }
-
-  // Aggregazione per grafici giornalieri di un mese specifico.
-  // Restituisce una mappa giorno -> totale spese convertite nella valuta target.
-  Map<String, double> getExpensesByDay(
-    List<ExpenseModel> expenses,
-    int year,
-    int month,
-    ExpenseCurrency targetCurrency,
-  ) {
-    return ExpenseCalculator.expensesByDay(
-      expenses,
-      year,
-      month,
-      targetCurrency,
-    );
-  }
-
-  // Filtra e restituisce tutte le spese di un giorno specifico.
-  List<ExpenseModel> getExpensesOfDay(
-    List<ExpenseModel> expenses,
-    int year,
-    int month,
-    int day,
-  ) {
-    return ExpenseCalculator.expensesOfDay(expenses, year, month, day);
-  }
-
-  // Aggregazione per grafico a torta annuale per categoria.
-  // Restituisce una mappa categoria -> totale spese convertite nella valuta target.
-  Map<ExpenseCategory, double> getExpensesByCategoryForYear(
-    List<ExpenseModel> expenses,
-    String year,
-    ExpenseCurrency targetCurrency,
-  ) {
-    return ExpenseCalculator.expensesByCategoryForYear(
-      expenses,
-      year,
-      targetCurrency,
-    );
-  }
 }
 
 // --- RESULT OBJECTS ---

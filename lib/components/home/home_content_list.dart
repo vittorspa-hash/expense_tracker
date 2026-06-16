@@ -1,5 +1,6 @@
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -39,7 +40,7 @@ class HomeContentList extends ConsumerWidget {
     final loc = AppLocalizations.of(context)!;
 
     // --- ASCOLTO STATI GLOBALI ---
-    final expenseState = ref.watch(expenseNotifierProvider);
+    final expenseState = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
     final multiSelectState = ref.watch(multiSelectNotifierProvider);
 
     // --- FILTRO DATI LOCALE ---
@@ -245,7 +246,7 @@ class HomeContentList extends ConsumerWidget {
                           await ref.read(expenseNotifierProvider.notifier).deleteExpenses([expense]);
 
                           // 3. Verifica fallimenti nello stato globale
-                          final currentState = ref.read(expenseNotifierProvider);
+                          final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
                           if (currentState.errorMessage != null) return false;
 
                           // 4. Feedback di successo con opzione Undo

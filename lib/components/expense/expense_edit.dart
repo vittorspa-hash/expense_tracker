@@ -4,6 +4,7 @@ import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_category.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
@@ -91,7 +92,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoading = ref.watch(expenseNotifierProvider.select((p) => p.isLoading));
+    final isLoading = ref.watch(expenseNotifierProvider.select((p) => p.value?.isLoading ?? false));
 
     final header = widget.headerBuilder?.call(isTappedDown);
 
@@ -372,7 +373,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
           if (!context.mounted) return;
 
-          final currentState = ref.read(expenseNotifierProvider);
+          final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
 
           // Gestione degli errori derivati dal tentativo di cancellazione
           if (currentState.errorMessage != null) {
@@ -437,7 +438,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
     if (!mounted) return;
 
-    final currentState = ref.read(expenseNotifierProvider);
+    final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
 
     // 1. GESTIONE ERRORE BLOCCANTE SUL SALVATAGGIO
     if (currentState.errorMessage != null) {
@@ -499,7 +500,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
   // --- ISTRUZIONI UTENTE ONBOARDING ---
   Future<void> _showInstructionDialogIfNeeded() async {
-    final prefs = await ref.read(sharedPreferencesProvider.future);
+    final prefs = ref.read(sharedPreferencesProvider);
     final uid = ref.read(firebaseAuthProvider).currentUser?.uid ?? "guest";
     final shouldShow = prefs.getBool('showExpenseEditHint_$uid') ?? true;
 

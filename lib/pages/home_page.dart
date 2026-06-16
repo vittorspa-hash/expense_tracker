@@ -4,6 +4,7 @@ import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_model.dart';
+import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/pages/new_expense_page.dart';
@@ -28,7 +29,6 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage>
     with TickerProviderStateMixin, FadeAnimationMixin {
-
   // --- STATO LOCALE E CONTROLLER ---
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
@@ -53,10 +53,11 @@ class _HomePageState extends ConsumerState<HomePage>
     // Caricamento dei dati utente asincroni locali e pianificazione notifiche post-build.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(profileNotifierProvider.notifier).loadLocalData();
         final l10n = AppLocalizations.of(context);
         if (l10n != null) {
-          ref.read(notificationNotifierProvider.notifier).rescheduleNotifications(l10n);
+          ref
+              .read(notificationNotifierProvider.notifier)
+              .rescheduleNotifications(l10n);
         }
       }
     });
@@ -96,7 +97,8 @@ class _HomePageState extends ConsumerState<HomePage>
 
     // ASCOLTO DEGLI STATI (RIVERPOD)
     final multiSelectState = ref.watch(multiSelectNotifierProvider);
-    final expenseState = ref.watch(expenseNotifierProvider);
+    final expenseState =
+        ref.watch(expenseNotifierProvider).value ?? ExpenseState();
 
     // Gestione degli errori derivati dallo stato globale delle spese
     if (expenseState.errorMessage != null) {
@@ -117,15 +119,22 @@ class _HomePageState extends ConsumerState<HomePage>
       appBar: isSelectionMode
           ? CustomAppBar(
               appBarBackgroundColor: AppColors.primary,
-              appBarTextColor: isDark ? AppColors.textDark : AppColors.textLight,
+              appBarTextColor: isDark
+                  ? AppColors.textDark
+                  : AppColors.textLight,
               title: "",
               isDark: isDark,
               isSelectionMode: true,
               selectedCount: selectedCount,
-              onCancelSelection: () => ref.read(multiSelectNotifierProvider.notifier).deselectAll(),
-              onDeleteSelected: () => ExpenseActionHandler.handleDeleteSelected(context, ref),
-              onSelectAll: () => ref.read(multiSelectNotifierProvider.notifier).selectAll(filteredExpenses),
-              onDeselectAll: () => ref.read(multiSelectNotifierProvider.notifier).deselectAll(),
+              onCancelSelection: () =>
+                  ref.read(multiSelectNotifierProvider.notifier).deselectAll(),
+              onDeleteSelected: () =>
+                  ExpenseActionHandler.handleDeleteSelected(context, ref),
+              onSelectAll: () => ref
+                  .read(multiSelectNotifierProvider.notifier)
+                  .selectAll(filteredExpenses),
+              onDeselectAll: () =>
+                  ref.read(multiSelectNotifierProvider.notifier).deselectAll(),
               totalCount: filteredExpenses.length,
             )
           : null,
@@ -135,7 +144,9 @@ class _HomePageState extends ConsumerState<HomePage>
         children: [
           Container(
             decoration: BoxDecoration(
-              color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+              color: isDark
+                  ? AppColors.backgroundDark
+                  : AppColors.backgroundLight,
             ),
             child: Column(
               children: [
@@ -197,7 +208,9 @@ class _HomePageState extends ConsumerState<HomePage>
                   ),
                 ),
                 icon: Icon(Icons.add_rounded, size: 20.sp),
-                foregroundColor: isDark ? AppColors.textDark : AppColors.textLight,
+                foregroundColor: isDark
+                    ? AppColors.textDark
+                    : AppColors.textLight,
               ),
             )
           : null,
@@ -232,7 +245,8 @@ class _HomePageState extends ConsumerState<HomePage>
   Future<void> _refreshExpenses() async {
     ref.read(multiSelectNotifierProvider.notifier).deselectAll();
     _clearSearch();
-    await ref.read(expenseNotifierProvider.notifier).initialise();
+    ref.invalidate(expenseNotifierProvider);
+    await ref.read(expenseNotifierProvider.future);
     if (_sortCriteria.isNotEmpty) {
       ref.read(expenseNotifierProvider.notifier).sortBy(_sortCriteria);
     }
