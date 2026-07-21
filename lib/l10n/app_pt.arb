@@ -134,7 +134,7 @@
     "newEmailHint": "Novo e-mail",
     "currentPasswordHint": "Senha atual",
     "invalidData": "Insira dados válidos",
-    "emailUpdateSent": "Confirmação enviada para o novo e-mail. Faça login.",
+    "emailUpdateSent": "E-mail de verificação enviado para nova endereço. Verifique o link recebido para fazer login novamente.",
     "newPasswordHint": "Nova senha",
     "confirmPasswordHint": "Confirmar senha",
     "recoveryEmailSent": "E-mail de recuperação enviado para {email}",
@@ -234,7 +234,7 @@
     "confirmPasswordRequired": "Confirme a senha",
     "registerButton": "Registrar",
     "verifyEmailTitle": "Verificar E-mail",
-    "verifyEmailContent": "Enviamos um e-mail de verificação. Verifique sua caixa de entrada.",
+    "verifyEmailContent": "Enviamos um e-mail de verificação para o endereço fornecido. Clique no link no e-mail para ativar sua conta, e depois faça login. Se você não conseguir encontrá-lo, verifique também sua pasta de spam.",
     "notificationDailyTitle": "💰 Lembrete de despesas",
     "notificationDailyBody": "Não se esqueça de inserir suas despesas de hoje!",
     "notificationBudgetTitle": "⚠️ Limite de orçamento excedido!",
@@ -272,5 +272,7 @@
     "emptyExpensesSubtitle": "As despesas que adicionar irão aparecer aqui. Adicione uma com o botão abaixo!",
     "emptySearchTitle": "Nenhum resultado",
     "emptySearchSubtitle": "Nenhuma despesa corresponde à sua pesquisa.",
-    "successTitle" : "Feito!"
+    "successTitle" : "Feito!",
+    "navHome": "Início",
+    "navReport": "Relatório"
 }

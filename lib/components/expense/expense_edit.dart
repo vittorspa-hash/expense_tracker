@@ -396,6 +396,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
               message: loc.deleteSuccessMessageSwipe,
               deletedItem: deletedExpense,
               undo: loc.undo,
+              navBar: true,
               onDelete: (_) {},
               onRestore: (exp) async {
                 await expenseNotifier.restoreExpenses([exp], locCopy);
@@ -423,6 +424,7 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
         context: context,
         title: loc.errorTitle,
         message: loc.zeroValueError,
+        navBar: true,
       );
       return;
     }
@@ -457,12 +459,14 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
         context: context,
         title: loc.warningTitle,
         message: currentState.warningMessage!,
+        navBar: true,
       );
     } else {
       SnackbarUtils.show(
         context: context,
         title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
         message: widget.initialValue == null ? loc.expenseCreated : loc.expenseEdited,
+        navBar: true,
       );
     }
 

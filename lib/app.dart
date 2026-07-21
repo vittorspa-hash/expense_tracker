@@ -15,6 +15,9 @@ import 'package:google_fonts/google_fonts.dart';
 /// entrambi sincroni grazie all'iniezione di SharedPreferences in main.dart.
 /// Monitora il ciclo di vita tramite WidgetsBindingObserver per azzerare
 /// i badge delle notifiche al ritorno in primo piano.
+
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 class App extends ConsumerStatefulWidget {
   const App({super.key});
 
@@ -64,6 +67,7 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
 
       // CONFIGURAZIONE LOCALIZZAZIONE
       locale: locale,

@@ -5,6 +5,7 @@ import 'package:expense_tracker/notifiers/currency_notifier.dart';
 import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:expense_tracker/notifiers/language_notifier.dart';
 import 'package:expense_tracker/notifiers/multi_select_notifier.dart';
+import 'package:expense_tracker/notifiers/navigation_notifier.dart';
 import 'package:expense_tracker/notifiers/notification_notifier.dart';
 import 'package:expense_tracker/notifiers/profile_notifier.dart';
 import 'package:expense_tracker/notifiers/theme_notifier.dart';
@@ -19,6 +20,7 @@ import 'package:expense_tracker/services/theme_service.dart';
 import 'package:expense_tracker/utils/expense_calculator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -115,40 +117,45 @@ final expenseServiceProvider = Provider<ExpenseService>((ref) {
 
 final notificationNotifierProvider =
     NotifierProvider<NotificationNotifier, NotificationState>(
-  () => NotificationNotifier(),
-);
+      () => NotificationNotifier(),
+    );
 
 final themeNotifierProvider = NotifierProvider<ThemeNotifier, ThemeState>(
   () => ThemeNotifier(),
 );
 
 final currencyNotifierProvider =
-    NotifierProvider<CurrencyNotifier, CurrencyState>(
-  () => CurrencyNotifier(),
-);
+    NotifierProvider<CurrencyNotifier, CurrencyState>(() => CurrencyNotifier());
 
 final languageNotifierProvider =
-    NotifierProvider<LanguageNotifier, LanguageState>(
-  () => LanguageNotifier(),
-);
+    NotifierProvider<LanguageNotifier, LanguageState>(() => LanguageNotifier());
 
 final profileNotifierProvider =
     AsyncNotifierProvider<ProfileNotifier, ProfileState>(
-  () => ProfileNotifier(),
-);
+      () => ProfileNotifier(),
+    );
 
 final authNotifierProvider = StreamNotifierProvider<AuthNotifier, AuthState>(
   () => AuthNotifier(),
 );
 
+/// Flag "di flusso UI" per l'autenticazione: true dal tap del bottone
+/// fino al termine dell'intera interazione (incluso l'eventuale dialog finale).
+/// Distinto da AuthState.isLoading, che copre solo la chiamata di rete.
+final authFlowBusyProvider = StateProvider<bool>((ref) => false);
+
 final expenseNotifierProvider =
     AsyncNotifierProvider<ExpenseNotifier, ExpenseState>(
-  () => ExpenseNotifier(),
-);
+      () => ExpenseNotifier(),
+    );
 
 final multiSelectNotifierProvider =
     NotifierProvider<MultiSelectNotifier, MultiSelectState>(
-  () => MultiSelectNotifier(),
+      () => MultiSelectNotifier(),
+    );
+
+final navigationNotifierProvider = NotifierProvider<NavigationNotifier, int>(
+  () => NavigationNotifier(),
 );
 
 // --- LAYER 5: PROVIDER DERIVATI ---
@@ -163,34 +170,35 @@ final expensesByMonthProvider = Provider<Map<String, double>>((ref) {
 
 /// Restituisce una funzione parametrica per aggregare le spese per giorno
 /// dato un anno e un mese specifici.
-final expensesByDayProvider =
-    Provider<Map<String, double> Function(int, int)>((ref) {
+final expensesByDayProvider = Provider<Map<String, double> Function(int, int)>((
+  ref,
+) {
   final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
   return (year, month) => ExpenseCalculator.expensesByDay(
-        state.expenses,
-        year,
-        month,
-        state.appCurrency,
-      );
+    state.expenses,
+    year,
+    month,
+    state.appCurrency,
+  );
 });
 
 /// Restituisce una funzione parametrica per filtrare le spese effettuate
 /// in un giorno specifico (anno, mese, giorno).
 final expensesOfDayProvider =
     Provider<List<ExpenseModel> Function(int, int, int)>((ref) {
-  final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
-  return (year, month, day) =>
-      ExpenseCalculator.expensesOfDay(state.expenses, year, month, day);
-});
+      final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
+      return (year, month, day) =>
+          ExpenseCalculator.expensesOfDay(state.expenses, year, month, day);
+    });
 
 /// Restituisce una funzione parametrica per aggregare i totali per categoria
 /// in un anno specifico, nella valuta corrente dell'app.
 final expensesByCategoryForYearProvider =
     Provider<Map<ExpenseCategory, double> Function(String)>((ref) {
-  final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
-  return (year) => ExpenseCalculator.expensesByCategoryForYear(
+      final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
+      return (year) => ExpenseCalculator.expensesByCategoryForYear(
         state.expenses,
         year,
         state.appCurrency,
       );
-});
+    });

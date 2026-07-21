@@ -1,7 +1,6 @@
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/notifiers/expense_notifier.dart';
-import 'package:expense_tracker/pages/years_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,14 +15,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 class HomeHeader extends ConsumerWidget {
   final Animation<double> fadeAnimation;
   final bool isDark;
-  final VoidCallback onTapProfile;
   final VoidCallback onReturn;
 
   const HomeHeader({
     super.key,
     required this.fadeAnimation,
     required this.isDark,
-    required this.onTapProfile,
     required this.onReturn,
   });
 
@@ -31,13 +28,10 @@ class HomeHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // --- RECOVERY STATI (RIVERPOD) ---
     // Sottoscrizione ai provider per l'aggiornamento in tempo reale di spese, profilo e valuta.
-    final expenseState = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
-    final profileState = ref.watch(profileNotifierProvider).value;
+    final expenseState =
+        ref.watch(expenseNotifierProvider).value ?? ExpenseState();
     final currencyState = ref.watch(currencyNotifierProvider);
-    
-    // Estrazione dati del profilo utente
-    final user = profileState?.user;
-    final localAvatar = profileState?.localImage;
+
     final loc = AppLocalizations.of(context)!;
 
     return FadeTransition(
@@ -57,117 +51,38 @@ class HomeHeader extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                SizedBox(height: 24.h),
                 // --- BARRA NAVIGAZIONE SUPERIORE ---
                 // Gestisce l'accesso al resoconto annuale e la visualizzazione del profilo.
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // PULSANTE RESOCONTO ANNUALE
-                    GestureDetector(
-                      onTap: () async {
-                        await Navigator.pushNamed(context, YearsPage.route);
-                        onReturn();
-                      },
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 16.w,
-                          vertical: 8.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.backgroundLight.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: AppColors.backgroundLight.withValues(alpha: 0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              size: 14.sp,
-                              color: isDark ? AppColors.textDark : AppColors.textLight,
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              loc.annualReport,
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                color: isDark ? AppColors.textDark : AppColors.textLight,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // AVATAR UTENTE (Logica: Immagine Locale -> Network Image -> Fallback Icon)
-                    GestureDetector(
-                      onTap: onTapProfile,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.backgroundLight.withValues(alpha: 0.4),
-                            width: 3,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          key: ObjectKey(localAvatar),
-                          radius: 20.r,
-                          backgroundColor: AppColors.backgroundLight.withValues(alpha: 0.3),
-                          backgroundImage: localAvatar != null
-                              ? FileImage(localAvatar)
-                              : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
-                          child: localAvatar == null && user?.photoURL == null
-                              ? Icon(
-                                  Icons.person_rounded,
-                                  size: 32.sp,
-                                  color: isDark ? AppColors.textDark : AppColors.textLight,
-                                )
-                              : null,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20.h),
 
                 // --- PANNELLO TOTALE MENSILE ---
                 // Sezione principale focalizzata sul riepilogo delle spese correnti del mese corrente.
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      loc.thisMonth,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: isDark
-                            ? AppColors.textDark.withValues(alpha: 0.9)
-                            : AppColors.textLight.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: Text(
-                        currencyState.formatAmount(expenseState.totalExpenseMonth),
-                        style: TextStyle(
-                          fontSize: 35.sp,
-                          color: isDark ? AppColors.textDark : AppColors.textLight,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  loc.thisMonth,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: isDark
+                        ? AppColors.textDark.withValues(alpha: 0.9)
+                        : AppColors.textLight.withValues(alpha: 0.9),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.3,
+                  ),
                 ),
+                SizedBox(height: 4.h),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Text(
+                    currencyState.formatAmount(expenseState.totalExpenseMonth),
+                    style: TextStyle(
+                      fontSize: 35.sp,
+                      color: isDark ? AppColors.textDark : AppColors.textLight,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1,
+                    ),
+                  ),
+                ),
+
                 SizedBox(height: 24.h),
 
                 // --- CARDS STATISTICHE RAPIDE ---
@@ -260,7 +175,7 @@ class HeaderExpenseState extends ConsumerWidget {
             ),
           ),
           SizedBox(height: 2.h),
-          
+
           // SEZIONE ETICHETTA TEMPORALE
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),

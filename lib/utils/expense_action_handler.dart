@@ -77,6 +77,7 @@ class ExpenseActionHandler {
       message: locAfter.deleteSuccessMessage(count),
       undo: locAfter.undo,
       deletedItem: expensesToDelete,
+      navBar: true,
       onDelete: (_) {},
       onRestore: (_) async {
         // Invoca l'operazione contraria sul notifier reinserendo il blocco di spese rimosse

@@ -58,11 +58,9 @@ class _YearsPageState extends ConsumerState<YearsPage>
     final monthlyExpenses = ref.watch(expensesByMonthProvider);
 
     // Estratta e ordinata cronologicamente la lista degli anni disponibili
-    final years = monthlyExpenses.keys
-        .map((key) => key.split('-')[0])
-        .toSet()
-        .toList()
-      ..sort();
+    final years =
+        monthlyExpenses.keys.map((key) => key.split('-')[0]).toSet().toList()
+          ..sort();
 
     // Reset dello stato se l'anno selezionato non è più presente a database
     if (_selectedYear != null && !years.contains(_selectedYear)) {
@@ -77,11 +75,18 @@ class _YearsPageState extends ConsumerState<YearsPage>
           isDark: isDark,
           icon: Icons.bar_chart_rounded,
         ),
-        body: ReportEmptyState(
-          title: loc.noExpensesTitle,
-          subtitle: loc.noExpensesSubtitle,
-          icon: Icons.analytics_outlined,
-          useCircleBackground: false,
+        body: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.backgroundDark
+                : AppColors.backgroundLight,
+          ),
+          child: ReportEmptyState(
+            title: loc.noExpensesTitle,
+            subtitle: loc.noExpensesSubtitle,
+            icon: Icons.analytics_outlined,
+            useCircleBackground: false,
+          ),
         ),
       );
     }
@@ -96,8 +101,13 @@ class _YearsPageState extends ConsumerState<YearsPage>
       return monthlyExpenses[monthKey] ?? 0.0;
     });
 
-    final double totalYearAmount = monthlyValues.fold(0.0, (sum, val) => sum + val);
-    final categoryData = ref.watch(expensesByCategoryForYearProvider)(activeYear);
+    final double totalYearAmount = monthlyValues.fold(
+      0.0,
+      (sum, val) => sum + val,
+    );
+    final categoryData = ref.watch(expensesByCategoryForYearProvider)(
+      activeYear,
+    );
     final monthNames = ReportDateUtils.getMonthNames(context);
 
     return Scaffold(
@@ -110,84 +120,87 @@ class _YearsPageState extends ConsumerState<YearsPage>
         decoration: BoxDecoration(
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
-        child: SafeArea(
-          child: buildWithFadeAnimation(
-            SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(height: 20.h),
+        child: buildWithFadeAnimation(
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(height: 20.h),
 
-                  // --- SELETTORE ANNO ---
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
-                    child: InkWell(
-                      onTap: () async {
-                        final year = await DialogUtils.showYearPickerAdaptive(
-                          context,
-                          years: years,
-                          selectedYear: activeYear,
-                        );
-
-                        if (year != null && year != activeYear) {
-                          setState(() => _selectedYear = year);
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(16.r),
-                      child: _buildYearBadge(isDark, activeYear),
-                    ),
-                  ),
-
-                  // --- TOTALE ANNUO ---
-                  ReportTotalCard(
-                    label: loc.totalYearLabel(activeYear),
-                    totalAmount: totalYearAmount,
-                    icon: Icons.bar_chart_rounded,
-                  ),
-
-                  // --- CAROUSEL GRAFICI ---
-                  ReportChartsCarousel(
-                    barValues: monthlyValues,
-                    monthNames: monthNames,
-                    categoryData: categoryData,
-                  ),
-
-                  SizedBox(height: 12.h),
-                  ReportSectionHeader(title: loc.monthlyDetail),
-                  SizedBox(height: 12.h),
-
-                  // --- LISTA MESI ---
-                  Column(
-                    key: _monthListKey,
-                    children: List.generate(12, (index) {
-                      final monthNum = index + 1;
-                      final totalMonthAmount = monthlyValues[index];
-                      final currentMonthName = monthNames[index];
-
-                      return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 3.h),
-                        child: ReportPeriodListItem(
-                          badgeText: "$monthNum",
-                          title: currentMonthName,
-                          totalAmount: totalMonthAmount,
-                          percentage: totalYearAmount > 0 ? (totalMonthAmount / totalYearAmount) * 100 : 0,
-                          onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              MonthsPage.route,
-                              arguments: {
-                                'year': int.parse(activeYear),
-                                'month': monthNum,
-                              },
-                            );
-                          },
-                        ),
+                // --- SELETTORE ANNO ---
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  child: InkWell(
+                    onTap: () async {
+                      final year = await DialogUtils.showYearPickerAdaptive(
+                        context,
+                        years: years,
+                        selectedYear: activeYear,
                       );
-                    }),
+
+                      if (year != null && year != activeYear) {
+                        setState(() => _selectedYear = year);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: _buildYearBadge(isDark, activeYear),
                   ),
-                  SizedBox(height: 20.h),
-                ],
-              ),
+                ),
+
+                // --- TOTALE ANNUO ---
+                ReportTotalCard(
+                  label: loc.totalYearLabel(activeYear),
+                  totalAmount: totalYearAmount,
+                  icon: Icons.bar_chart_rounded,
+                ),
+
+                // --- CAROUSEL GRAFICI ---
+                ReportChartsCarousel(
+                  barValues: monthlyValues,
+                  monthNames: monthNames,
+                  categoryData: categoryData,
+                ),
+
+                SizedBox(height: 12.h),
+                ReportSectionHeader(title: loc.monthlyDetail),
+                SizedBox(height: 12.h),
+
+                // --- LISTA MESI ---
+                Column(
+                  key: _monthListKey,
+                  children: List.generate(12, (index) {
+                    final monthNum = index + 1;
+                    final totalMonthAmount = monthlyValues[index];
+                    final currentMonthName = monthNames[index];
+
+                    return Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 20.w,
+                        vertical: 3.h,
+                      ),
+                      child: ReportPeriodListItem(
+                        badgeText: "$monthNum",
+                        title: currentMonthName,
+                        totalAmount: totalMonthAmount,
+                        percentage: totalYearAmount > 0
+                            ? (totalMonthAmount / totalYearAmount) * 100
+                            : 0,
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            MonthsPage.route,
+                            arguments: {
+                              'year': int.parse(activeYear),
+                              'month': monthNum,
+                            },
+                          );
+                        },
+                      ),
+                    );
+                  }),
+                ),
+                SizedBox(height: 120.h),
+              ],
             ),
           ),
         ),
@@ -198,7 +211,9 @@ class _YearsPageState extends ConsumerState<YearsPage>
   // --- ELEMENTI GRAFICI SECONDARI ---
   /// Costruisce il badge interattivo per la selezione e visualizzazione dell'anno fiscale.
   Widget _buildYearBadge(bool isDark, String year) {
-    final chipColor = isDark ? AppColors.secondaryDark : AppColors.secondaryLight;
+    final chipColor = isDark
+        ? AppColors.secondaryDark
+        : AppColors.secondaryLight;
     final contentColor = isDark ? AppColors.textDark : AppColors.primary;
 
     return Container(
@@ -222,11 +237,7 @@ class _YearsPageState extends ConsumerState<YearsPage>
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.calendar_today_rounded, 
-            color: contentColor, 
-            size: 16.sp,
-          ),
+          Icon(Icons.calendar_today_rounded, color: contentColor, size: 16.sp),
           SizedBox(width: 12.w),
           Text(
             year,
@@ -238,11 +249,7 @@ class _YearsPageState extends ConsumerState<YearsPage>
             ),
           ),
           SizedBox(width: 8.w),
-          Icon(
-            Icons.arrow_drop_down_rounded, 
-            color: contentColor, 
-            size: 26.sp,
-          ),
+          Icon(Icons.arrow_drop_down_rounded, color: contentColor, size: 26.sp),
         ],
       ),
     );

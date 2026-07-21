@@ -152,15 +152,13 @@ class _DaysPageState extends ConsumerState<DaysPage>
                   ? AppColors.backgroundDark
                   : AppColors.backgroundLight,
             ),
-            child: SafeArea(
-              child: _buildBody(
-                context,
-                expensesList,
-                isSelectionMode,
-                multiSelectState,
-                expenseState,
-                isDark,
-              ),
+            child: _buildBody(
+              context,
+              expensesList,
+              isSelectionMode,
+              multiSelectState,
+              expenseState,
+              isDark,
             ),
           ),
 
@@ -269,7 +267,9 @@ class _DaysPageState extends ConsumerState<DaysPage>
                       await expenseNotifier.deleteExpenses([expense]);
 
                       // Annulla il dismiss se l'operazione ha riscontrato errori di persistenza
-                      final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
+                      final currentState =
+                          ref.read(expenseNotifierProvider).value ??
+                          ExpenseState();
                       if (currentState.errorMessage != null) return false;
 
                       if (context.mounted) {
@@ -279,6 +279,7 @@ class _DaysPageState extends ConsumerState<DaysPage>
                           message: loc.deleteSuccessMessageSwipe,
                           undo: loc.undo,
                           deletedItem: expense,
+                          navBar: true,
                           onDelete: (_) {},
                           onRestore: (exp) =>
                               expenseNotifier.restoreExpenses([exp], locCopy),

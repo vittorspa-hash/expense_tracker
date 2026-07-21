@@ -49,7 +49,9 @@ supporto a notifiche, dark mode, localizzazione completa (IT, EN, FR, ES, DE, PT
   - YearsPage → Riepilogo annuale con grafico a barre e grafico a torta per categoria
 - **Pagine principali**:
   - AuthPage → Login e registrazione
+  - NavigationShell → Shell post-login con floating bottom navigation bar (Home, Report, Profile, Settings)
   - HomePage → Overview delle spese recenti
+  - YearsPage → Riepilogo annuale con grafici
   - ProfilePage → Informazioni utente
   - SettingsPage → Impostazioni app (Tema, Notifiche, Lingua, Valuta)
 - **Notifiche locali**:

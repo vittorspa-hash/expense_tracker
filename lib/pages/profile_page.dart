@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:expense_tracker/app.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
@@ -76,6 +77,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 context: context,
                 title: loc.successTitle,
                 message: loc.dataUpdated,
+                navBar: true,
               );
             }
           } catch (e) {
@@ -84,6 +86,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 context: context,
                 title: loc.errorTitle,
                 message: loc.refreshError(e.toString()),
+                navBar: true,
               );
             }
           }
@@ -102,9 +105,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 Container(
                   padding: EdgeInsets.symmetric(vertical: 20.h),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.cardDark.withValues(alpha: 0.3)
-                        : AppColors.cardLight.withValues(alpha: 0.7),
+                    color: isDark ? AppColors.cardDark : AppColors.cardLight,
                     borderRadius: BorderRadius.circular(24.r),
                   ),
                   child: ProfileAvatar(
@@ -121,9 +122,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 // SEZIONE DATI PERSONALI
                 Container(
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.cardDark.withValues(alpha: 0.5)
-                        : AppColors.cardLight.withValues(alpha: 0.9),
+                    color: isDark ? AppColors.cardDark : AppColors.cardLight,
                     borderRadius: BorderRadius.circular(20.r),
                     boxShadow: [
                       BoxShadow(
@@ -187,6 +186,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                               context: context,
                               title: loc.successTitle,
                               message: loc.idCopied,
+                              navBar: true,
                             );
                           }
                         },
@@ -252,7 +252,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   ),
                 ),
 
-                SizedBox(height: 24.h),
+                SizedBox(height: 120.h),
               ],
             ),
           ),
@@ -296,6 +296,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           context: context,
           title: loc.successTitle,
           message: loc.profilePictureUpdated,
+          navBar: true,
         );
       }
     } catch (e) {
@@ -304,6 +305,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           context: context,
           title: loc.errorTitle,
           message: e.toString(),
+          navBar: true,
         );
       }
     }
@@ -331,6 +333,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           context: context,
           title: loc.successTitle,
           message: loc.pictureRemoved,
+          navBar: true,
         );
       }
     } catch (e) {
@@ -339,6 +342,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
           context: context,
           title: loc.errorTitle,
           message: e.toString(),
+          navBar: true,
         );
       }
     }
@@ -373,6 +377,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             context: context,
             title: loc.successTitle,
             message: loc.nameUpdated,
+            navBar: true,
           );
         }
       } catch (e) {
@@ -381,6 +386,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             context: context,
             title: loc.errorTitle,
             message: e.toString(),
+            navBar: true,
           );
         }
       }
@@ -396,7 +402,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
       fields: [
         {
           "hintText": loc.newEmailHint,
-          "initialValue": ref.read(profileNotifierProvider).value?.user?.email ?? "",
+          "initialValue":
+              ref.read(profileNotifierProvider).value?.user?.email ?? "",
           "keyboardType": TextInputType.emailAddress,
           "obscureText": false,
         },
@@ -416,28 +423,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         context: context,
         title: loc.errorTitle,
         message: loc.invalidData,
+        navBar: true,
       );
       return;
     }
+    // 1. SALVIAMO I DATI PRIMA DELL'AWAIT (Mentre il context è valido)
+    if (!mounted) return;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final successTitle = loc.successTitle;
+    final successMessage = loc.emailUpdateSent;
 
     try {
       await ref
           .read(profileNotifierProvider.notifier)
           .updateEmail(newEmail: newEmail, password: password);
-      if (!mounted) return;
-
-      SnackbarUtils.show(
-        context: context,
-        title: loc.successTitle,
-        message: loc.emailUpdateSent,
+      // 2. USIAMO LE VARIABILI SALVATE (Senza toccare il context)
+      SnackbarUtils.showGlobal(
+        messengerKey: rootScaffoldMessengerKey,
+        isDark: isDarkTheme,
+        title: successTitle,
+        message: successMessage,
+        navBar: false,
       );
-      Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
       if (mounted) {
         SnackbarUtils.show(
           context: context,
           title: loc.errorTitle,
           message: e.toString(),
+          navBar: true,
         );
       }
     }
@@ -467,6 +481,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               context: context,
               title: loc.successTitle,
               message: loc.recoveryEmailSent(userEmail.toString()),
+              navBar: true,
             );
           }
         } catch (e) {
@@ -475,6 +490,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
               context: context,
               title: loc.errorTitle,
               message: e.toString(),
+              navBar: true,
             );
           }
         }
@@ -492,27 +508,36 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         context: context,
         title: loc.errorTitle,
         message: loc.passwordsDoNotMatch,
+        navBar: true,
       );
       return;
     }
+
+    // 1. SALVIAMO I DATI PRIMA DELL'AWAIT
+    if (!mounted) return;
+    final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+    final successTitle = loc.successTitle;
+    final successMessage = loc.passwordUpdated;
 
     try {
       await ref
           .read(profileNotifierProvider.notifier)
           .updatePassword(currentPassword: currentPass, newPassword: newPass);
-      if (mounted) {
-        SnackbarUtils.show(
-          context: context,
-          title: loc.successTitle,
-          message: loc.passwordUpdated,
-        );
-      }
+      // 2. USIAMO LE VARIABILI SALVATE
+      SnackbarUtils.showGlobal(
+        messengerKey: rootScaffoldMessengerKey,
+        isDark: isDarkTheme,
+        title: successTitle,
+        message: successMessage,
+        navBar: true,
+      );
     } catch (e) {
       if (mounted) {
         SnackbarUtils.show(
           context: context,
           title: loc.errorTitle,
           message: e.toString(),
+          navBar: true,
         );
       }
     }
@@ -542,21 +567,28 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
 
       if (confirm2 == true) {
         if (!mounted) return;
+
+        // 1. SALVIAMO I DATI PRIMA DELL'AWAIT
+        final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+        final successTitle = loc.successTitle;
+        final successMessage = loc.accountDeleted;
+
         try {
           await ref.read(profileNotifierProvider.notifier).deleteAccount();
-          if (!mounted) return;
-          SnackbarUtils.show(
-            context: context,
-            title: loc.successTitle,
-            message: loc.accountDeleted,
+          SnackbarUtils.showGlobal(
+            messengerKey: rootScaffoldMessengerKey,
+            isDark: isDarkTheme,
+            title: successTitle,
+            message: successMessage,
+            navBar: false, 
           );
-          Navigator.of(context).popUntil((route) => route.isFirst);
         } catch (e) {
           if (mounted) {
             SnackbarUtils.show(
               context: context,
               title: loc.errorTitle,
               message: e.toString(),
+              navBar: true,
             );
           }
         }

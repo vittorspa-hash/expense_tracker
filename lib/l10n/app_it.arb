@@ -134,7 +134,7 @@
     "newEmailHint": "Nuova email",
     "currentPasswordHint": "Password attuale",
     "invalidData": "Inserisci dati validi",
-    "emailUpdateSent": "Conferma la nuova email inviata. Effettua l'accesso.",
+    "emailUpdateSent": "Email di verifica inviata al nuovo indirizzo. Conferma il link ricevuto per effettuare nuovamente l'accesso.",
     "newPasswordHint": "Nuova password",
     "confirmPasswordHint": "Conferma password",
     "recoveryEmailSent": "Email di recupero inviata a {email}",
@@ -148,7 +148,7 @@
     "passwordsDoNotMatch": "Le nuove password non coincidono",
     "passwordUpdated": "Password aggiornata con successo",
     "notAvailable": "Non disponibile",
-    "yearsPageTitle": "Resoconto Annuale",
+    "yearsPageTitle": "Report Annuale",
     "noExpensesTitle": "Nessuna spesa disponibile",
     "noExpensesSubtitle": "Le spese che aggiungi appariranno qui",
     "totalYearLabel": "Totale {year}",
@@ -234,7 +234,7 @@
     "confirmPasswordRequired": "Conferma la password",
     "registerButton": "Registrati",
     "verifyEmailTitle": "Verifica Email",
-    "verifyEmailContent": "Ti abbiamo inviato una email di verifica. Controlla la tua casella di posta.",
+    "verifyEmailContent": "Ti abbiamo inviato un'email di verifica all'indirizzo indicato. Ti invitiamo a cliccare sul link contenuto nel messaggio per attivare il tuo account, quindi effettuare l'accesso. Se non dovessi trovarla, controlla anche nella cartella spam.",
     "notificationDailyTitle": "💰 Promemoria spese",
     "notificationDailyBody": "Non dimenticare di inserire le tue spese di oggi!",
     "notificationBudgetTitle": "⚠️ Limite budget superato!",
@@ -281,5 +281,7 @@
     "emptyExpensesSubtitle": "Qui appariranno le tue spese. Aggiungine una con il pulsante in basso!",
     "emptySearchTitle": "Nessun risultato",
     "emptySearchSubtitle": "Nessuna spesa corrisponde alla tua ricerca.",
-    "successTitle" : "Fatto!"
+    "successTitle" : "Fatto!",
+    "navHome": "Home",
+    "navReport": "Report"
 }

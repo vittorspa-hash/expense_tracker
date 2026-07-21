@@ -1,13 +1,9 @@
-import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
-import 'package:expense_tracker/pages/profile_page.dart';
-import 'package:expense_tracker/pages/settings_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_styles.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: dialog_utils.dart
@@ -17,7 +13,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// Gestisce:
 /// 1. Alert (Info, Conferma, Istruzioni).
 /// 2. Input (Form in dialog).
-/// 3. Bottom Sheets (Menu, Profilo).
+/// 3. Bottom Sheets (Menu, Selezione anno).
 /// 4. Pickers (Data, Ora, Anno).
 
 class DialogUtils {
@@ -275,147 +271,6 @@ class DialogUtils {
         ),
       ),
     );
-  }
-
-  // Menu Profilo complesso: gestisce navigazione e logica di logout.
-  //
-  static Future<void> showProfileSheet(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    if (!context.mounted) return;
-    final isDark = DialogStyles.isDark(context);
-    final loc = AppLocalizations.of(context)!;
-
-    // -- Logica di Navigazione --
-    Future<void> handleNav(
-      String routeName,
-    ) async {
-      Navigator.pop(context);
-      await Future.delayed(Duration.zero);
-      if (context.mounted) await Navigator.pushNamed(context, routeName);
-    }
-
-    // -- Logica di Logout --
-    Future<void> handleLogout() async {
-      // RIVERPOD: Usiamo il ref passato al metodo
-      final auth = ref.read(authNotifierProvider.notifier);
-
-      if (!context.mounted) return;
-      final confirm = await showConfirmDialog(
-        context,
-        title: loc.logoutConfirmTitle,
-        content: loc.logoutConfirmMessage,
-        confirmText: loc.logout,
-      );
-
-      if (confirm == true && context.mounted) {
-        try {
-          await auth.signOut();
-          if (context.mounted) Navigator.pop(context);
-        } catch (e) {
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(loc.logoutError(e.toString())),
-                backgroundColor:
-                    AppColors.delete, // Usato colore errore standard
-              ),
-            );
-          }
-        }
-      }
-    }
-
-    // UI Builder usando il Consumer di Riverpod
-    Widget sheetBuilder(BuildContext _) => Consumer(
-      builder: (ctx, ref, _) {
-        // Ascoltiamo il profilo tramite Riverpod
-        final profileState = ref.watch(profileNotifierProvider).value;
-        final user = profileState?.user;
-        final localAvatar = profileState?.localImage;
-
-        if (DialogStyles.isIOS) {
-          return CupertinoActionSheet(
-            title: ProfileHeader(user: user, localAvatar: localAvatar),
-            actions: [
-              DialogStyles.buildSheetAction(
-                ctx,
-                text: loc.profileTitle,
-                isDark: isDark,
-                onPressed: () => handleNav(ProfilePage.route),
-              ),
-              DialogStyles.buildSheetAction(
-                ctx,
-                text: loc.settingsTitle,
-                isDark: isDark,
-                onPressed: () => handleNav(SettingsPage.route),
-              ),
-              DialogStyles.buildSheetAction(
-                ctx,
-                text: loc.logout,
-                isDark: isDark,
-                isDestructive: true,
-                onPressed: handleLogout,
-              ),
-            ],
-            cancelButton: DialogStyles.buildSheetAction(
-              ctx,
-              text: loc.close,
-              isDark: isDark,
-              isCancel: true,
-              onPressed: () => Navigator.pop(ctx),
-            ),
-          );
-        } else {
-          return Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ProfileHeader(user: user, localAvatar: localAvatar),
-                  SizedBox(height: 20.h),
-                  MaterialProfileTile(
-                    icon: Icons.person,
-                    text: loc.profileTitle,
-                    onTap: () => handleNav(ProfilePage.route),
-                  ),
-                  MaterialProfileTile(
-                    icon: Icons.settings,
-                    text: loc.settingsTitle,
-                    onTap: () => handleNav(SettingsPage.route),
-                  ),
-                  MaterialProfileTile(
-                    icon: Icons.logout,
-                    text: loc.logout,
-                    color: AppColors.delete,
-                    onTap: handleLogout,
-                  ),
-                  SizedBox(height: 12.h),
-                  DialogStyles.buildCloseButton(ctx),
-                ],
-              ),
-            ),
-          );
-        }
-      },
-    );
-
-    // Apertura del modal
-    if (DialogStyles.isIOS) {
-      await showCupertinoModalPopup(context: context, builder: sheetBuilder);
-    } else {
-      await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true, // Consigliato se il contenuto può variare
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        ),
-        builder: sheetBuilder,
-      );
-    }
   }
 
   // --- DATE & TIME PICKERS ---

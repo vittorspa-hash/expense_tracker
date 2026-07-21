@@ -48,30 +48,6 @@ class DialogStyles {
     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
   );
 
-  /// Pulsante "Chiudi" a larghezza intera (Stile Material).
-  /// Solitamente usato in fondo ai BottomSheet Android.
-  static Widget buildCloseButton(BuildContext context) {
-    final isDarkMode = isDark(context);
-    final loc = AppLocalizations.of(context)!;
-
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: isDarkMode
-              ? AppColors.textDark
-              : AppColors.textLight,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r),
-          ),
-        ),
-        onPressed: () => Navigator.pop(context),
-        child: Text(loc.close, style: TextStyle(fontSize: 16.sp)),
-      ),
-    );
-  }
-
   // --- BUILDER ADATTIVI (PLATFORM AWARE) ---
   // Questi metodi restituiscono il widget nativo corretto in base a `isIOS`.
   //

@@ -10,7 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthService {
   final FirebaseAuth _firebaseAuth;
   AuthService({required FirebaseAuth firebaseAuth})
-      : _firebaseAuth = firebaseAuth;
+    : _firebaseAuth = firebaseAuth;
 
   // --- CONFIGURAZIONE E STATO ---
   DateTime? _lastEmailSent;
@@ -29,22 +29,22 @@ class AuthService {
         password: password.trim(),
       );
 
-      var user = userCredential.user;
+      final user = userCredential.user;
       if (user == null) {
         throw AuthException("Unknown error creating user.");
       }
 
-      // Aggiornamento profilo e ricarica stato utente
-      await user.updateDisplayName(nome.trim());
-      await user.reload();
-      final reloadUser = _firebaseAuth.currentUser;
-      if (reloadUser == null) throw AuthException("User not found.");
-
-      // Invio email di verifica gestito internamente
-      await sendVerificationEmail(reloadUser);
+      // Aggiornamento nome e invio email di verifica sono indipendenti:
+      // eseguiti in parallelo invece che in sequenza per ridurre il tempo di attesa.
+      await Future.wait([
+        user.updateDisplayName(nome.trim()),
+        user.sendEmailVerification(),
+      ]);
+      _lastEmailSent = DateTime.now();
     } on FirebaseAuthException catch (e) {
-      // Utilizza il messaggio diretto di Firebase o un fallback generico in inglese
-      throw AuthException(e.message ?? "An error occurred during registration.");
+      throw AuthException(
+        e.message ?? "An error occurred during registration.",
+      );
     }
   }
 
@@ -96,7 +96,9 @@ class AuthService {
       await _firebaseAuth.sendPasswordResetEmail(email: targetEmail);
       _lastEmailSent = DateTime.now();
     } on FirebaseAuthException catch (e) {
-      throw AuthException(e.message ?? "An error occurred during password reset.");
+      throw AuthException(
+        e.message ?? "An error occurred during password reset.",
+      );
     }
   }
 

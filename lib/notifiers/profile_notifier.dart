@@ -47,7 +47,7 @@ class ProfileNotifier extends AsyncNotifier<ProfileState> {
   }
 
   ProfileService get _profileService => ref.read(profileServiceProvider);
-  User? get _currentUser => ref.read(authNotifierProvider).value?.user;
+  User? get _currentUser => ref.read(firebaseAuthProvider).currentUser;
 
   // --- SINCRONIZZAZIONE UTENTE ---
   /// Ricarica i dati utente da Firebase e aggiorna lo stato preservando

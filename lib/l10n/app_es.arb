@@ -134,7 +134,7 @@
     "newEmailHint": "Nuevo correo",
     "currentPasswordHint": "Contraseña actual",
     "invalidData": "Introduce datos válidos",
-    "emailUpdateSent": "Confirmación del nuevo correo enviada. Inicia sesión.",
+    "emailUpdateSent": "Correo de verificación enviado a nueva dirección. Comprueba el enlace recibido para iniciar sesión de nuevo.",
     "newPasswordHint": "Nueva contraseña",
     "confirmPasswordHint": "Confirmar contraseña",
     "recoveryEmailSent": "Correo de recuperación enviado a {email}",
@@ -234,7 +234,7 @@
     "confirmPasswordRequired": "Confirma la contraseña",
     "registerButton": "Registrarse",
     "verifyEmailTitle": "Verificar correo",
-    "verifyEmailContent": "Te hemos enviado un correo de verificación. Revisa tu bandeja de entrada.",
+    "verifyEmailContent": "Hemos enviado un correo de verificación a la dirección que has proporcionado. Por favor, haz clic en el enlace en el mensaje para activar tu cuenta, luego inicia sesión. Si no lo encuentras, revisa también tu carpeta de spam.",
     "notificationDailyTitle": "💰 Recordatorio de gastos",
     "notificationDailyBody": "¡No olvides introducir tus gastos de hoy!",
     "notificationBudgetTitle": "⚠️ ¡Límite de presupuesto superado!",
@@ -272,5 +272,7 @@
     "emptyExpensesSubtitle": "Aquí aparecerán tus gastos. ¡Agrega uno con el botón de abajo!",
     "emptySearchTitle": "Sin resultados",
     "emptySearchSubtitle": "No hay gastos que coincidan con tu búsqueda.",
-    "successTitle" : "¡Hecho!"
+    "successTitle" : "¡Hecho!",
+    "navHome": "Inicio",
+    "navReport": "Informe"
 }

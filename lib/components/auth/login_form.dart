@@ -4,7 +4,7 @@ import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
-import 'package:expense_tracker/utils/snackbar_utils.dart'; 
+import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -50,7 +50,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   Widget build(BuildContext context) {
     // Rilevamento del tema e dello stato di caricamento dal provider di autenticazione.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoading = ref.watch(authNotifierProvider).value?.isLoading ?? false;
+    final isLoading = ref.watch(authFlowBusyProvider);
     final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
@@ -143,14 +143,22 @@ class _LoginFormState extends ConsumerState<LoginForm> {
                         loc.forgotPassword,
                         style: TextStyle(
                           color: isLoading
-                              ? (isDark ? AppColors.greyDark : AppColors.greyLight)
-                              : (isDark ? AppColors.textLight : AppColors.textDark),
+                              ? (isDark
+                                    ? AppColors.greyDark
+                                    : AppColors.greyLight)
+                              : (isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textDark),
                           fontWeight: FontWeight.w600,
                           fontSize: 12.sp,
                           decoration: TextDecoration.underline,
                           decorationColor: isLoading
-                              ? (isDark ? AppColors.greyDark : AppColors.greyLight)
-                              : (isDark ? AppColors.textLight : AppColors.textDark),
+                              ? (isDark
+                                    ? AppColors.greyDark
+                                    : AppColors.greyLight)
+                              : (isDark
+                                    ? AppColors.textLight
+                                    : AppColors.textDark),
                         ),
                       ),
                     ),
@@ -193,10 +201,14 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
     final auth = ref.read(authNotifierProvider.notifier);
     final loc = AppLocalizations.of(context)!;
+    // Catturato SUBITO, prima di qualsiasi await: rimane valido anche se
+    // il widget viene smontato da una navigazione innescata dal login riuscito.
+    final busyNotifier = ref.read(authFlowBusyProvider.notifier);
 
+    ref.invalidate(navigationNotifierProvider);
+    busyNotifier.state = true;
     try {
-      // Esegue il login tramite l'AuthNotifier di Riverpod.
-       await auth.signIn(
+      await auth.signIn(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -205,15 +217,18 @@ class _LoginFormState extends ConsumerState<LoginForm> {
 
       final user = ref.read(authNotifierProvider).value?.user;
 
-      // Verifica se l'indirizzo email dell'utente è già stato confermato.
       if (user != null && !user.emailVerified) {
-        final confirm = await DialogUtils.showConfirmDialog(
+        final dialogFuture = DialogUtils.showConfirmDialog(
           context,
           title: loc.emailNotVerifiedTitle,
           content: loc.emailNotVerifiedMessage,
           confirmText: loc.resendEmail,
           cancelText: loc.close,
         );
+
+        busyNotifier.state = false;
+
+        final confirm = await dialogFuture;
 
         if (!mounted) return;
 
@@ -225,6 +240,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               context: context,
               title: loc.successTitle,
               message: loc.verificationEmailSent,
+              navBar: false,
             );
           } catch (e) {
             if (!mounted) return;
@@ -232,11 +248,11 @@ class _LoginFormState extends ConsumerState<LoginForm> {
               context: context,
               title: loc.errorTitle,
               message: e.toString(),
+              navBar: false,
             );
           }
         }
 
-        // Impedisce l'accesso forzando il logout se l'email non è verificata.
         await auth.signOut();
         return;
       }
@@ -246,7 +262,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         context: context,
         title: loc.errorTitle,
         message: e.toString(),
+        navBar: false,
       );
+    } finally {
+      busyNotifier.state = false;
     }
   }
 
@@ -256,13 +275,14 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   Future<void> _handleResetPassword() async {
     final loc = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
-    
+
     if (email.isEmpty) {
       if (!mounted) return;
       SnackbarUtils.show(
         context: context,
         title: loc.errorTitle,
         message: loc.insertEmailForRecovery,
+        navBar: false,
       );
       return;
     }
@@ -274,6 +294,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         context: context,
         title: loc.successTitle,
         message: loc.recoveryEmailSent(email),
+        navBar: false,
       );
     } catch (e) {
       if (!mounted) return;
@@ -281,6 +302,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         context: context,
         title: loc.errorTitle,
         message: e.toString(),
+        navBar: false,
       );
     }
   }

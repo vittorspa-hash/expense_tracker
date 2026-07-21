@@ -25,11 +25,7 @@ class MonthsPage extends ConsumerStatefulWidget {
   final int year;
   final int month;
 
-  const MonthsPage({
-    super.key, 
-    required this.year, 
-    required this.month,
-  });
+  const MonthsPage({super.key, required this.year, required this.month});
 
   @override
   ConsumerState<MonthsPage> createState() => _MonthsPageState();
@@ -37,7 +33,6 @@ class MonthsPage extends ConsumerStatefulWidget {
 
 class _MonthsPageState extends ConsumerState<MonthsPage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- INIZIALIZZAZIONE ---
   @override
   TickerProvider get vsync => this;
@@ -60,7 +55,10 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final monthName = ReportDateUtils.getMonthNames(context)[widget.month - 1];
     final loc = AppLocalizations.of(context)!;
-    final dailyExpenses = ref.watch(expensesByDayProvider)(widget.year, widget.month);
+    final dailyExpenses = ref.watch(expensesByDayProvider)(
+      widget.year,
+      widget.month,
+    );
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -72,9 +70,7 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
         decoration: BoxDecoration(
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
-        child: SafeArea(
-          child: _buildBody(context, dailyExpenses, monthName, loc),
-        ),
+        child: _buildBody(context, dailyExpenses, monthName, loc),
       ),
     );
   }
@@ -98,7 +94,10 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
       );
     }
 
-    final totalMonthAmount = dailyExpenses.values.fold(0.0, (sum, val) => sum + val);
+    final totalMonthAmount = dailyExpenses.values.fold(
+      0.0,
+      (sum, val) => sum + val,
+    );
     final localeStr = Localizations.localeOf(context).toString();
 
     return buildWithFadeAnimation(
@@ -125,7 +124,7 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
               itemBuilder: (context, index) {
                 final dayKey = dailyExpenses.keys.elementAt(index);
                 final totalDayAmount = dailyExpenses[dayKey]!;
-                
+
                 // Parsing posizionale sicuro della chiave data (es. "dd/MM/yyyy")
                 final dateParts = dayKey.split('/');
                 final date = DateTime(
@@ -136,11 +135,16 @@ class _MonthsPageState extends ConsumerState<MonthsPage>
 
                 return ReportPeriodListItem(
                   badgeText: "${date.day}",
-                  badgeSubtext: DateFormat("MMM", localeStr).format(date).toUpperCase(),
+                  badgeSubtext: DateFormat(
+                    "MMM",
+                    localeStr,
+                  ).format(date).toUpperCase(),
                   title: ReportDateUtils.getDayOfWeek(context, date),
                   subtitle: ReportDateUtils.formatDate(context, date),
                   totalAmount: totalDayAmount,
-                  percentage: totalMonthAmount > 0 ? (totalDayAmount / totalMonthAmount) * 100 : 0,
+                  percentage: totalMonthAmount > 0
+                      ? (totalDayAmount / totalMonthAmount) * 100
+                      : 0,
                   onTap: () {
                     Navigator.pushNamed(
                       context,

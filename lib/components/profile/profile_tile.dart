@@ -43,7 +43,7 @@ class ProfileTile extends StatelessWidget {
     // 1. Icona decorativa a sinistra.
     // 2. Colonna di testo centrale (Etichetta + Valore).
     // 3. Widget di azione a destra (Edit button o Spinner).
-    // 
+    //
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
@@ -53,24 +53,13 @@ class ProfileTile extends StatelessWidget {
             width: 44.w,
             height: 44.h,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.15),
-                  AppColors.primary.withValues(alpha: 0.08),
-                ],
-              ),
+              color: isDark
+                  ? AppColors.secondaryDark
+                  : AppColors.secondaryLight,
+
               borderRadius: BorderRadius.circular(14.r),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
             ),
-            child: Icon(icon, size: 24.r, color: AppColors.primary),
+            child: Icon(icon, size: 24.r, color: isDark ? AppColors.textDark : AppColors.primary),
           ),
 
           SizedBox(width: 16.w),

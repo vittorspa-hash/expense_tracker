@@ -90,9 +90,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage>
     final loc = AppLocalizations.of(context)!;
 
     // Determina l'icona della valuta corrente per visualizzarla nei tile o dialoghi.
-    final currentCurrencyIcon = _getCurrencyIcon(
-      currencyState.currentCurrency,
-    );
+    final currentCurrencyIcon = _getCurrencyIcon(currencyState.currentCurrency);
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -101,228 +99,261 @@ class _SettingsPageState extends ConsumerState<SettingsPage>
         isDark: isDark,
       ),
 
-      body: SafeArea(
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.backgroundDark
-                : AppColors.backgroundLight,
-          ),
-          // Applica l'animazione di fade-in alla lista delle opzioni.
-          child: buildWithFadeAnimation(
-            ListView(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
-              children: [
-                // --- SEZIONE ASPETTO ---
-                // Gestione del cambio tema (Light/Dark mode).
-                SettingsSectionHeader(
-                  icon: Icons.palette_outlined,
-                  title: loc.appearance,
-                ),
+      body: Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        ),
+        // Applica l'animazione di fade-in alla lista delle opzioni.
+        child: buildWithFadeAnimation(
+          ListView(
+            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+            children: [
+              // --- SEZIONE ASPETTO ---
+              // Gestione del cambio tema (Light/Dark mode).
+              SettingsSectionHeader(
+                icon: Icons.palette_outlined,
+                title: loc.appearance,
+              ),
 
-                SizedBox(height: 12.h),
+              SizedBox(height: 12.h),
 
-                SettingsContainer(
-                  child: SettingsTile(
-                    icon: isDark
-                        ? Icons.dark_mode_rounded
-                        : Icons.light_mode_rounded,
-                    title: loc.darkMode,
-                    subtitle: isDark ? loc.activated : loc.deactivated,
-                    trailingWidget: Transform.scale(
-                          scale: 0.9,
-                          child: Switch(
-                            value: themeState.isDarkMode,
-                            onChanged: (value) =>
-                                ref.read(themeNotifierProvider.notifier).toggleTheme(value),
-                            activeThumbColor: AppColors.primary,
-                          ),
-                        )
+              SettingsContainer(
+                child: SettingsTile(
+                  icon: isDark
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
+                  title: loc.darkMode,
+                  subtitle: isDark ? loc.activated : loc.deactivated,
+                  trailingWidget: Transform.scale(
+                    scale: 0.9,
+                    child: Switch(
+                      value: themeState.isDarkMode,
+                      onChanged: (value) => ref
+                          .read(themeNotifierProvider.notifier)
+                          .toggleTheme(value),
+                      activeThumbColor: AppColors.primary,
+                    ),
                   ),
+                  logout: false,
                 ),
+              ),
 
-                SizedBox(height: 32.h),
+              SizedBox(height: 32.h),
 
-                // --- SEZIONE NOTIFICHE ---
-                // Gestisce i promemoria orari e gli avvisi di superamento budget.
-                SettingsSectionHeader(
-                  icon: Icons.notifications_outlined,
-                  title: loc.notifications,
-                ),
+              // --- SEZIONE NOTIFICHE ---
+              // Gestisce i promemoria orari e gli avvisi di superamento budget.
+              SettingsSectionHeader(
+                icon: Icons.notifications_outlined,
+                title: loc.notifications,
+              ),
 
-                SizedBox(height: 12.h),
+              SizedBox(height: 12.h),
 
-                SettingsContainer(
-                  child: Column(
-                    children: [
-                      // Opzione 1: Promemoria giornaliero (Switch)
-                      SettingsTile(
-                        icon: Icons.alarm_rounded,
-                        title: loc.dailyReminder,
-                        subtitle: notificationState.dailyReminderEnabled
-                            ? loc.activeAt(
-                                notificationState.reminderTime.format(context))
-                            : loc.deactivated,
-                        trailingWidget: Transform.scale(
-                          scale: 0.9,
-                          child: Switch(
-                            value: notificationState.dailyReminderEnabled,
-                            onChanged: (value) {
-                              ref.read(notificationNotifierProvider.notifier).toggleDailyReminder(value, AppLocalizations.of(context)!);
-                            },
-                            activeThumbColor: AppColors.primary,
-                          ),
+              SettingsContainer(
+                child: Column(
+                  children: [
+                    // Opzione 1: Promemoria giornaliero (Switch)
+                    SettingsTile(
+                      icon: Icons.alarm_rounded,
+                      title: loc.dailyReminder,
+                      subtitle: notificationState.dailyReminderEnabled
+                          ? loc.activeAt(
+                              notificationState.reminderTime.format(context),
+                            )
+                          : loc.deactivated,
+                      trailingWidget: Transform.scale(
+                        scale: 0.9,
+                        child: Switch(
+                          value: notificationState.dailyReminderEnabled,
+                          onChanged: (value) {
+                            ref
+                                .read(notificationNotifierProvider.notifier)
+                                .toggleDailyReminder(
+                                  value,
+                                  AppLocalizations.of(context)!,
+                                );
+                          },
+                          activeThumbColor: AppColors.primary,
                         ),
                       ),
+                      logout: false,
+                    ),
 
-                      // Opzione 1.1: Selettore orario (visibile solo se attivo)
-                      if (notificationState.dailyReminderEnabled) ...[
-                        _buildDivider(isDark),
-                        SettingsTile(
-                          icon: Icons.schedule_rounded,
-                          title: loc.reminderTime,
-                          subtitle: notificationState.reminderTime.format(
-                            context,
-                          ),
-                          trailingIcon: Icons.chevron_right_rounded,
-                          onPressed: () =>
-                              _selectTime(context, notificationState),
-                        ),
-                      ],
-
+                    // Opzione 1.1: Selettore orario (visibile solo se attivo)
+                    if (notificationState.dailyReminderEnabled) ...[
                       _buildDivider(isDark),
-
-                      // Opzione 2: Avviso limite spesa (Switch)
                       SettingsTile(
-                        icon: Icons.warning_amber_rounded,
-                        title: loc.spendingLimitAlert,
-                        subtitle: notificationState.limitAlertEnabled
-                            ? loc.activeMonthlyLimit(currencyState
-                                .formatAmount(notificationState.monthlyLimit))
-                            : loc.deactivated,
-                        trailingWidget: Transform.scale(
-                          scale: 0.9,
-                          child: Switch(
-                            value: notificationState.limitAlertEnabled,
-                            onChanged: (value) {
-                              ref.read(notificationNotifierProvider.notifier).toggleLimitAlert(value);
-                            },
-                            activeThumbColor: AppColors.primary,
-                          ),
+                        icon: Icons.schedule_rounded,
+                        title: loc.reminderTime,
+                        subtitle: notificationState.reminderTime.format(
+                          context,
                         ),
+                        trailingIcon: Icons.chevron_right_rounded,
+                        logout: false,
+                        onPressed: () =>
+                            _selectTime(context, notificationState),
                       ),
-
-                      // Opzione 2.1: Input limite mensile (visibile solo se attivo)
-                      if (notificationState.limitAlertEnabled) ...[
-                        _buildDivider(isDark),
-                        SettingsTile(
-                          icon: currentCurrencyIcon,
-                          title: loc.monthlyLimit,
-                          subtitle: currencyState.formatAmount(
-                            notificationState.monthlyLimit,
-                          ),
-                          trailingIcon: Icons.chevron_right_rounded,
-                          onPressed: () => _selectLimit(
-                            context,
-                            notificationState,
-                            currentCurrencyIcon,
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
-                ),
 
-                SizedBox(height: 12.h),
+                    _buildDivider(isDark),
 
-                // --- BOX INFORMATIVO ---
-                // Messaggio statico per spiegare l'utilità delle notifiche all'utente.
-                // Nota: Non usiamo SettingsContainer qui perché lo stile è specifico (bordo e sfondo primary).
-                Container(
-                  padding: EdgeInsets.all(16.w),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16.r),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline_rounded,
-                        color: AppColors.primary,
-                        size: 24.r,
+                    // Opzione 2: Avviso limite spesa (Switch)
+                    SettingsTile(
+                      icon: Icons.warning_amber_rounded,
+                      title: loc.spendingLimitAlert,
+                      subtitle: notificationState.limitAlertEnabled
+                          ? loc.activeMonthlyLimit(
+                              currencyState.formatAmount(
+                                notificationState.monthlyLimit,
+                              ),
+                            )
+                          : loc.deactivated,
+                      trailingWidget: Transform.scale(
+                        scale: 0.9,
+                        child: Switch(
+                          value: notificationState.limitAlertEnabled,
+                          onChanged: (value) {
+                            ref
+                                .read(notificationNotifierProvider.notifier)
+                                .toggleLimitAlert(value);
+                          },
+                          activeThumbColor: AppColors.primary,
+                        ),
                       ),
-                      SizedBox(width: 12.w),
-                      Expanded(
-                        child: Text(
-                          loc.notificationsInfo,
-                          style: TextStyle(
-                            fontSize: 13.sp,
-                            color: isDark
-                                ? AppColors.textLight
-                                : AppColors.textDark,
-                            height: 1.4,
-                          ),
+                      logout: false,
+                    ),
+
+                    // Opzione 2.1: Input limite mensile (visibile solo se attivo)
+                    if (notificationState.limitAlertEnabled) ...[
+                      _buildDivider(isDark),
+                      SettingsTile(
+                        icon: currentCurrencyIcon,
+                        title: loc.monthlyLimit,
+                        subtitle: currencyState.formatAmount(
+                          notificationState.monthlyLimit,
+                        ),
+                        trailingIcon: Icons.chevron_right_rounded,
+                        logout: false,
+                        onPressed: () => _selectLimit(
+                          context,
+                          notificationState,
+                          currentCurrencyIcon,
                         ),
                       ),
                     ],
-                  ),
+                  ],
                 ),
+              ),
 
-                SizedBox(height: 32.h),
+              SizedBox(height: 12.h),
 
-                // --- SEZIONE VALUTA ---
-                // Permette di selezionare la valuta globale dell'app.
-                SettingsSectionHeader(
-                  icon: Icons.currency_exchange_rounded,
-                  title: loc.currency,
+              // --- BOX INFORMATIVO ---
+              // Messaggio statico per spiegare l'utilità delle notifiche all'utente.
+              // Nota: Non usiamo SettingsContainer qui perché lo stile è specifico (bordo e sfondo primary).
+              Container(
+                padding: EdgeInsets.all(16.w),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.cardDark : AppColors.cardLight,
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(color: AppColors.primary, width: 0),
                 ),
-
-                SizedBox(height: 12.h),
-
-                SettingsContainer(
-                  child: SettingsTile(
-                    icon: Icons.payments_rounded,
-                    title: loc.defaultCurrency,
-                    subtitle:
-                        "${currencyState.currencyName} (${currencyState.currencySymbol})",
-                    trailingIcon: Icons.chevron_right_rounded,
-                    onPressed: () {
-                      _selectCurrency(context, isDark, currencyState);
-                    },
-                  ),
-                ),
-
-                SizedBox(height: 32.h),
-
-                // --- SEZIONE LINGUA ---
-                // Permette di selezionare la lingua globale dell'app.
-                SettingsSectionHeader(
-                  icon: Icons.language_rounded,
-                  title: loc.language,
-                ),
-
-                SizedBox(height: 12.h),
-
-                SettingsContainer(
-                  child: SettingsTile(
-                    icon: Icons.translate_rounded,
-                    title: loc.defaultLanguage,
-                    subtitle: _getLanguageName(
-                      context,
-                      languageState.currentLocale.languageCode,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: AppColors.primary,
+                      size: 24.r,
                     ),
-                    trailingIcon: Icons.chevron_right_rounded,
-                    onPressed: () {
-                      _selectLanguage(context, isDark);
-                    },
-                  ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Text(
+                        loc.notificationsInfo,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          color: isDark
+                              ? AppColors.textLight
+                              : AppColors.textDark,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              SizedBox(height: 32.h),
+
+              // --- SEZIONE VALUTA ---
+              // Permette di selezionare la valuta globale dell'app.
+              SettingsSectionHeader(
+                icon: Icons.currency_exchange_rounded,
+                title: loc.currency,
+              ),
+
+              SizedBox(height: 12.h),
+
+              SettingsContainer(
+                child: SettingsTile(
+                  icon: Icons.payments_rounded,
+                  title: loc.defaultCurrency,
+                  subtitle:
+                      "${currencyState.currencyName} (${currencyState.currencySymbol})",
+                  trailingIcon: Icons.chevron_right_rounded,
+                  logout: false,
+                  onPressed: () {
+                    _selectCurrency(context, isDark, currencyState);
+                  },
+                ),
+              ),
+
+              SizedBox(height: 32.h),
+
+              // --- SEZIONE LINGUA ---
+              // Permette di selezionare la lingua globale dell'app.
+              SettingsSectionHeader(
+                icon: Icons.language_rounded,
+                title: loc.language,
+              ),
+
+              SizedBox(height: 12.h),
+
+              SettingsContainer(
+                child: SettingsTile(
+                  icon: Icons.translate_rounded,
+                  title: loc.defaultLanguage,
+                  subtitle: _getLanguageName(
+                    context,
+                    languageState.currentLocale.languageCode,
+                  ),
+                  trailingIcon: Icons.chevron_right_rounded,
+                  logout: false,
+                  onPressed: () {
+                    _selectLanguage(context, isDark);
+                  },
+                ),
+              ),
+
+              SizedBox(height: 32.h),
+
+              // --- SEZIONE ACCOUNT ---
+              SettingsSectionHeader(
+                icon: Icons.manage_accounts_outlined,
+                title: loc.profileTitle, // aggiungi la stringa localizzata
+              ),
+
+              SizedBox(height: 12.h),
+
+              SettingsContainer(
+                child: SettingsTile(
+                  icon: Icons.logout_rounded,
+                  title: loc.logout,
+                  logout: true,
+                  onPressed: () => _confirmLogout(context),
+                ),
+              ),
+
+              SizedBox(height: 120.h),
+            ],
           ),
         ),
       ),
@@ -341,8 +372,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage>
       initialTime: notificationState.reminderTime,
     );
 
-    if (picked != null && picked != notificationState.reminderTime && context.mounted) {
-      await ref.read(notificationNotifierProvider.notifier).setReminderTime(picked, AppLocalizations.of(context)!);
+    if (picked != null &&
+        picked != notificationState.reminderTime &&
+        context.mounted) {
+      await ref
+          .read(notificationNotifierProvider.notifier)
+          .setReminderTime(picked, AppLocalizations.of(context)!);
     }
   }
 
@@ -398,18 +433,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage>
 
     if (result != null) {
       final selectedCurrency = ExpenseCurrency.fromCode(result);
-      await ref.read(currencyNotifierProvider.notifier).setCurrency(selectedCurrency);
+      await ref
+          .read(currencyNotifierProvider.notifier)
+          .setCurrency(selectedCurrency);
       if (context.mounted) {
-        ref.read(expenseNotifierProvider.notifier).updateAppCurrency(selectedCurrency);
+        ref
+            .read(expenseNotifierProvider.notifier)
+            .updateAppCurrency(selectedCurrency);
       }
     }
   }
 
   // Apre un BottomSheet per selezionare la lingua tra quelle disponibili.
-  Future<void> _selectLanguage(
-    BuildContext context,
-    bool isDark,
-  ) async {
+  Future<void> _selectLanguage(BuildContext context, bool isDark) async {
     final loc = AppLocalizations.of(context)!;
     final result = await DialogUtils.showSortSheet(
       context,
@@ -428,9 +464,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage>
     if (result != null) {
       // 1. Creiamo il Locale per la nuova lingua scelta
       final newLocale = Locale(result);
-      
+
       // 2. Aggiorniamo la lingua nell'app (questo aggiorna la UI)
-      await ref.read(languageNotifierProvider.notifier).changeLanguage(newLocale);
+      await ref
+          .read(languageNotifierProvider.notifier)
+          .changeLanguage(newLocale);
 
       // 3. AGGIORNAMENTO NOTIFICHE:
       // Carichiamo manualmente le traduzioni per la NUOVA lingua.
@@ -440,9 +478,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage>
 
       // 4. Se il widget è ancora montato, rischeduliamo le notifiche
       if (context.mounted) {
-        ref.read(notificationNotifierProvider.notifier).rescheduleNotifications(newL10n);
+        ref
+            .read(notificationNotifierProvider.notifier)
+            .rescheduleNotifications(newL10n);
         debugPrint("🌍 Notifiche aggiornate alla lingua: $result");
       }
+    }
+  }
+
+  // --- LOGOUT ---
+  Future<void> _confirmLogout(BuildContext context) async {
+    final loc = AppLocalizations.of(context)!;
+    final confirm = await DialogUtils.showConfirmDialog(
+      context,
+      title: loc.logoutConfirmTitle,
+      content: loc.logoutConfirmMessage,
+      confirmText: loc.logout,
+      cancelText: loc.cancel,
+    );
+
+    if (confirm == true && context.mounted) {
+      await ref.read(authNotifierProvider.notifier).signOut();
     }
   }
 

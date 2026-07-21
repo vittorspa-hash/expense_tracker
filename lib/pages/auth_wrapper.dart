@@ -3,8 +3,8 @@ import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/notifiers/auth_notifier.dart';
 import 'package:expense_tracker/pages/auth_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/pages/navigation_shell.dart';
 import 'package:flutter/material.dart';
-import 'package:expense_tracker/pages/home_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -56,7 +56,7 @@ class AuthWrapper extends ConsumerWidget {
               ),
               data: (state) {
                 // Dati pronti: mostra la HomePage
-                return const HomePage();
+                return const NavigationShell();
               },
             );
         }

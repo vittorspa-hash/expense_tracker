@@ -134,7 +134,7 @@
     "newEmailHint": "New email",
     "currentPasswordHint": "Current password",
     "invalidData": "Please enter valid data",
-    "emailUpdateSent": "Confirmation for new email sent. Please log in.",
+    "emailUpdateSent": "Email verification sent to new address. Check the link received to log in again.",
     "newPasswordHint": "New password",
     "confirmPasswordHint": "Confirm password",
     "recoveryEmailSent": "Recovery email sent to {email}",
@@ -234,7 +234,7 @@
     "confirmPasswordRequired": "Confirm the password",
     "registerButton": "Register",
     "verifyEmailTitle": "Verify Email",
-    "verifyEmailContent": "We have sent you a verification email. Please check your inbox.",
+    "verifyEmailContent": "We've sent a verification email to the address you provided. Please click the link in the message to activate your account, then log in. If you can't find it, check your spam folder.",
     "notificationDailyTitle": "💰 Expense Reminder",
     "notificationDailyBody": "Don't forget to add your expenses today!",
     "notificationBudgetTitle": "⚠️ Budget limit exceeded!",
@@ -272,5 +272,7 @@
     "emptyExpensesSubtitle": "Expenses you add will appear here. Add one with the button below!",
     "emptySearchTitle": "No results",
     "emptySearchSubtitle": "No expenses match your search.",
-    "successTitle" : "Done!"
+    "successTitle" : "Done!",
+    "navHome": "Home", 
+    "navReport": "Report"
 }

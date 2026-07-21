@@ -134,7 +134,7 @@
     "newEmailHint": "Nouvel e-mail",
     "currentPasswordHint": "Mot de passe actuel",
     "invalidData": "Veuillez saisir des données valides",
-    "emailUpdateSent": "Confirmation du nouvel e-mail envoyée. Veuillez vous connecter.",
+    "emailUpdateSent": "E-mail de vérification envoyé à la nouvelle adresse. Vérifiez le lien reçu pour vous connecter à nouveau.",
     "newPasswordHint": "Nouveau mot de passe",
     "confirmPasswordHint": "Confirmer le mot de passe",
     "recoveryEmailSent": "E-mail de récupération envoyé à {email}",
@@ -148,7 +148,7 @@
     "passwordsDoNotMatch": "Les nouveaux mots de passe ne correspondent pas",
     "passwordUpdated": "Mot de passe mis à jour avec succès",
     "notAvailable": "Indisponible",
-    "yearsPageTitle": "Bilan annuel",
+    "yearsPageTitle": "Rapport Annuel",
     "noExpensesTitle": "Aucune dépense disponible",
     "noExpensesSubtitle": "Les dépenses que vous ajoutez apparaîtront ici",
     "totalYearLabel": "Total {year}",
@@ -234,7 +234,7 @@
     "confirmPasswordRequired": "Confirmez le mot de passe",
     "registerButton": "S'inscrire",
     "verifyEmailTitle": "Vérifier l'e-mail",
-    "verifyEmailContent": "Nous vous avons envoyé un e-mail de vérification. Vérifiez votre boîte de réception.",
+    "verifyEmailContent": "Nous avons envoyé un e-mail de vérification à l'adresse indiquée. Veuillez cliquer sur le lien dans le message pour activer votre compte, puis vous connecter. Si vous ne le trouvez pas, vérifiez également votre dossier de spam.",
     "notificationDailyTitle": "💰 Rappel dépenses",
     "notificationDailyBody": "N'oubliez pas de saisir vos dépenses d'aujourd'hui !",
     "notificationBudgetTitle": "⚠️ Limite budgétaire dépassée !",
@@ -272,5 +272,7 @@
     "emptyExpensesSubtitle": "Vos dépenses apparaîtront ici. Ajoutez-en une avec le bouton ci-dessous !",
     "emptySearchTitle": "Aucun résultat",
     "emptySearchSubtitle": "Aucune dépense ne correspond à votre recherche.",
-    "successTitle" : "Fait !"
+    "successTitle" : "Fait !",
+    "navHome": "Accueil",
+    "navReport": "Rapport"
 }

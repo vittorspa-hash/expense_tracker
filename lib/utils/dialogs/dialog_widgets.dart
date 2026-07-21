@@ -1,7 +1,5 @@
-import 'dart:io';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/config/app_colors.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,8 +9,7 @@ import 'dialog_styles.dart';
 /// DESCRIZIONE: Raccolta di widget specifici utilizzati all'interno dei dialoghi complessi.
 /// Include:
 /// 1. InputDialogWidget: Un form dinamico per l'inserimento dati.
-/// 2. Helper per Pickers.
-/// 3. Componenti Profilo.
+/// 2. Helper per Pickers e checkbox di stato.
 
 // --- INPUT DIALOG WIDGET ---
 class InputDialogWidget extends StatefulWidget {
@@ -302,90 +299,6 @@ class PickerHeader extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-// --- COMPONENTI PROFILO ---
-
-// Header con avatar e dati utente
-//
-class ProfileHeader extends StatelessWidget {
-  final User? user;
-  final File? localAvatar;
-
-  const ProfileHeader({
-    super.key,
-    required this.user,
-    required this.localAvatar,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final txtColor = DialogStyles.textColor(context);
-    final loc = AppLocalizations.of(context)!;
-
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 34.r,
-          backgroundColor: AppColors.backgroundAvatar,
-          backgroundImage: localAvatar != null
-              ? FileImage(localAvatar!)
-              : (user?.photoURL != null ? NetworkImage(user!.photoURL!) : null),
-          child: localAvatar == null && user?.photoURL == null
-              ? Icon(Icons.person, size: 50.sp, color: AppColors.avatar)
-              : null,
-        ),
-        SizedBox(height: DialogStyles.isIOS ? 10.h : 12.h),
-        Text(
-          user?.displayName ?? loc.accountFallback,
-          style: TextStyle(
-            color: txtColor,
-            fontWeight: FontWeight.bold,
-            fontSize: DialogStyles.isIOS ? 15.sp : 17.sp,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          user?.email ?? "",
-          style: TextStyle(
-            color: txtColor,
-            fontSize: DialogStyles.isIOS ? 13.sp : 15.sp,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class MaterialProfileTile extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final Color? color;
-  final VoidCallback onTap;
-
-  const MaterialProfileTile({
-    super.key,
-    required this.icon,
-    required this.text,
-    required this.onTap,
-    this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-      leading: Icon(icon, color: color ?? AppColors.primary, size: 24.sp),
-      title: Text(
-        text,
-        style: TextStyle(
-          fontSize: 16.sp,
-          color: color ?? DialogStyles.textColor(context),
-        ),
-      ),
-      onTap: onTap,
     );
   }
 }

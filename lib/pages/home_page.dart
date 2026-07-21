@@ -5,7 +5,6 @@ import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/notifiers/expense_notifier.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/pages/new_expense_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
@@ -94,6 +93,7 @@ class _HomePageState extends ConsumerState<HomePage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     // ASCOLTO DEGLI STATI (RIVERPOD)
     final multiSelectState = ref.watch(multiSelectNotifierProvider);
@@ -115,6 +115,7 @@ class _HomePageState extends ConsumerState<HomePage>
     final isLoading = expenseState.isLoading;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false, 
       // APP BAR CONDIZIONALE (Attiva solo in modalità selezione di massa)
       appBar: isSelectionMode
           ? CustomAppBar(
@@ -153,7 +154,6 @@ class _HomePageState extends ConsumerState<HomePage>
                 HomeHeader(
                   fadeAnimation: fadeAnimation,
                   isDark: isDark,
-                  onTapProfile: () => _showProfileSheet(context),
                   onReturn: _clearSearch,
                 ),
                 SizedBox(height: 6.h),
@@ -185,32 +185,35 @@ class _HomePageState extends ConsumerState<HomePage>
       ),
 
       // AZIONE INSERIMENTO NUOVA SPESA
-      floatingActionButton: !isSelectionMode && !isLoading
-          ? Container(
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: FloatingActionButton.extended(
-                heroTag: null,
-                elevation: 0,
-                backgroundColor: Colors.transparent,
-                onPressed: () async {
-                  await Navigator.pushNamed(context, NewExpensePage.route);
-                  if (mounted) _clearSearch();
-                },
-                label: Text(
-                  loc.newExpense,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
+      floatingActionButton: !isSelectionMode && !isLoading && !isKeyboardOpen
+          ? Padding(
+              padding: EdgeInsets.only(bottom: 70.h),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(20.r),
                 ),
-                icon: Icon(Icons.add_rounded, size: 20.sp),
-                foregroundColor: isDark
-                    ? AppColors.textDark
-                    : AppColors.textLight,
+                child: FloatingActionButton.extended(
+                  heroTag: null,
+                  elevation: 0,
+                  backgroundColor: Colors.transparent,
+                  onPressed: () async {
+                    await Navigator.pushNamed(context, NewExpensePage.route);
+                    if (mounted) _clearSearch();
+                  },
+                  label: Text(
+                    loc.newExpense,
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  icon: Icon(Icons.add_rounded, size: 20.sp),
+                  foregroundColor: isDark
+                      ? AppColors.textDark
+                      : AppColors.textLight,
+                ),
               ),
             )
           : null,
@@ -250,11 +253,5 @@ class _HomePageState extends ConsumerState<HomePage>
     if (_sortCriteria.isNotEmpty) {
       ref.read(expenseNotifierProvider.notifier).sortBy(_sortCriteria);
     }
-  }
-
-  /// Mostra la scheda del profilo utente mediante bottom sheet dedicato.
-  Future<void> _showProfileSheet(BuildContext context) async {
-    await DialogUtils.showProfileSheet(context, ref);
-    _clearSearch();
   }
 }

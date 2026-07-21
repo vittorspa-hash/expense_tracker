@@ -9,14 +9,15 @@ import 'package:expense_tracker/config/app_colors.dart';
 
 class SettingsTile extends StatelessWidget {
   // --- PARAMETRI ---
-  // Configurazione del tile: icona principale, testi descrittivi e 
+  // Configurazione del tile: icona principale, testi descrittivi e
   // widget di coda opzionale (trailingWidget) che ha priorità sull'icona di default.
-  final IconData icon; 
-  final String title; 
-  final String? subtitle; 
-  final VoidCallback? onPressed; 
-  final IconData trailingIcon; 
-  final Widget? trailingWidget; 
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback? onPressed;
+  final IconData trailingIcon;
+  final Widget? trailingWidget;
+  final bool logout;
 
   const SettingsTile({
     super.key,
@@ -26,6 +27,7 @@ class SettingsTile extends StatelessWidget {
     this.onPressed,
     this.trailingIcon = Icons.chevron_right_rounded,
     this.trailingWidget,
+    required this.logout,
   });
 
   @override
@@ -34,7 +36,7 @@ class SettingsTile extends StatelessWidget {
 
     // --- STRUTTURA LAYOUT ---
     // Organizza gli elementi orizzontalmente con padding standard.
-    // 
+    //
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
@@ -45,17 +47,16 @@ class SettingsTile extends StatelessWidget {
             width: 44.w,
             height: 44.h,
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.15),
+              color: logout ? AppColors.delete.withValues(alpha: 0.2) : isDark
+                  ? AppColors.secondaryDark
+                  : AppColors.secondaryLight,
               borderRadius: BorderRadius.circular(14.r),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
             ),
-            child: Icon(icon, size: 24.r, color: AppColors.primary),
+            child: Icon(
+              icon,
+              size: 24.r,
+              color: logout ? AppColors.delete : isDark ? AppColors.textDark : AppColors.primary,
+            ),
           ),
 
           SizedBox(width: 16.w),
@@ -72,7 +73,11 @@ class SettingsTile extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.textLight : AppColors.textDark,
+                    color: logout
+                        ? AppColors.delete
+                        : isDark
+                        ? AppColors.textLight
+                        : AppColors.textDark,
                     letterSpacing: 0.2,
                   ),
                 ),
@@ -109,7 +114,9 @@ class SettingsTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12.r),
                         border: Border.all(
-                          color: isDark
+                          color: logout
+                              ? AppColors.delete
+                              : isDark
                               ? AppColors.borderLight.withValues(alpha: 0.2)
                               : AppColors.borderDark.withValues(alpha: 0.2),
                           width: 1.5,
@@ -117,9 +124,11 @@ class SettingsTile extends StatelessWidget {
                       ),
                       child: IconButton(
                         icon: Icon(
-                          trailingIcon,
+                          logout ? Icons.logout_rounded : trailingIcon,
                           size: 20.r,
-                          color: isDark
+                          color: logout
+                              ? AppColors.delete
+                              : isDark
                               ? AppColors.greyDark
                               : AppColors.greyLight,
                         ),

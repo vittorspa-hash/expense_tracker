@@ -134,7 +134,7 @@
     "newEmailHint": "Neue E-Mail",
     "currentPasswordHint": "Aktuelles Passwort",
     "invalidData": "Bitte gültige Daten eingeben",
-    "emailUpdateSent": "Bestätigung für neue E-Mail gesendet. Bitte melde dich an.",
+    "emailUpdateSent": "E-Mail-Verifizierung an neue Adresse gesendet. Überprüfe den Link, den du erhalten hast, um dich erneut anzumelden.",
     "newPasswordHint": "Neues Passwort",
     "confirmPasswordHint": "Passwort bestätigen",
     "recoveryEmailSent": "E-Mail zur Wiederherstellung an {email} gesendet",
@@ -234,7 +234,7 @@
     "confirmPasswordRequired": "Bestätige das Passwort",
     "registerButton": "Registrieren",
     "verifyEmailTitle": "E-Mail verifizieren",
-    "verifyEmailContent": "Wir haben dir eine Verifizierungs-E-Mail gesendet. Bitte überprüfe deinen Posteingang.",
+    "verifyEmailContent": "Wir haben eine E-Mail zur Bestätigung des Kontos an die angegebene Adresse gesendet. Bitte klicke auf den Link in der Nachricht, um dein Konto zu aktivieren und dann einzuloggen. Falls du sie nicht finden kannst, prüfe bitte deinen Spam-Ordner.",
     "notificationDailyTitle": "💰 Ausgabenerinnerung",
     "notificationDailyBody": "Vergiss nicht, deine heutigen Ausgaben einzutragen!",
     "notificationBudgetTitle": "⚠️ Budgetlimit überschritten!",
@@ -272,5 +272,7 @@
     "emptyExpensesSubtitle": "Hier werden deine Ausgaben angezeigt. Füge eine mit dem unteren Button hinzu!",
     "emptySearchTitle": "Keine Ergebnisse", 
     "emptySearchSubtitle": "Keine Ausgaben entsprechen deiner Suche.",
-    "successTitle": "Erfolg"
+    "successTitle": "Erfolg",
+    "navHome": "Startseite",
+    "navReport": "Bericht"
 }

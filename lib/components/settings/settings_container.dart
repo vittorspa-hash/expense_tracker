@@ -21,8 +21,8 @@ class SettingsContainer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark
-            ? AppColors.cardDark.withValues(alpha: 0.5)
-            : AppColors.cardLight.withValues(alpha: 0.9),
+            ? AppColors.cardDark
+            : AppColors.cardLight,
         borderRadius: BorderRadius.circular(20.r),
         boxShadow: [
           BoxShadow(

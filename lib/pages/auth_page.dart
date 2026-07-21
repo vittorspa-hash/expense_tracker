@@ -1,8 +1,10 @@
 import 'package:expense_tracker/components/auth/login_form.dart';
 import 'package:expense_tracker/components/auth/register_form.dart';
+import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -12,16 +14,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// tra Login e Registrazione tramite un TabController, offrendo un header
 /// personalizzato e transizioni animate per un'esperienza utente fluida.
 
-class AuthPage extends StatefulWidget {
+class AuthPage extends ConsumerStatefulWidget {
   const AuthPage({super.key});
 
   @override
-  State<AuthPage> createState() => _AuthPageState();
+  ConsumerState<AuthPage> createState() => _AuthPageState();
 }
 
-class _AuthPageState extends State<AuthPage>
+class _AuthPageState extends ConsumerState<AuthPage>
     with TickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- STATO E ANIMAZIONI ---
   // Gestione del controller per i Tab e mixin per le animazioni di fade-in.
   late TabController _tabController;
@@ -52,6 +53,7 @@ class _AuthPageState extends State<AuthPage>
     // e struttura principale della pagina.
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
+    final isLoading = ref.watch(authFlowBusyProvider);
 
     return Scaffold(
       body: Container(
@@ -59,7 +61,7 @@ class _AuthPageState extends State<AuthPage>
           color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         ),
         child: SafeArea(
-          top: false, 
+          top: false,
           child: buildWithFadeAnimation(
             Column(
               children: [
@@ -130,73 +132,84 @@ class _AuthPageState extends State<AuthPage>
 
                 // --- SELETTORE TAB ---
                 // Switch grafico per alternare tra le modalità di Accesso e Registrazione.
-                Container(
-                  margin: EdgeInsets.symmetric(horizontal: 20.w),
-                  padding: EdgeInsets.all(4.w),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                    borderRadius: BorderRadius.circular(16.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadow.withValues(
-                          alpha: isDark ? 0.3 : 0.08,
-                        ),
-                        blurRadius: 15,
-                        offset: const Offset(0, 6),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: isLoading ? 0.5 : 1.0,
+                  child: IgnorePointer(
+                    ignoring: isLoading,
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 20.w),
+                      padding: EdgeInsets.all(4.w),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.cardDark
+                            : AppColors.cardLight,
+                        borderRadius: BorderRadius.circular(16.r),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadow.withValues(
+                              alpha: isDark ? 0.3 : 0.08,
+                            ),
+                            blurRadius: 15,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    indicator: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(12.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    labelColor: AppColors.textLight,
-                    unselectedLabelColor: isDark
-                        ? AppColors.greyDark
-                        : AppColors.greyLight,
-                    labelStyle: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
-                    ),
-                    unselectedLabelStyle: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-
-                    tabs: [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(FontAwesomeIcons.rightToBracket, size: 15.sp),
-                            SizedBox(width: 8.w),
-                            Text(loc.loginTab),
+                      child: TabBar(
+                        controller: _tabController,
+                        indicator: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
                           ],
                         ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(FontAwesomeIcons.userPlus, size: 15.sp),
-                            SizedBox(width: 8.w),
-                            Text(loc.registerTab),
-                          ],
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        dividerColor: Colors.transparent,
+                        labelColor: AppColors.textLight,
+                        unselectedLabelColor: isDark
+                            ? AppColors.greyDark
+                            : AppColors.greyLight,
+                        labelStyle: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
                         ),
+                        unselectedLabelStyle: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        tabs: [
+                          Tab(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  FontAwesomeIcons.rightToBracket,
+                                  size: 15.sp,
+                                ),
+                                SizedBox(width: 8.w),
+                                Text(loc.loginTab),
+                              ],
+                            ),
+                          ),
+                          Tab(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(FontAwesomeIcons.userPlus, size: 15.sp),
+                                SizedBox(width: 8.w),
+                                Text(loc.registerTab),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
 
@@ -207,10 +220,10 @@ class _AuthPageState extends State<AuthPage>
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
-                    children: const [
-                      LoginForm(),
-                      RegisterForm(),
-                    ],
+                    physics: isLoading
+                        ? const NeverScrollableScrollPhysics()
+                        : const AlwaysScrollableScrollPhysics(),
+                    children: const [LoginForm(), RegisterForm()],
                   ),
                 ),
               ],

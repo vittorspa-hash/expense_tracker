@@ -4,7 +4,7 @@ import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
-import 'package:expense_tracker/utils/snackbar_utils.dart'; 
+import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -60,7 +60,7 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   Widget build(BuildContext context) {
     // Rilevamento del tema corrente e ascolto dello stato di caricamento dal provider.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoading = ref.watch(authNotifierProvider).value?.isLoading ?? false;
+    final isLoading = ref.watch(authFlowBusyProvider);
     final loc = AppLocalizations.of(context)!;
 
     return SingleChildScrollView(
@@ -211,11 +211,13 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
     final loc = AppLocalizations.of(context)!;
-
     final auth = ref.read(authNotifierProvider.notifier);
+    // Catturato subito, prima di qualsiasi await: resta valido anche se
+    // il widget venisse smontato durante l'operazione.
+    final busyNotifier = ref.read(authFlowBusyProvider.notifier);
 
+    busyNotifier.state = true;
     try {
-      // Invia la richiesta di registrazione a Firebase tramite l'AuthNotifier.
       await auth.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
@@ -224,19 +226,27 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
 
       if (!mounted) return;
 
-      // Mostra un dialogo informativo per spiegare la necessità di convalidare l'indirizzo email.
-      await DialogUtils.showInfoDialog(
+      // Avvia il dialog (la route viene inserita subito, in modo sincrono)
+      final dialogFuture = DialogUtils.showInfoDialog(
         context,
         title: loc.verifyEmailTitle,
         content: loc.verifyEmailContent,
       );
+
+      // Da qui in poi il modal barrier del dialog protegge già la UI sottostante,
+      // quindi possiamo sbloccare tab/campi senza rischi.
+      busyNotifier.state = false;
+
+      await dialogFuture;
     } catch (e) {
       if (!mounted) return;
       SnackbarUtils.show(
         context: context,
         title: loc.errorTitle,
         message: e.toString(),
+        navBar: false,
       );
+      busyNotifier.state = false;
     }
   }
 }
