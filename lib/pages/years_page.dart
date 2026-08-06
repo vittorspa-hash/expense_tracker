@@ -22,7 +22,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// dedicati tramite un carosello di componenti analitici.
 
 class YearsPage extends ConsumerStatefulWidget {
-  static const route = "/years";
   const YearsPage({super.key});
 
   @override

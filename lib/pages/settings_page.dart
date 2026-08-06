@@ -21,7 +21,6 @@ import 'package:expense_tracker/components/settings/settings_container.dart';
 /// Utilizza SettingsContainer per uniformare lo stile delle sezioni.
 
 class SettingsPage extends ConsumerStatefulWidget {
-  static const route = "/settings/page";
   const SettingsPage({super.key});
 
   @override

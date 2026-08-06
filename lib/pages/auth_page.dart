@@ -94,7 +94,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
                           ),
                         ),
                         child: Image.asset(
-                          "assets/icons/money2.png",
+                          "assets/icons/money2_ardesia.png",
                           width: 68.w,
                           height: 68.w,
                           fit: BoxFit.contain,

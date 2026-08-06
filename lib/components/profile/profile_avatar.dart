@@ -56,24 +56,17 @@ class ProfileAvatar extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isDark ? AppColors.cardDark : AppColors.cardLight,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.shadow.withValues(alpha: isDark ? 0.4 : 0.1),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             child: CircleAvatar(
               key: ValueKey(image?.path ?? "default_avatar"),
               radius: 65.r,
               backgroundImage: image != null ? FileImage(image!) : null,
-              backgroundColor: AppColors.backgroundAvatar,
+              backgroundColor: isDark ? AppColors.secondaryDark : AppColors.secondaryLight,
               child: image == null
                   ? Icon(
                       Icons.person_rounded,
                       size: 70.r,
-                      color: AppColors.avatar.withValues(alpha: 0.7),
+                      color: AppColors.primary,
                     )
                   : null,
             ),

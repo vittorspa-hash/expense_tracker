@@ -23,7 +23,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 /// Utilizza `SnackbarUtils` per standardizzare il feedback visivo delle operazioni.
 
 class ProfilePage extends ConsumerStatefulWidget {
-  static const route = "/profile/page";
   const ProfilePage({super.key});
 
   @override

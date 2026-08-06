@@ -65,17 +65,17 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/money2.png"
+  image_path: "assets/icons/money2_ardesia.png"
   remove_alpha_ios: true
 
 flutter_native_splash:
-  color: "#9575CD"
-  color_dark: "#9575CD"
-  image: assets/icons/money2.png
+  color: "#64748B"
+  color_dark: "#64748B"
+  image: assets/icons/money2_ardesia.png
   android_12:
-    color: "#9575CD"
-    color_dark: "#9575CD"
-    image: assets/icons/icon-1152x1152.png
+    color: "#64748B"
+    color_dark: "#64748B"
+    image: assets/icons/icon-1152x1152_ardesia.png
 
 
 flutter:
@@ -83,4 +83,4 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/icons/money2.png
+    - assets/icons/money2_ardesia.png
