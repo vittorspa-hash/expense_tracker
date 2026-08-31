@@ -352,7 +352,7 @@ class HomeContentList extends ConsumerWidget {
                   },
                 ),
               ),
-            SliverToBoxAdapter(child: SizedBox(height: 120.h)),
+            SliverToBoxAdapter(child: SizedBox(height: 180.h)),
           ],
         ),
       ),

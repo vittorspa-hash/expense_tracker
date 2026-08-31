@@ -78,14 +78,9 @@ e l'utente interagisce con una spesa "incompleta", l'app scarica silenziosamente
 ---
 
 ## ⚡ Screenshot
-**Auth Page**  
-![Auth Page](assets/screenshots/auth_page3.png)
-
-**Home Page**  
-![Home Page](assets/screenshots/home_page5.png)
-
-**Years Page**  
-![Years Page Graph](assets/screenshots/years_page3.png)
+| Auth Page | Home Page | Years Page |
+|:---:|:---:|:---:|
+| <img src="assets/screenshots/auth_page.png" width="230"/> | <img src="assets/screenshots/home_page.png" width="230"/> | <img src="assets/screenshots/years_page.png" width="230"/> |
 
 ---
 
