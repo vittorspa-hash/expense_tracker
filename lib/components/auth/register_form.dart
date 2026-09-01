@@ -1,4 +1,5 @@
 import 'package:expense_tracker/components/auth/auth_button.dart';
+import 'package:expense_tracker/components/auth/auth_form_card.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
@@ -58,8 +59,6 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
   // --- COSTRUZIONE INTERFACCIA ---
   @override
   Widget build(BuildContext context) {
-    // Rilevamento del tema corrente e ascolto dello stato di caricamento dal provider.
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isLoading = ref.watch(authFlowBusyProvider);
     final loc = AppLocalizations.of(context)!;
 
@@ -69,118 +68,77 @@ class _RegisterFormState extends ConsumerState<RegisterForm> {
         key: _formKey,
         child: Column(
           children: [
-            // SCHEDA DEL FORM DI REGISTRAZIONE
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    loc.createAccount,
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? AppColors.textLight : AppColors.textDark2,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    loc.registerToStart,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: isDark ? AppColors.greyDark : AppColors.greyLight,
-                    ),
-                  ),
-                  SizedBox(height: 18.h),
-
-                  // CAMPO DI INPUT NOME
-                  AuthTextField(
-                    controller: _nameController,
-                    focusNode: _nameFocus,
-                    nextFocus: _emailFocus,
-                    hint: loc.fullNameHint,
-                    icon: FontAwesomeIcons.user,
-                    capitalization: TextCapitalization.words,
-                    enabled: !isLoading,
-                    validator: (v) =>
-                        v!.trim().isEmpty ? loc.nameRequired : null,
-                  ),
-                  SizedBox(height: 8.h),
-
-                  // CAMPO DI INPUT EMAIL
-                  AuthTextField(
-                    controller: _emailController,
-                    focusNode: _emailFocus,
-                    nextFocus: _passwordFocus,
-                    hint: loc.emailHint,
-                    icon: FontAwesomeIcons.envelope,
-                    keyboardType: TextInputType.emailAddress,
-                    enabled: !isLoading,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return loc.emailRequired;
-                      }
-                      if (!v.contains("@")) return loc.emailInvalid;
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 8.h),
-
-                  // CAMPO DI INPUT PASSWORD
-                  AuthTextField(
-                    controller: _passwordController,
-                    focusNode: _passwordFocus,
-                    nextFocus: _confirmFocus,
-                    hint: loc.passwordHint,
-                    icon: FontAwesomeIcons.lock,
-                    obscure: _obscure1,
-                    enabled: !isLoading,
-                    onToggleObscure: () =>
-                        setState(() => _obscure1 = !_obscure1),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return loc.passwordRequired;
-                      }
-                      if (v.length < 6) {
-                        return loc.passwordMinLength;
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 8.h),
-
-                  // CAMPO DI INPUT CONFERMA PASSWORD
-                  AuthTextField(
-                    controller: _confirmController,
-                    focusNode: _confirmFocus,
-                    hint: loc.confirmPasswordHint,
-                    icon: FontAwesomeIcons.lock,
-                    obscure: _obscure2,
-                    isLast: true,
-                    enabled: !isLoading,
-                    onToggleObscure: () =>
-                        setState(() => _obscure2 = !_obscure2),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) {
-                        return loc.confirmPasswordRequired;
-                      }
-                      if (v != _passwordController.text) {
-                        return loc.passwordsDoNotMatch;
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
+            AuthFormCard(
+              title: loc.createAccount,
+              subtitle: loc.registerToStart,
+              children: [
+                AuthTextField(
+                  controller: _nameController,
+                  focusNode: _nameFocus,
+                  nextFocus: _emailFocus,
+                  hint: loc.fullNameHint,
+                  icon: FontAwesomeIcons.user,
+                  capitalization: TextCapitalization.words,
+                  enabled: !isLoading,
+                  validator: (v) => v!.trim().isEmpty ? loc.nameRequired : null,
+                ),
+                SizedBox(height: 8.h),
+                AuthTextField(
+                  controller: _emailController,
+                  focusNode: _emailFocus,
+                  nextFocus: _passwordFocus,
+                  hint: loc.emailHint,
+                  icon: FontAwesomeIcons.envelope,
+                  keyboardType: TextInputType.emailAddress,
+                  enabled: !isLoading,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return loc.emailRequired;
+                    if (!v.contains("@")) return loc.emailInvalid;
+                    return null;
+                  },
+                ),
+                SizedBox(height: 8.h),
+                AuthTextField(
+                  controller: _passwordController,
+                  focusNode: _passwordFocus,
+                  nextFocus: _confirmFocus,
+                  hint: loc.passwordHint,
+                  icon: FontAwesomeIcons.lock,
+                  obscure: _obscure1,
+                  enabled: !isLoading,
+                  onToggleObscure: () => setState(() => _obscure1 = !_obscure1),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty){
+                      return loc.passwordRequired;
+                    }
+                    if (v.length < 6) return loc.passwordMinLength;
+                    return null;
+                  },
+                ),
+                SizedBox(height: 8.h),
+                AuthTextField(
+                  controller: _confirmController,
+                  focusNode: _confirmFocus,
+                  hint: loc.confirmPasswordHint,
+                  icon: FontAwesomeIcons.lock,
+                  obscure: _obscure2,
+                  isLast: true,
+                  enabled: !isLoading,
+                  onToggleObscure: () => setState(() => _obscure2 = !_obscure2),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return loc.confirmPasswordRequired;
+                    }
+                    if (v != _passwordController.text) {
+                      return loc.passwordsDoNotMatch;
+                    }
+                    return null;
+                  },
+                ),
+              ],
             ),
             SizedBox(height: 10.h),
 
-            // BOTTONE DI REGISTRAZIONE
             AuthButton(
               onPressed: isLoading ? null : _handleRegister,
               icon: isLoading ? null : FontAwesomeIcons.userPlus,

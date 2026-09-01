@@ -1,11 +1,11 @@
+import 'package:expense_tracker/components/auth/auth_header.dart';
+import 'package:expense_tracker/components/auth/auth_tab_selector.dart';
 import 'package:expense_tracker/components/auth/login_form.dart';
 import 'package:expense_tracker/components/auth/register_form.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
-import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -24,14 +24,12 @@ class AuthPage extends ConsumerStatefulWidget {
 class _AuthPageState extends ConsumerState<AuthPage>
     with TickerProviderStateMixin, FadeAnimationMixin {
   // --- STATO E ANIMAZIONI ---
-  // Gestione del controller per i Tab e mixin per le animazioni di fade-in.
   late TabController _tabController;
 
   @override
   TickerProvider get vsync => this;
 
   // --- CICLO DI VITA ---
-  // Inizializzazione e dismissione dei controller per evitare memory leak.
   @override
   void initState() {
     super.initState();
@@ -49,10 +47,7 @@ class _AuthPageState extends ConsumerState<AuthPage>
   @override
   Widget build(BuildContext context) {
     // --- BUILD UI ---
-    // Configurazione dello scaffold con background dinamico (Light/Dark)
-    // e struttura principale della pagina.
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = AppLocalizations.of(context)!;
     final isLoading = ref.watch(authFlowBusyProvider);
 
     return Scaffold(
@@ -65,158 +60,18 @@ class _AuthPageState extends ConsumerState<AuthPage>
           child: buildWithFadeAnimation(
             Column(
               children: [
-                // --- HEADER PERSONALIZZATO ---
-                // Sezione superiore curva contenente il logo, il titolo dell'app
-                // e una breve descrizione.
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 20.h,
-                    bottom: 30.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(32.r),
-                      bottomRight: Radius.circular(32.r),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(20.w),
-                        decoration: BoxDecoration(
-                          color: AppColors.avatar.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.avatar.withValues(alpha: 0.3),
-                            width: 2,
-                          ),
-                        ),
-                        child: Image.asset(
-                          "assets/icons/money2_ardesia.png",
-                          width: 68.w,
-                          height: 68.w,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-
-                      SizedBox(height: 16.h),
-
-                      Text(
-                        loc.authAppTitle,
-                        style: TextStyle(
-                          color: AppColors.textLight,
-                          fontSize: 26.sp,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-
-                      SizedBox(height: 8.h),
-
-                      Text(
-                        loc.authAppSubtitle,
-                        style: TextStyle(
-                          color: AppColors.textLight.withValues(alpha: 0.9),
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // Header statico: const, non si ricostruisce mai su isLoading.
+                const AuthHeader(),
 
                 SizedBox(height: 18.h),
 
-                // --- SELETTORE TAB ---
-                // Switch grafico per alternare tra le modalità di Accesso e Registrazione.
-                AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  opacity: isLoading ? 0.5 : 1.0,
-                  child: IgnorePointer(
-                    ignoring: isLoading,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 20.w),
-                      padding: EdgeInsets.all(4.w),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? AppColors.cardDark
-                            : AppColors.cardLight,
-                        borderRadius: BorderRadius.circular(16.r),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.shadow.withValues(
-                              alpha: isDark ? 0.3 : 0.08,
-                            ),
-                            blurRadius: 15,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        indicator: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        dividerColor: Colors.transparent,
-                        labelColor: AppColors.textLight,
-                        unselectedLabelColor: isDark
-                            ? AppColors.greyDark
-                            : AppColors.greyLight,
-                        labelStyle: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.3,
-                        ),
-                        unselectedLabelStyle: TextStyle(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        tabs: [
-                          Tab(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  FontAwesomeIcons.rightToBracket,
-                                  size: 15.sp,
-                                ),
-                                SizedBox(width: 8.w),
-                                Text(loc.loginTab),
-                              ],
-                            ),
-                          ),
-                          Tab(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(FontAwesomeIcons.userPlus, size: 15.sp),
-                                SizedBox(width: 8.w),
-                                Text(loc.registerTab),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                AuthTabSelector(
+                  controller: _tabController,
+                  isLoading: isLoading,
                 ),
 
                 SizedBox(height: 10.h),
 
-                // --- AREA CONTENUTO ---
-                // TabBarView che renderizza i form specifici (Login/Register) nello spazio rimanente.
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,

@@ -1,4 +1,5 @@
 import 'package:expense_tracker/components/auth/auth_button.dart';
+import 'package:expense_tracker/components/auth/auth_form_card.dart';
 import 'package:expense_tracker/components/auth/auth_text_field.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
@@ -59,112 +60,86 @@ class _LoginFormState extends ConsumerState<LoginForm> {
         key: _formKey,
         child: Column(
           children: [
-            // SCHEDA DEL FORM DI LOGIN
-            Container(
-              padding: EdgeInsets.all(20.w),
-              decoration: BoxDecoration(
-                color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                borderRadius: BorderRadius.circular(20.r),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    loc.welcomeBack,
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? AppColors.textLight : AppColors.textDark2,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    loc.signInToContinue,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: isDark ? AppColors.greyDark : AppColors.greyLight,
-                    ),
-                  ),
-                  SizedBox(height: 18.h),
+            AuthFormCard(
+              title: loc.welcomeBack,
+              subtitle: loc.signInToContinue,
+              children: [
+                // CAMPO DI INPUT EMAIL
+                AuthTextField(
+                  controller: _emailController,
+                  focusNode: _emailFocus,
+                  nextFocus: _passwordFocus,
+                  hint: loc.emailHint,
+                  icon: FontAwesomeIcons.envelope,
+                  keyboardType: TextInputType.emailAddress,
+                  enabled: !isLoading,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return loc.emailRequired;
+                    }
+                    if (!value.contains("@")) {
+                      return loc.emailInvalid;
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 8.h),
 
-                  // CAMPO DI INPUT EMAIL
-                  AuthTextField(
-                    controller: _emailController,
-                    focusNode: _emailFocus,
-                    nextFocus: _passwordFocus,
-                    hint: loc.emailHint,
-                    icon: FontAwesomeIcons.envelope,
-                    keyboardType: TextInputType.emailAddress,
-                    enabled: !isLoading,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return loc.emailRequired;
-                      }
-                      if (!value.contains("@")) {
-                        return loc.emailInvalid;
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 8.h),
+                // CAMPO DI INPUT PASSWORD
+                AuthTextField(
+                  controller: _passwordController,
+                  focusNode: _passwordFocus,
+                  hint: loc.passwordHint,
+                  icon: FontAwesomeIcons.lock,
+                  obscure: _obscure,
+                  isLast: true,
+                  enabled: !isLoading,
+                  onToggleObscure: () => setState(() => _obscure = !_obscure),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return loc.passwordRequired;
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 8.h),
 
-                  // CAMPO DI INPUT PASSWORD
-                  AuthTextField(
-                    controller: _passwordController,
-                    focusNode: _passwordFocus,
-                    hint: loc.passwordHint,
-                    icon: FontAwesomeIcons.lock,
-                    obscure: _obscure,
-                    isLast: true,
-                    enabled: !isLoading,
-                    onToggleObscure: () => setState(() => _obscure = !_obscure),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return loc.passwordRequired;
-                      }
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 8.h),
-
-                  // PULSANTE RECUPERO PASSWORD
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: isLoading ? null : _handleResetPassword,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8.w,
-                          vertical: 4.h,
-                        ),
+                // PULSANTE RECUPERO PASSWORD
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: isLoading ? null : _handleResetPassword,
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
                       ),
-                      child: Text(
-                        loc.forgotPassword,
-                        style: TextStyle(
-                          color: isLoading
-                              ? (isDark
-                                    ? AppColors.greyDark
-                                    : AppColors.greyLight)
-                              : (isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textDark),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12.sp,
-                          decoration: TextDecoration.underline,
-                          decorationColor: isLoading
-                              ? (isDark
-                                    ? AppColors.greyDark
-                                    : AppColors.greyLight)
-                              : (isDark
-                                    ? AppColors.textLight
-                                    : AppColors.textDark),
-                        ),
+                    ),
+                    child: Text(
+                      loc.forgotPassword,
+                      style: TextStyle(
+                        color: isLoading
+                            ? (isDark
+                                  ? AppColors.greyDark
+                                  : AppColors.greyLight)
+                            : (isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textDark),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.sp,
+                        decoration: TextDecoration.underline,
+                        decorationColor: isLoading
+                            ? (isDark
+                                  ? AppColors.greyDark
+                                  : AppColors.greyLight)
+                            : (isDark
+                                  ? AppColors.textLight
+                                  : AppColors.textDark),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             SizedBox(height: 10.h),
 
