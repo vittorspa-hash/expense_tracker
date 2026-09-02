@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:expense_tracker/app.dart';
+import 'package:expense_tracker/components/profile/delete_account_button.dart';
+import 'package:expense_tracker/components/profile/profile_info_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
@@ -11,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:expense_tracker/components/profile/profile_avatar.dart';
-import 'package:expense_tracker/components/profile/profile_tile.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -55,6 +56,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final profileState = ref.watch(profileNotifierProvider).value;
     final user = profileState?.user;
+    final isLoading = profileState?.isLoading ?? false;
     final loc = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -110,7 +112,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                   child: ProfileAvatar(
                     key: ObjectKey(profileState?.localImage),
                     image: profileState?.localImage,
-                    isUploading: profileState?.isLoading ?? false,
+                    isUploading: isLoading,
                     onChangePicture: _handleChangePicture,
                     onRemovePicture: _handleRemovePicture,
                   ),
@@ -119,136 +121,31 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 SizedBox(height: 32.h),
 
                 // SEZIONE DATI PERSONALI
-                Container(
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.cardDark : AppColors.cardLight,
-                    borderRadius: BorderRadius.circular(20.r),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.shadow.withValues(
-                          alpha: isDark ? 0.3 : 0.08,
-                        ),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // Nome
-                      ProfileTile(
-                        icon: Icons.person_outline_rounded,
-                        title: loc.nameLabel,
-                        value: user?.displayName,
-                        tooltip: loc.editNameTooltip,
-                        onPressed: _handleChangeDisplayName,
-                        isLoading: profileState?.isLoading ?? false,
-                      ),
-
-                      _buildDivider(isDark),
-
-                      // Email
-                      ProfileTile(
-                        icon: Icons.email_outlined,
-                        title: loc.emailLabel,
-                        value: user?.email,
-                        tooltip: loc.editEmailTooltip,
-                        onPressed: _handleChangeEmail,
-                        isLoading: profileState?.isLoading ?? false,
-                      ),
-
-                      _buildDivider(isDark),
-
-                      // Password
-                      ProfileTile(
-                        icon: Icons.lock_outline_rounded,
-                        title: loc.passwordLabel,
-                        value: "••••••••••",
-                        tooltip: loc.editPasswordTooltip,
-                        onPressed: _handleChangePassword,
-                        isLoading: profileState?.isLoading ?? false,
-                      ),
-
-                      _buildDivider(isDark),
-
-                      // ID Utente (Copiabile)
-                      ProfileTile(
-                        icon: Icons.badge_outlined,
-                        title: loc.userIdLabel,
-                        value: user?.uid,
-                        trailingIcon: Icons.content_copy_rounded,
-                        tooltip: loc.copyIdTooltip,
-                        onPressed: () async {
-                          await ClipboardUtils.copy(user?.uid);
-                          if (context.mounted) {
-                            SnackbarUtils.show(
-                              context: context,
-                              title: loc.successTitle,
-                              message: loc.idCopied,
-                              navBar: true,
-                            );
-                          }
-                        },
-                        isLoading: profileState?.isLoading ?? false,
-                      ),
-                    ],
-                  ),
+                ProfileInfoCard(
+                  user: user,
+                  isLoading: isLoading,
+                  onEditName: _handleChangeDisplayName,
+                  onEditEmail: _handleChangeEmail,
+                  onEditPassword: _handleChangePassword,
+                  onCopyId: () async {
+                    await ClipboardUtils.copy(user?.uid);
+                    if (context.mounted) {
+                      SnackbarUtils.show(
+                        context: context,
+                        title: loc.successTitle,
+                        message: loc.idCopied,
+                        navBar: true,
+                      );
+                    }
+                  },
                 ),
 
                 SizedBox(height: 24.h),
 
                 // BOTTONE ELIMINAZIONE ACCOUNT
-                ElevatedButton(
-                  onPressed: profileState?.isLoading ?? false
-                      ? null
-                      : _handleDeleteAccount,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: isDark
-                        ? AppColors.textDark
-                        : AppColors.textLight,
-                    elevation: 6,
-                    shadowColor: AppColors.primary.withValues(alpha: 0.3),
-                    minimumSize: Size(double.infinity, 50.h),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16.r),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (profileState?.isLoading ?? false)
-                        Padding(
-                          padding: EdgeInsets.only(right: 12.w),
-                          child: SizedBox(
-                            width: 20.r,
-                            height: 20.r,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppColors.textLight,
-                            ),
-                          ),
-                        )
-                      else ...[
-                        Icon(
-                          Icons.delete_outline_rounded,
-                          size: 22.r,
-                          color: isDark
-                              ? AppColors.textDark
-                              : AppColors.textLight,
-                        ),
-                        SizedBox(width: 12.w),
-                      ],
-                      Text(
-                        loc.deleteAccountButton,
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
+                DeleteAccountButton(
+                  isLoading: isLoading,
+                  onPressed: _handleDeleteAccount,
                 ),
 
                 SizedBox(height: 120.h),
@@ -256,20 +153,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  // --- ELEMENTI GRAFICI SECONDARI ---
-  Widget _buildDivider(bool isDark) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      child: Divider(
-        height: 1,
-        thickness: 1,
-        color: isDark
-            ? AppColors.dividerDark.withValues(alpha: 0.3)
-            : AppColors.dividerLight.withValues(alpha: 0.5),
       ),
     );
   }
@@ -579,7 +462,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
             isDark: isDarkTheme,
             title: successTitle,
             message: successMessage,
-            navBar: false, 
+            navBar: false,
           );
         } catch (e) {
           if (mounted) {
