@@ -208,4 +208,17 @@ class ExpenseCalculator {
         break;
     }
   }
+
+  /// Filtra le spese la cui descrizione contiene la query di ricerca
+  /// (case-insensitive). Centralizza la logica usata sia da HomePage
+  /// (per select-all/count) sia da HomeContentList (per il rendering).
+  static List<ExpenseModel> filterByQuery(
+    List<ExpenseModel> expenses,
+    String query,
+  ) {
+    final q = query.toLowerCase();
+    return expenses
+        .where((e) => (e.description ?? "").toLowerCase().contains(q))
+        .toList();
+  }
 }

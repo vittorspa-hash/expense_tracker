@@ -1,13 +1,13 @@
 import 'package:expense_tracker/components/home/home_content_list.dart';
 import 'package:expense_tracker/components/home/home_header.dart';
+import 'package:expense_tracker/components/home/new_expense_fab.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_model.dart';
-import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
-import 'package:expense_tracker/pages/new_expense_page.dart';
 import 'package:expense_tracker/config/app_colors.dart';
+import 'package:expense_tracker/utils/expense_calculator.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -78,44 +78,42 @@ class _HomePageState extends ConsumerState<HomePage>
     super.dispose();
   }
 
-  // --- FILTRAGGIO DATI ---
-  /// Filtra localmente la lista delle spese in base alla query di ricerca inserita.
-  List<ExpenseModel> _getFilteredExpenses(List<ExpenseModel> expenses) {
-    final query = _searchQuery.toLowerCase();
-    return expenses.where((expense) {
-      final desc = expense.description?.toLowerCase() ?? "";
-      return desc.contains(query);
-    }).toList();
-  }
-
   // --- COSTRUZIONE INTERFACCIA ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final loc = AppLocalizations.of(context)!;
     final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
-    // ASCOLTO DEGLI STATI (RIVERPOD)
-    final multiSelectState = ref.watch(multiSelectNotifierProvider);
-    final expenseState =
-        ref.watch(expenseNotifierProvider).value ?? ExpenseState();
-
-    // Gestione degli errori derivati dallo stato globale delle spese
-    if (expenseState.errorMessage != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _showErrorSnackBar(context, expenseState.errorMessage!);
+    // --- SIDE-EFFECT: GESTIONE ERRORI ---
+    // ref.listen reagisce una sola volta al cambio di errorMessage, non ad ogni rebuild,
+    // e Riverpod smette automaticamente di notificare se il widget viene smontato
+    ref.listen(expenseNotifierProvider, (previous, next) {
+      final message = next.value?.errorMessage;
+      if (message != null) {
+        _showErrorSnackBar(context, message);
         ref.read(expenseNotifierProvider.notifier).clearError();
-      });
-    }
+      }
+    });
+
+    // ASCOLTO DEGLI STATI (RIVERPOD)
+    // select mirato: HomePage si ricostruisce solo quando cambia isLoading,
+    // non ad ogni modifica della lista spese
+    final multiSelectState = ref.watch(multiSelectNotifierProvider);
+    final isLoading = ref.watch(
+      expenseNotifierProvider.select((s) => s.value?.isLoading ?? false),
+    );
 
     // Estrazione delle proprietà utili dello stato
     final isSelectionMode = multiSelectState.isSelectionMode;
     final selectedCount = multiSelectState.selectedCount;
-    final filteredExpenses = _getFilteredExpenses(expenseState.expenses);
-    final isLoading = expenseState.isLoading;
+
+    // Calcolato solo quando serve (isSelectionMode true), serve ai callback/contatori dell'AppBar di selezione multipla
+    final currentFiltered = isSelectionMode
+        ? _currentFilteredExpenses()
+        : const <ExpenseModel>[];
 
     return Scaffold(
-      resizeToAvoidBottomInset: false, 
+      resizeToAvoidBottomInset: false,
       // APP BAR CONDIZIONALE (Attiva solo in modalità selezione di massa)
       appBar: isSelectionMode
           ? CustomAppBar(
@@ -133,10 +131,10 @@ class _HomePageState extends ConsumerState<HomePage>
                   ExpenseActionHandler.handleDeleteSelected(context, ref),
               onSelectAll: () => ref
                   .read(multiSelectNotifierProvider.notifier)
-                  .selectAll(filteredExpenses),
+                  .selectAll(currentFiltered),
               onDeselectAll: () =>
                   ref.read(multiSelectNotifierProvider.notifier).deselectAll(),
-              totalCount: filteredExpenses.length,
+              totalCount: currentFiltered.length,
             )
           : null,
 
@@ -186,41 +184,21 @@ class _HomePageState extends ConsumerState<HomePage>
 
       // AZIONE INSERIMENTO NUOVA SPESA
       floatingActionButton: !isSelectionMode && !isLoading && !isKeyboardOpen
-          ? Padding(
-              padding: EdgeInsets.only(bottom: 70.h),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: FloatingActionButton.extended(
-                  heroTag: null,
-                  elevation: 0,
-                  backgroundColor: Colors.transparent,
-                  onPressed: () async {
-                    await Navigator.pushNamed(context, NewExpensePage.route);
-                    if (mounted) _clearSearch();
-                  },
-                  label: Text(
-                    loc.newExpense,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  icon: Icon(Icons.add_rounded, size: 20.sp),
-                  foregroundColor: isDark
-                      ? AppColors.textDark
-                      : AppColors.textLight,
-                ),
-              ),
-            )
+          ? NewExpenseFab(isDark: isDark, onReturn: _clearSearch)
           : null,
     );
   }
 
   // --- LOGICA E METODI DI SUPPORTO ---
+
+  /// Recupera la lista filtrata corrente per select-all/count nell'AppBar
+  /// di selezione multipla. Legge lo stato "on demand" (ref.read) perché
+  /// invocata solo dentro i callback dell'AppBar, non durante il build.
+  List<ExpenseModel> _currentFilteredExpenses() {
+    final expenses =
+        ref.read(expenseNotifierProvider).value?.expenses ?? const [];
+    return ExpenseCalculator.filterByQuery(expenses, _searchQuery);
+  }
 
   /// Pulisce il controller di ricerca e resetta lo stato della query locale.
   void _clearSearch() {

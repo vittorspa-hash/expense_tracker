@@ -8,9 +8,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// FILE: home_header.dart
 /// DESCRIZIONE: Componente superiore della Home Page (Dashboard).
-/// Visualizza i totali delle spese (Oggi, Settimana, Mese, Anno) e l'avatar utente.
-/// Monitora in modo reattivo i notifier delle spese, del profilo e della valuta
-/// tramite i rispettivi provider Riverpod.
+/// Visualizza i totali delle spese (Oggi, Settimana, Mese, Anno), formattati
+/// nella valuta corrente dell'app tramite currencyNotifierProvider.
 
 class HomeHeader extends ConsumerWidget {
   final Animation<double> fadeAnimation;
@@ -26,10 +25,13 @@ class HomeHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // --- RECOVERY STATI (RIVERPOD) ---
-    // Sottoscrizione ai provider per l'aggiornamento in tempo reale di spese, profilo e valuta.
-    final expenseState =
-        ref.watch(expenseNotifierProvider).value ?? ExpenseState();
+    // --- ASCOLTO STATI (RIVERPOD) ---
+    // select mirato: si ricostruisce solo quando cambiano i totali, non ad
+    // ogni variazione di isLoading/errorMessage nello stato delle spese.
+    final totals = ref.watch(
+          expenseNotifierProvider.select((s) => s.value?.totals),
+        ) ??
+        ExpenseState().totals;
     final currencyState = ref.watch(currencyNotifierProvider);
 
     final loc = AppLocalizations.of(context)!;
@@ -52,8 +54,6 @@ class HomeHeader extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: 24.h),
-                // --- BARRA NAVIGAZIONE SUPERIORE ---
-                // Gestisce l'accesso al resoconto annuale e la visualizzazione del profilo.
 
                 // --- PANNELLO TOTALE MENSILE ---
                 // Sezione principale focalizzata sul riepilogo delle spese correnti del mese corrente.
@@ -73,7 +73,7 @@ class HomeHeader extends ConsumerWidget {
                   scrollDirection: Axis.horizontal,
                   physics: const BouncingScrollPhysics(),
                   child: Text(
-                    currencyState.formatAmount(expenseState.totalExpenseMonth),
+                    currencyState.formatAmount(totals.month),
                     style: TextStyle(
                       fontSize: 35.sp,
                       color: isDark ? AppColors.textDark : AppColors.textLight,
@@ -90,24 +90,15 @@ class HomeHeader extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: HeaderExpenseState(
-                        value: expenseState.totalExpenseToday,
-                        label: loc.today,
-                      ),
+                      child: HeaderExpenseState(value: totals.today, label: loc.today),
                     ),
                     SizedBox(width: 10.w),
                     Expanded(
-                      child: HeaderExpenseState(
-                        value: expenseState.totalExpenseWeek,
-                        label: loc.week,
-                      ),
+                      child: HeaderExpenseState(value: totals.week, label: loc.week),
                     ),
                     SizedBox(width: 10.w),
                     Expanded(
-                      child: HeaderExpenseState(
-                        value: expenseState.totalExpenseYear,
-                        label: loc.year,
-                      ),
+                      child: HeaderExpenseState(value: totals.year, label: loc.year),
                     ),
                   ],
                 ),
@@ -158,7 +149,6 @@ class HeaderExpenseState extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // SEZIONE VALORE FORMATTATO
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -175,8 +165,6 @@ class HeaderExpenseState extends ConsumerWidget {
             ),
           ),
           SizedBox(height: 2.h),
-
-          // SEZIONE ETICHETTA TEMPORALE
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
             child: Text(
