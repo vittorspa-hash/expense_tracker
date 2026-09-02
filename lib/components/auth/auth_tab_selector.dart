@@ -46,6 +46,14 @@ class AuthTabSelector extends StatelessWidget {
           ),
           child: TabBar(
             controller: controller,
+            // Personalizza l'effetto al tocco (splash/highlight)
+            overlayColor: WidgetStateProperty.resolveWith<Color?>((states) {
+              if (states.contains(WidgetState.pressed)) {
+                return AppColors.primary.withValues(alpha: 0.12);
+              }
+              return null;
+            }),
+            splashBorderRadius: BorderRadius.circular(12.r),
             indicator: BoxDecoration(
               color: AppColors.primary,
               borderRadius: BorderRadius.circular(12.r),
@@ -60,8 +68,9 @@ class AuthTabSelector extends StatelessWidget {
             indicatorSize: TabBarIndicatorSize.tab,
             dividerColor: Colors.transparent,
             labelColor: AppColors.textLight,
-            unselectedLabelColor:
-                isDark ? AppColors.greyDark : AppColors.greyLight,
+            unselectedLabelColor: isDark
+                ? AppColors.greyDark
+                : AppColors.greyLight,
             labelStyle: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.w700,

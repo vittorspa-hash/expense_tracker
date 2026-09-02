@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:flutter/material.dart';
@@ -190,7 +192,7 @@ class _ProfileAvatar extends StatelessWidget {
     required this.inactiveColor,
   });
 
-  final dynamic localAvatar; // File?
+  final File? localAvatar; 
   final String? photoURL;
   final bool isSelected;
   final Color activeColor;
