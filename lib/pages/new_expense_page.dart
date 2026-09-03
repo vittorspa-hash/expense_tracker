@@ -42,6 +42,12 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage>
     super.dispose();
   }
 
+  // --- COSTRUZIONE UI ---
+  @override
+  Widget build(BuildContext context) {
+    return buildWithFadeAnimation(ExpenseEdit(onSubmit: onSubmit));
+  }
+
   // --- LOGICA DI CREAZIONE ---
   // Callback invocata quando l'utente conferma l'inserimento nel form.
   // Ora include il parametro category selezionato dall'utente.
@@ -50,23 +56,18 @@ class _NewExpensePageState extends ConsumerState<NewExpensePage>
     required String? description,
     required DateTime date,
     required ExpenseCurrency currencyCode,
-    required ExpenseCategory category, 
+    required ExpenseCategory category,
     required AppLocalizations l10n,
   }) async {
-    
-    await ref.read(expenseNotifierProvider.notifier).createExpense(
-      value: value,
-      description: description,
-      date: date,
-      l10n: l10n,
-      currencyCode: currencyCode,
-      category: category, 
-    );
-  }
-
-  // --- COSTRUZIONE UI ---
-  @override
-  Widget build(BuildContext context) {
-    return buildWithFadeAnimation(ExpenseEdit(onSubmit: onSubmit));
+    await ref
+        .read(expenseNotifierProvider.notifier)
+        .createExpense(
+          value: value,
+          description: description,
+          date: date,
+          l10n: l10n,
+          currencyCode: currencyCode,
+          category: category,
+        );
   }
 }

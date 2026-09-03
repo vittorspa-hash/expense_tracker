@@ -1,3 +1,8 @@
+import 'package:expense_tracker/components/expense/currency_amount_input.dart';
+import 'package:expense_tracker/components/expense/delete_expense_fab.dart';
+import 'package:expense_tracker/components/expense/expense_category_selector.dart';
+import 'package:expense_tracker/components/expense/expense_date_selector.dart';
+import 'package:expense_tracker/components/expense/expense_description_input.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/models/expense_currency.dart';
@@ -8,16 +13,15 @@ import 'package:expense_tracker/notifiers/expense_notifier.dart';
 import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 
 /// FILE: expense_edit.dart
 /// DESCRIZIONE: Schermata generica per la creazione o la modifica di una spesa.
-/// Gestisce l'input dell'utente e funge da "Hub" per il feedback visivo delle operazioni.
-/// Centralizza la logica di visualizzazione delle Snackbar (Successo vs Warning)
-/// basandosi sullo stato del Provider dopo il tentativo di salvataggio.
+/// Assembla gli input del form (CurrencyAmountInput, ExpenseDescriptionInput,
+/// ExpenseDateSelector, ExpenseCategorySelector) e funge da "Hub" per il
+/// feedback visivo delle operazioni, basandosi sullo stato del Provider dopo
+/// il tentativo di salvataggio.
 
 class ExpenseEdit extends ConsumerStatefulWidget {
   // --- PARAMETRI ---
@@ -39,7 +43,8 @@ class ExpenseEdit extends ConsumerStatefulWidget {
     required ExpenseCurrency currencyCode,
     required ExpenseCategory category,
     required AppLocalizations l10n,
-  }) onSubmit;
+  })
+  onSubmit;
 
   const ExpenseEdit({
     super.key,
@@ -88,11 +93,21 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
     });
   }
 
+  // --- DISPOSE DEI CONTROLLER ---
+  @override
+  void dispose() {
+    priceController.dispose();
+    descriptionController.dispose();
+    super.dispose();
+  }
+
   // --- COSTRUZIONE UI ---
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isLoading = ref.watch(expenseNotifierProvider.select((p) => p.value?.isLoading ?? false));
+    final isLoading = ref.watch(
+      expenseNotifierProvider.select((p) => p.value?.isLoading ?? false),
+    );
 
     final header = widget.headerBuilder?.call(isTappedDown);
 
@@ -119,12 +134,30 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
               children: [
                 if (header != null) ...[header, SizedBox(height: 20.h)],
 
-                inputPrice(isDark),
-                inputDescription(),
+                CurrencyAmountInput(
+                  controller: priceController,
+                  selectedCurrency: _selectedCurrency,
+                  isTappedDown: isTappedDown,
+                  onCurrencyChanged: (currency) =>
+                      setState(() => _selectedCurrency = currency),
+                ),
+                ExpenseDescriptionInput(
+                  controller: descriptionController,
+                  isTappedDown: isTappedDown,
+                ),
                 SizedBox(height: 20.h),
-                inputDate(),
+                ExpenseDateSelector(
+                  selectedDate: selectedDate,
+                  isTappedDown: isTappedDown,
+                  onTap: () => _pickDate(context),
+                ),
                 SizedBox(height: 24.h),
-                inputCategory(isDark),
+                ExpenseCategorySelector(
+                  selectedCategory: _selectedCategory,
+                  isTappedDown: isTappedDown,
+                  onCategorySelected: (category) =>
+                      setState(() => _selectedCategory = category),
+                ),
               ],
             ),
           ),
@@ -139,274 +172,13 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
             ),
         ],
       ),
-      floatingActionButton: (widget.floatingActionButtonIcon == null || isLoading)
+      floatingActionButton:
+          (widget.floatingActionButtonIcon == null || isLoading)
           ? null
-          : floatingActionButton(context, isDark),
-    );
-  }
-
-  // --- INPUT PREZZO E VALUTA ---
-  Widget inputPrice(bool isDark) {
-    final String hintText = _selectedCurrency == ExpenseCurrency.jpy ? "0" : "0.00";
-    final textColor = isTappedDown ? AppColors.textLight : AppColors.textTappedDown;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Selettore della valuta (Codice monetario e simbolo)
-          GestureDetector(
-            onTap: () => _showCurrencyPicker(isDark),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-              color: Colors.transparent,
-              child: Text(
-                _selectedCurrency.symbol,
-                style: TextStyle(
-                  fontSize: 50.sp,
-                  color: textColor,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+          : DeleteExpenseFab(
+              icon: widget.floatingActionButtonIcon!,
+              onDeletePressed: widget.onFloatingActionButtonPressed!,
             ),
-          ),
-          SizedBox(width: 10.w),
-          
-          // Campo di input numerico per l'ammontare speso
-          Flexible(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: IntrinsicWidth(
-                child: TextField(
-                  controller: priceController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  cursorColor: textColor,
-                  style: TextStyle(
-                    fontSize: 50.sp,
-                    color: textColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9,.]')),
-                    // Normalizzazione automatica della virgola in punto decimale
-                    TextInputFormatter.withFunction((oldValue, newValue) {
-                      final text = newValue.text.replaceAll(',', '.');
-                      return newValue.copyWith(
-                        text: text,
-                        selection: newValue.selection,
-                      );
-                    }),
-                  ],
-                  decoration: InputDecoration(
-                    hintText: hintText,
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(
-                      color: AppColors.secondaryDark,
-                      fontSize: 50.sp,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- SELETTORE VALUTA ---
-  Future<void> _showCurrencyPicker(bool isDark) async {
-    final options = ExpenseCurrency.values
-        .map((c) => {"title": "${c.name} (${c.symbol})", "criteria": c.code})
-        .toList();
-
-    final result = await DialogUtils.showSortSheet(
-      context,
-      isDark: isDark,
-      options: options,
-      title: AppLocalizations.of(context)!.selectCurrencyTitle,
-    );
-
-    if (result != null) {
-      setState(() {
-        _selectedCurrency = ExpenseCurrency.fromCode(result);
-      });
-    }
-  }
-
-  // --- INPUT DESCRIZIONE ---
-  Widget inputDescription() => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w),
-        child: TextField(
-          keyboardType: TextInputType.text,
-          maxLines: null,
-          controller: descriptionController,
-          cursorColor: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-          textAlign: TextAlign.center,
-          textCapitalization: TextCapitalization.sentences,
-          style: TextStyle(
-            fontSize: 20.sp,
-            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-            fontWeight: FontWeight.w600,
-          ),
-          decoration: InputDecoration(
-            hintText: AppLocalizations.of(context)!.descriptionHint,
-            border: InputBorder.none,
-            hintStyle: TextStyle(color: AppColors.secondaryDark, fontSize: 18.sp),
-          ),
-        ),
-      );
-
-  // --- INPUT DATA ---
-  Widget inputDate() {
-    final locale = Localizations.localeOf(context).toString();
-    final formattedDate = DateFormat("d MMMM y", locale).format(selectedDate);
-    final displayDate = capitalizeMonth(formattedDate);
-
-    return GestureDetector(
-      onTap: () => _pickDate(context),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.calendar_today,
-            color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-            size: 24.sp,
-          ),
-          SizedBox(width: 10.w),
-          Text(
-            displayDate,
-            style: TextStyle(
-              fontSize: 18.sp,
-              color: isTappedDown ? AppColors.textLight : AppColors.textTappedDown,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- SELETTORE CATEGORIA ---
-  /// Renderizza una griglia adattiva di chip per la selezione della categoria merceologica.
-  /// Il chip attivo riflette lo stato evidenziandosi con il colore primario del brand.
-  Widget inputCategory(bool isDark) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 24.w),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 8.w,
-        runSpacing: 8.h,
-        children: ExpenseCategory.values.map((category) {
-          final isSelected = _selectedCategory == category;
-          final loc = AppLocalizations.of(context)!;
-          final label = category.label(loc);
-
-          return GestureDetector(
-            onTap: () => setState(() => _selectedCategory = category),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary
-                    : (isDark
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : AppColors.primary.withValues(alpha: 0.07)),
-                borderRadius: BorderRadius.circular(14.r),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : AppColors.primary.withValues(alpha: 0.25),
-                  width: 1.2,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    category.icon,
-                    size: 16.sp,
-                    color: isSelected
-                        ? AppColors.textLight
-                        : (isTappedDown ? AppColors.textLight : AppColors.textTappedDown),
-                  ),
-                  SizedBox(width: 6.w),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected
-                          ? AppColors.textLight
-                          : (isTappedDown ? AppColors.textLight : AppColors.textTappedDown),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  // --- GESTIONE ELIMINAZIONE DIRETTATE ---
-  Widget floatingActionButton(BuildContext context, bool isDark) {
-    final loc = AppLocalizations.of(context)!;
-
-    return FloatingActionButton(
-      heroTag: null,
-      backgroundColor: AppColors.delete.withValues(alpha: 0.3),
-      foregroundColor: AppColors.delete,
-      onPressed: () async {
-        final confirm = await DialogUtils.showConfirmDialog(
-          context,
-          title: loc.deleteConfirmTitle,
-          content: loc.deleteConfirmMessageSwipe,
-          confirmText: loc.delete,
-          cancelText: loc.cancel,
-        );
-
-        if (confirm == true && widget.onFloatingActionButtonPressed != null) {
-          final deletedExpense = await widget.onFloatingActionButtonPressed!();
-
-          if (!context.mounted) return;
-
-          final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
-
-          // Gestione degli errori derivati dal tentativo di cancellazione
-          if (currentState.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(currentState.errorMessage!),
-                backgroundColor: AppColors.snackBar,
-              ),
-            );
-            return;
-          }
-
-          if (deletedExpense != null) {
-            final expenseNotifier = ref.read(expenseNotifierProvider.notifier);
-            final locCopy = loc;
-            
-            SnackbarUtils.show(
-              context: context,
-              title: loc.deletedTitleSingle,
-              message: loc.deleteSuccessMessageSwipe,
-              deletedItem: deletedExpense,
-              undo: loc.undo,
-              navBar: true,
-              onDelete: (_) {},
-              onRestore: (exp) async {
-                await expenseNotifier.restoreExpenses([exp], locCopy);
-              },
-            );
-            Navigator.pop(context);
-          }
-        }
-      },
-      child: Icon(widget.floatingActionButtonIcon, size: 28.sp),
     );
   }
 
@@ -440,7 +212,8 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
 
     if (!mounted) return;
 
-    final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
+    final currentState =
+        ref.read(expenseNotifierProvider).value ?? ExpenseState();
 
     // 1. GESTIONE ERRORE BLOCCANTE SUL SALVATAGGIO
     if (currentState.errorMessage != null) {
@@ -465,7 +238,9 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
       SnackbarUtils.show(
         context: context,
         title: widget.initialValue == null ? loc.createdTitle : loc.editedTitle,
-        message: widget.initialValue == null ? loc.expenseCreated : loc.expenseEdited,
+        message: widget.initialValue == null
+            ? loc.expenseCreated
+            : loc.expenseEdited,
         navBar: true,
       );
     }
@@ -488,18 +263,6 @@ class _ExpenseEditState extends ConsumerState<ExpenseEdit> {
         selectedDate = pickedDate;
       });
     }
-  }
-
-  // --- UTILITY FORMATTAZIONE ---
-  /// Capitalizza forzatamente la prima lettera del mese (es. da "19 maggio 2026" a "19 Maggio 2026")
-  /// per mantenere l'uniformità con la visualizzazione standard del resto dell'applicazione.
-  String capitalizeMonth(String date) {
-    final parts = date.split(' ');
-    if (parts.length < 3) return date;
-    final day = parts[0];
-    final month = parts[1][0].toUpperCase() + parts[1].substring(1);
-    final year = parts[2];
-    return "$day $month $year";
   }
 
   // --- ISTRUZIONI UTENTE ONBOARDING ---

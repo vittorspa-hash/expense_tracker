@@ -31,7 +31,6 @@ class EditExpensePage extends ConsumerStatefulWidget {
 
 class _EditExpensePageState extends ConsumerState<EditExpensePage>
     with SingleTickerProviderStateMixin, FadeAnimationMixin {
-  
   // --- CONFIGURAZIONE ANIMAZIONE ---
   @override
   TickerProvider get vsync => this;
@@ -51,20 +50,45 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
     super.dispose();
   }
 
+  // --- COSTRUZIONE UI ---
+  @override
+  Widget build(BuildContext context) {
+    final currencyState = ref.watch(currencyNotifierProvider);
+
+    return buildWithFadeAnimation(
+      ExpenseEdit(
+        initialValue: widget.expenseModel.value,
+        initialDescription: widget.expenseModel.description,
+        initialDate: widget.expenseModel.createdOn,
+        initialCurrencyCode: widget.expenseModel.currency.code,
+        initialCategory: widget.expenseModel.category,
+        headerBuilder: (isHovered) => _buildExchangeRateBanner(context, isHovered, currencyState),
+        floatingActionButtonIcon: Icons.delete,
+        onFloatingActionButtonPressed: onDelete,
+        onSubmit: onSubmit,
+      ),
+    );
+  }
+
   // --- BANNER CONVERSIONE VALUTA (STRATEGIA SOFT FAIL) ---
   /// Costruisce l'header dinamico per il tasso di cambio.
   /// Compare solo se la valuta nativa della spesa differisce da quella globale dell'app.
   /// Gestisce la variazione cromatica in base allo stato `isHovered` ereditato dall'area touch.
-  Widget? _buildExchangeRateBanner(BuildContext context, bool isHovered) {
+  Widget? _buildExchangeRateBanner(
+    BuildContext context,
+    bool isHovered,
+    CurrencyState currencyState,
+  ) {
     final model = widget.expenseModel;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final loc = AppLocalizations.of(context)!;
-    final currencyState = ref.watch(currencyNotifierProvider);
     final currentAppCurrency = currencyState.currentCurrency;
-    
+
     if (model.currency == currentAppCurrency) return null;
 
-    final bool hasRate = model.exchangeRates.containsKey(currentAppCurrency.code);
+    final bool hasRate = model.exchangeRates.containsKey(
+      currentAppCurrency.code,
+    );
 
     final Color baseColor = AppColors.primary;
     final Color iconColor = isHovered ? AppColors.textLight : baseColor;
@@ -95,7 +119,9 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            hasRate ? Icons.currency_exchange_rounded : Icons.warning_amber_rounded,
+            hasRate
+                ? Icons.currency_exchange_rounded
+                : Icons.warning_amber_rounded,
             color: iconColor,
             size: 26.sp,
           ),
@@ -211,7 +237,9 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
     required ExpenseCategory category,
     required AppLocalizations l10n,
   }) async {
-    await ref.read(expenseNotifierProvider.notifier).editExpense(
+    await ref
+        .read(expenseNotifierProvider.notifier)
+        .editExpense(
           widget.expenseModel,
           value: value,
           description: description,
@@ -226,31 +254,17 @@ class _EditExpensePageState extends ConsumerState<EditExpensePage>
   /// Esegue la rimozione della spesa analizzando preventivamente lo stato di errore del provider.
   Future<ExpenseModel?> onDelete() async {
     final modelToDelete = widget.expenseModel;
-    final currentState = ref.read(expenseNotifierProvider).value ?? ExpenseState();
 
-    await ref.read(expenseNotifierProvider.notifier).deleteExpenses([modelToDelete]);
+    await ref.read(expenseNotifierProvider.notifier).deleteExpenses([
+      modelToDelete,
+    ]);
 
     if (!mounted) return null;
+
+    final currentState =
+        ref.read(expenseNotifierProvider).value ?? ExpenseState();
     if (currentState.errorMessage != null) return null;
 
     return modelToDelete;
-  }
-
-  // --- COSTRUZIONE UI ---
-  @override
-  Widget build(BuildContext context) {
-    return buildWithFadeAnimation(
-      ExpenseEdit(
-        initialValue: widget.expenseModel.value,
-        initialDescription: widget.expenseModel.description,
-        initialDate: widget.expenseModel.createdOn,
-        initialCurrencyCode: widget.expenseModel.currency.code,
-        initialCategory: widget.expenseModel.category,
-        headerBuilder: (isHovered) => _buildExchangeRateBanner(context, isHovered),
-        floatingActionButtonIcon: Icons.delete,
-        onFloatingActionButtonPressed: onDelete,
-        onSubmit: onSubmit,
-      ),
-    );
   }
 }
