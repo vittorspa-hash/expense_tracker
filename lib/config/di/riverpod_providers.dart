@@ -1,4 +1,5 @@
 import 'package:expense_tracker/models/expense_category.dart';
+import 'package:expense_tracker/models/expense_currency.dart';
 import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/notifiers/auth_notifier.dart';
 import 'package:expense_tracker/notifiers/currency_notifier.dart';
@@ -161,11 +162,19 @@ final navigationNotifierProvider = NotifierProvider<NavigationNotifier, int>(
 // --- LAYER 5: PROVIDER DERIVATI ---
 // Provider in sola lettura che derivano dati filtrati o aggregati da expenseNotifierProvider
 // per alimentare grafici e statistiche, senza duplicare la logica nei widget.
+// Tutti usano select su (expenses, appCurrency) invece di watchare l'intero ExpenseState.
 
 /// Calcola il totale delle spese raggruppate per mese nella valuta corrente dell'app.
 final expensesByMonthProvider = Provider<Map<String, double>>((ref) {
-  final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
-  return ExpenseCalculator.expensesByMonth(state.expenses, state.appCurrency);
+  final (expenses, appCurrency) = ref.watch(
+    expenseNotifierProvider.select(
+      (s) => (
+        s.value?.expenses ?? const <ExpenseModel>[],
+        s.value?.appCurrency ?? ExpenseCurrency.euro,
+      ),
+    ),
+  );
+  return ExpenseCalculator.expensesByMonth(expenses, appCurrency);
 });
 
 /// Restituisce una funzione parametrica per aggregare le spese per giorno
@@ -173,32 +182,44 @@ final expensesByMonthProvider = Provider<Map<String, double>>((ref) {
 final expensesByDayProvider = Provider<Map<String, double> Function(int, int)>((
   ref,
 ) {
-  final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
-  return (year, month) => ExpenseCalculator.expensesByDay(
-    state.expenses,
-    year,
-    month,
-    state.appCurrency,
+  final (expenses, appCurrency) = ref.watch(
+    expenseNotifierProvider.select(
+      (s) => (
+        s.value?.expenses ?? const <ExpenseModel>[],
+        s.value?.appCurrency ?? ExpenseCurrency.euro,
+      ),
+    ),
   );
+  return (year, month) =>
+      ExpenseCalculator.expensesByDay(expenses, year, month, appCurrency);
 });
 
 /// Restituisce una funzione parametrica per filtrare le spese effettuate
 /// in un giorno specifico (anno, mese, giorno).
 final expensesOfDayProvider =
     Provider<List<ExpenseModel> Function(int, int, int)>((ref) {
-      final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
+      final expenses = ref.watch(
+        expenseNotifierProvider.select((s) => s.value?.expenses ?? const <ExpenseModel>[]),
+      );
       return (year, month, day) =>
-          ExpenseCalculator.expensesOfDay(state.expenses, year, month, day);
+          ExpenseCalculator.expensesOfDay(expenses, year, month, day);
     });
 
 /// Restituisce una funzione parametrica per aggregare i totali per categoria
 /// in un anno specifico, nella valuta corrente dell'app.
 final expensesByCategoryForYearProvider =
     Provider<Map<ExpenseCategory, double> Function(String)>((ref) {
-      final state = ref.watch(expenseNotifierProvider).value ?? ExpenseState();
+      final (expenses, appCurrency) = ref.watch(
+        expenseNotifierProvider.select(
+          (s) => (
+            s.value?.expenses ?? const <ExpenseModel>[],
+            s.value?.appCurrency ?? ExpenseCurrency.euro,
+          ),
+        ),
+      );
       return (year) => ExpenseCalculator.expensesByCategoryForYear(
-        state.expenses,
+        expenses,
         year,
-        state.appCurrency,
+        appCurrency,
       );
     });
