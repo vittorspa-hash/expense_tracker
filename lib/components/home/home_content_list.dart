@@ -1,15 +1,12 @@
 import 'package:expense_tracker/components/home/expenses_empty_state.dart';
 import 'package:expense_tracker/components/home/search_and_sort_bar.dart';
+import 'package:expense_tracker/components/shared/swipe_to_delete_expense_tile.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
-import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/utils/expense_calculator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
-import 'package:expense_tracker/utils/snackbar_utils.dart';
 import 'package:expense_tracker/config/app_colors.dart';
-import 'package:expense_tracker/components/shared/expense_tile.dart';
 
 /// FILE: home_content_list.dart
 /// DESCRIZIONE: Componente principale per la visualizzazione della lista spese.
@@ -39,7 +36,6 @@ class HomeContentList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final loc = AppLocalizations.of(context)!;
 
     // --- ASCOLTO STATI GLOBALI ---
     // select mirato: si ricostruisce solo quando cambia la lista spese,
@@ -109,83 +105,17 @@ class HomeContentList extends ConsumerWidget {
                       expense.uuid,
                     );
 
-                    return Dismissible(
-                      key: Key(expense.uuid),
-                      direction: isSelectionMode
-                          ? DismissDirection.none
-                          : DismissDirection.endToStart,
-
-                      // --- LOGICA DISMISS (SWIPE TO DELETE) ---
-                      confirmDismiss: (_) async {
-                        if (isSelectionMode) return false;
-
-                        final confirm = await DialogUtils.showConfirmDialog(
-                          context,
-                          title: loc.deleteDialogTitleSingle,
-                          content: loc.deleteConfirmMessageSwipe,
-                          confirmText: loc.delete,
-                          cancelText: loc.cancel,
-                        );
-
-                        if (confirm != true) return false;
-
-                        await ref
-                            .read(expenseNotifierProvider.notifier)
-                            .deleteExpenses([expense]);
-
-                        final currentState = ref
-                            .read(expenseNotifierProvider)
-                            .value;
-                        if (currentState?.errorMessage != null) return false;
-
-                        if (context.mounted) {
-                          SnackbarUtils.show(
-                            context: context,
-                            title: loc.deletedTitleSingle,
-                            message: loc.deleteSuccessMessageSwipe,
-                            undo: loc.undo,
-                            deletedItem: expense,
-                            navBar: true,
-                            onDelete: (_) {},
-                            onRestore: (exp) => ref
-                                .read(expenseNotifierProvider.notifier)
-                                .restoreExpenses([exp], loc),
-                          );
-                        }
-                        return true;
-                      },
-                      background: Container(
-                        margin: EdgeInsets.symmetric(vertical: 4.h),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.delete.withValues(alpha: 0.8),
-                              AppColors.delete,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(16.r),
-                        ),
-                        alignment: Alignment.centerRight,
-                        padding: EdgeInsets.symmetric(horizontal: 24.w),
-                        child: Icon(
-                          Icons.delete_rounded,
-                          color: AppColors.textLight,
-                          size: 28.sp,
-                        ),
-                      ),
-                      onDismissed: (_) {},
-                      child: ExpenseTile(
-                        expense,
-                        isSelectionMode: isSelectionMode,
-                        isSelected: isSelected,
-                        onLongPress: () => ref
-                            .read(multiSelectNotifierProvider.notifier)
-                            .onLongPress(expense),
-                        onSelectToggle: () => ref
-                            .read(multiSelectNotifierProvider.notifier)
-                            .onToggleSelect(expense),
-                        onReturn: onReturn,
-                      ),
+                    return SwipeToDeleteExpenseTile(
+                      expense: expense,
+                      isSelectionMode: isSelectionMode,
+                      isSelected: isSelected,
+                      onLongPress: () => ref
+                          .read(multiSelectNotifierProvider.notifier)
+                          .onLongPress(expense),
+                      onSelectToggle: () => ref
+                          .read(multiSelectNotifierProvider.notifier)
+                          .onToggleSelect(expense),
+                      onReturn: onReturn,
                     );
                   },
                 ),

@@ -172,7 +172,7 @@ class ReportBarChart extends ConsumerWidget {
               tooltipMargin: 8.h,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 return BarTooltipItem(
-                  ref.watch(currencyNotifierProvider).formatAmount(rod.toY),
+                  currencyState.formatAmount(rod.toY),
                   TextStyle(
                     color: isDark ? AppColors.textDark : AppColors.primary,
                     fontWeight: FontWeight.w700,

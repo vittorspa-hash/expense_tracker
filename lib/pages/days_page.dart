@@ -2,18 +2,17 @@ import 'package:expense_tracker/components/report/report_empty_state.dart';
 import 'package:expense_tracker/components/report/report_section_header.dart';
 import 'package:expense_tracker/components/report/report_total_card.dart';
 import 'package:expense_tracker/components/shared/custom_appbar.dart';
+import 'package:expense_tracker/components/shared/swipe_to_delete_expense_tile.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
+import 'package:expense_tracker/models/expense_model.dart';
 import 'package:expense_tracker/notifiers/multi_select_notifier.dart';
 import 'package:expense_tracker/utils/expense_action_handler.dart';
 import 'package:expense_tracker/utils/fade_animation_mixin.dart';
 import 'package:expense_tracker/utils/report_date_utils.dart';
-import 'package:expense_tracker/utils/snackbar_utils.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_utils.dart';
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:expense_tracker/notifiers/expense_notifier.dart';
-import 'package:expense_tracker/components/shared/expense_tile.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -178,7 +177,7 @@ class _DaysPageState extends ConsumerState<DaysPage>
   // --- COMPONENTI INTERNI ---
   Widget _buildBody(
     BuildContext context,
-    List<dynamic> expensesList,
+    List<ExpenseModel> expensesList,
     bool isSelectionMode,
     MultiSelectState multiSelectState,
     ExpenseState expenseState,
@@ -238,93 +237,22 @@ class _DaysPageState extends ConsumerState<DaysPage>
                     expense.uuid,
                   );
 
-                  return Dismissible(
-                    key: Key(expense.uuid),
-                    direction: isSelectionMode
-                        ? DismissDirection.none
-                        : DismissDirection.endToStart,
-                    background: _buildDismissibleBackground(),
-                    confirmDismiss: (_) async {
-                      if (isSelectionMode) return false;
-
-                      // Cache preventiva dei riferimenti asincroni
-                      final expenseNotifier = ref.read(
-                        expenseNotifierProvider.notifier,
-                      );
-                      final locCopy = loc;
-
-                      final isConfirmed = await DialogUtils.showConfirmDialog(
-                        context,
-                        title: loc.deleteConfirmTitle,
-                        content: loc.deleteConfirmMessageSwipe,
-                        confirmText: loc.delete,
-                        cancelText: loc.cancel,
-                      );
-
-                      if (isConfirmed != true) return false;
-
-                      // Esecuzione eliminazione logica/fisica a database
-                      await expenseNotifier.deleteExpenses([expense]);
-
-                      // Annulla il dismiss se l'operazione ha riscontrato errori di persistenza
-                      final currentState =
-                          ref.read(expenseNotifierProvider).value ??
-                          ExpenseState();
-                      if (currentState.errorMessage != null) return false;
-
-                      if (context.mounted) {
-                        SnackbarUtils.show(
-                          context: context,
-                          title: loc.deletedTitleSingle,
-                          message: loc.deleteSuccessMessageSwipe,
-                          undo: loc.undo,
-                          deletedItem: expense,
-                          navBar: true,
-                          onDelete: (_) {},
-                          onRestore: (exp) =>
-                              expenseNotifier.restoreExpenses([exp], locCopy),
-                        );
-                      }
-
-                      return true;
-                    },
-                    child: ExpenseTile(
-                      expense,
-                      isSelectionMode: isSelectionMode,
-                      isSelected: isSelected,
-                      onLongPress: () => ref
-                          .read(multiSelectNotifierProvider.notifier)
-                          .onLongPress(expense),
-                      onSelectToggle: () => ref
-                          .read(multiSelectNotifierProvider.notifier)
-                          .onToggleSelect(expense),
-                      onReturn: () {},
-                    ),
+                  return SwipeToDeleteExpenseTile(
+                    expense: expense,
+                    isSelectionMode: isSelectionMode,
+                    isSelected: isSelected,
+                    onLongPress: () => ref
+                        .read(multiSelectNotifierProvider.notifier)
+                        .onLongPress(expense),
+                    onSelectToggle: () => ref
+                        .read(multiSelectNotifierProvider.notifier)
+                        .onToggleSelect(expense),
                   );
                 },
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDismissibleBackground() {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 4.h),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.delete.withValues(alpha: 0.8), AppColors.delete],
-        ),
-        borderRadius: BorderRadius.circular(16.r),
-      ),
-      alignment: Alignment.centerRight,
-      padding: EdgeInsets.only(right: 20.w),
-      child: Icon(
-        Icons.delete_rounded,
-        color: AppColors.textLight,
-        size: 28.sp,
       ),
     );
   }
