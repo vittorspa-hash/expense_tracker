@@ -1057,5 +1057,98 @@ void main() {
 
       expect(total, 100.0); // inclusa grazie a !isBefore
     });
+
+    // =================================================================
+    // TEST 26: Filter By Query - Match case-insensitive sulla descrizione
+    // =================================================================
+    test('Should filter expenses whose description contains the query (case-insensitive)', () {
+      // ARRANGE
+      final expenses = [
+        ExpenseModel(
+          uuid: '1',
+          value: 50.0,
+          description: 'Spesa al Supermercato',
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: '2',
+          value: 30.0,
+          description: 'Benzina auto',
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+        ExpenseModel(
+          uuid: '3',
+          value: 100.0,
+          description: 'SUPERMERCATO settimanale',
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
+
+      // ACT
+      final filtered = ExpenseCalculator.filterByQuery(expenses, 'supermercato');
+
+      // ASSERT
+      expect(filtered.length, 2);
+      expect(filtered.map((e) => e.uuid), containsAll(['1', '3']));
+    });
+
+    // =================================================================
+    // TEST 27: Filter By Query - Nessuna corrispondenza
+    // =================================================================
+    test('Should return empty list when no description matches the query', () {
+      // ARRANGE
+      final expenses = [
+        ExpenseModel(
+          uuid: '1',
+          value: 50.0,
+          description: 'Spesa al Supermercato',
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
+
+      // ACT
+      final filtered = ExpenseCalculator.filterByQuery(expenses, 'ristorante');
+
+      // ASSERT
+      expect(filtered, isEmpty);
+    });
+
+    // =================================================================
+    // TEST 28: Filter By Query - Descrizione null non genera eccezioni
+    // =================================================================
+    test('Should treat null description as empty string without throwing', () {
+      // ARRANGE
+      final expenses = [
+        ExpenseModel(
+          uuid: '1',
+          value: 50.0,
+          description: null,
+          createdOn: now,
+          userId: 'user-123',
+          currency: ExpenseCurrency.euro,
+          exchangeRates: testRates,
+        ),
+      ];
+
+      // ACT
+      final filtered = ExpenseCalculator.filterByQuery(expenses, 'qualsiasi');
+
+      // ASSERT
+      // Nessuna eccezione sollevata; la spesa senza descrizione viene
+      // semplicemente esclusa dal filtro.
+      expect(filtered, isEmpty);
+    });
   });
 }
