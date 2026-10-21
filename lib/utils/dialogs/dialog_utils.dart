@@ -1,26 +1,93 @@
+import 'dart:io';
 import 'package:expense_tracker/l10n/app_localizations.dart';
 import 'package:expense_tracker/config/app_colors.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_styles.dart';
-import 'package:expense_tracker/utils/dialogs/dialog_widgets.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+part 'dialog_cupertino.dart';
+part 'dialog_material.dart';
+
 /// FILE: dialog_utils.dart
 /// DESCRIZIONE: Classe di utilità statica per la gestione centralizzata dei dialoghi.
-/// Implementa il pattern "Adaptive": controlla la piattaforma (iOS o Android)
-/// e restituisce il widget nativo appropriato (Cupertino vs Material).
-/// Gestisce:
-/// 1. Alert (Info, Conferma, Istruzioni).
-/// 2. Input (Form in dialog).
-/// 3. Bottom Sheets (Menu, Selezione anno).
-/// 4. Pickers (Data, Ora, Anno).
+/// Ogni metodo pubblico qui espone l'API unica (showConfirmDialog, showSortSheet,
+/// ecc.) e delega l'implementazione concreta alle funzioni private definite in
+/// dialog_cupertino.dart (stile iOS) e dialog_material.dart (stile Android),
+/// tenute insieme tramite part/part of: i tre file restano un'unica libreria
+/// logica, quindi le funzioni "_cupertinoXxx"/"_materialXxx" restano private
+/// all'esterno del modulo e nessuna chiamata altrove nel progetto cambia.
+///
+/// Organizzazione:
+/// - dialog_utils.dart: API pubblica + helper/widget condivisi non legati a
+///   una piattaforma specifica.
+/// - dialog_cupertino.dart: implementazioni e widget specifici per iOS.
+/// - dialog_material.dart: implementazioni e widget specifici per Android.
 
 class DialogUtils {
+  // --- HELPER CONDIVISI (non legati a una piattaforma specifica) ---
+
+  static bool get isIOS => Platform.isIOS;
+
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color textColor(BuildContext context) =>
+      isDark(context) ? AppColors.textLight : AppColors.textDark;
+
+  // Euristica per determinare se un'azione è distruttiva (Rosso) basandosi sul testo.
+  static bool isDestructiveAction(BuildContext context, String text) {
+    final loc = AppLocalizations.of(context);
+    if (loc == null) return false;
+    final t = text.toLowerCase();
+    return t == loc.delete.toLowerCase() || t == loc.logout.toLowerCase();
+  }
+
+  /// Titolo standard per i bottom sheet, identico su entrambe le piattaforme.
+  static Widget buildSheetTitle(String title) => Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15.sp),
+      );
+
+  /// Pulsante d'azione per i Dialoghi (Alert). Dispatcha alla variante
+  /// per-piattaforma: iOS (CupertinoDialogAction) o Android (TextButton).
+  static Widget buildActionButton(
+    BuildContext context,
+    String text,
+    Color color, [
+    bool? returnValue,
+  ]) {
+    return isIOS
+        ? _cupertinoActionButton(context, text, color, returnValue)
+        : _materialActionButton(context, text, color, returnValue);
+  }
+
+  /// Pulsante d'azione per i Bottom Sheet. Dispatcha alla variante per-piattaforma.
+  static Widget buildSheetAction(
+    BuildContext context, {
+    required String text,
+    required VoidCallback onPressed,
+    required bool isDark,
+    bool isDestructive = false,
+    bool isCancel = false,
+  }) {
+    return isIOS
+        ? _cupertinoSheetAction(
+            context,
+            text: text,
+            onPressed: onPressed,
+            isDark: isDark,
+            isDestructive: isDestructive,
+            isCancel: isCancel,
+          )
+        : _materialSheetAction(
+            text: text,
+            onPressed: onPressed,
+            isDark: isDark,
+            isDestructive: isDestructive,
+          );
+  }
+
   // --- DIALOGHI DI BASE ---
-  // Metodi per mostrare avvisi semplici o richieste di conferma.
-  // Utilizzano un helper privato `_showGenericDialog` per astrarre la scelta del widget.
-  //
 
   static Future<void> showInfoDialog(
     BuildContext context, {
@@ -34,9 +101,7 @@ class DialogUtils {
       context: context,
       title: title,
       content: content,
-      actions: (ctx, color) => [
-        DialogStyles.buildActionButton(ctx, loc.ok, color),
-      ],
+      actions: (ctx, color) => [buildActionButton(ctx, loc.ok, color)],
     );
   }
 
@@ -44,46 +109,31 @@ class DialogUtils {
     BuildContext context, {
     required String title,
     required String content,
-    String? confirmText, // Reso nullable per gestire la localizzazione interna
+    String? confirmText,
     String? cancelText,
   }) async {
     if (!context.mounted) return false;
     final loc = AppLocalizations.of(context)!;
 
-    // Default localizzati
     final effectiveConfirmText = confirmText ?? loc.confirm;
     final effectiveCancelText = cancelText ?? loc.cancel;
 
-    final isDestructive = DialogStyles.isDestructiveAction(
-      context,
-      effectiveConfirmText,
-    );
-    final textColor = DialogStyles.textColor(context);
-    final confirmColor = isDestructive ? AppColors.delete : textColor;
+    final destructive = isDestructiveAction(context, effectiveConfirmText);
+    final color = textColor(context);
+    final confirmColor = destructive ? AppColors.delete : color;
 
     return await _showGenericDialog<bool>(
       context: context,
       title: title,
       content: content,
       actions: (ctx, _) => [
-        DialogStyles.buildActionButton(
-          ctx,
-          effectiveCancelText,
-          textColor,
-          false,
-        ),
-        DialogStyles.buildActionButton(
-          ctx,
-          effectiveConfirmText,
-          confirmColor,
-          true,
-        ),
+        buildActionButton(ctx, effectiveCancelText, color, false),
+        buildActionButton(ctx, effectiveConfirmText, confirmColor, true),
       ],
     );
   }
 
   // Mostra un dialogo con una checkbox di stato (es. "Non mostrare più").
-  // Richiede StatefulBuilder interno per aggiornare la UI del dialog senza ricostruire l'intera pagina.
   static Future<bool> showInstructionDialog(
     BuildContext context, {
     required String title,
@@ -93,80 +143,28 @@ class DialogUtils {
   }) async {
     if (!context.mounted) return false;
     final loc = AppLocalizations.of(context)!;
-    final textColor = DialogStyles.textColor(context);
-    bool dontShowAgain = false;
-
-    // Default localizzati
     final effectiveConfirmText = confirmText ?? loc.ok;
     final effectiveCheckboxLabel = checkboxLabel ?? loc.dontShowAgain;
 
-    Widget buildContent(StateSetter setState) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          message,
-          style: TextStyle(fontSize: DialogStyles.isIOS ? 13.sp : 14.sp),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 16.h),
-        DialogCheckboxRow(
-          value: dontShowAgain,
-          label: effectiveCheckboxLabel,
-          onChanged: (val) => setState(() => dontShowAgain = val),
-        ),
-      ],
-    );
-
-    if (DialogStyles.isIOS) {
-      await showCupertinoDialog(
-        context: context,
-        builder: (_) => StatefulBuilder(
-          builder: (ctx, setState) => CupertinoAlertDialog(
-            title: Text(title, style: TextStyle(fontSize: 15.sp)),
-            content: Padding(
-              padding: EdgeInsets.only(top: 8.h),
-              child: Material(
-                color: Colors.transparent,
-                child: buildContent(setState),
-              ),
-            ),
-            actions: [
-              DialogStyles.buildActionButton(
-                ctx,
-                effectiveConfirmText,
-                textColor,
-              ),
-            ],
-          ),
-        ),
-      );
-    } else {
-      await showDialog(
-        context: context,
-        builder: (_) => StatefulBuilder(
-          builder: (ctx, setState) => AlertDialog(
-            shape: DialogStyles.roundedRectangleBorder(),
-            title: Text(
-              title,
-              style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-            ),
-            content: buildContent(setState),
-            actions: [
-              DialogStyles.buildActionButton(
-                ctx,
-                effectiveConfirmText,
-                textColor,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return dontShowAgain;
+    return isIOS
+        ? await _cupertinoInstructionDialog(
+            context,
+            title: title,
+            message: message,
+            confirmText: effectiveConfirmText,
+            checkboxLabel: effectiveCheckboxLabel,
+          )
+        : await _materialInstructionDialog(
+            context,
+            title: title,
+            message: message,
+            confirmText: effectiveConfirmText,
+            checkboxLabel: effectiveCheckboxLabel,
+          );
   }
 
   // --- DIALOGHI DI INPUT ---
-  // Wrapper per mostrare form complessi (es. cambio password) dentro un dialog.
+
   static Future<List<String>?> showInputDialogAdaptive(
     BuildContext context, {
     required String title,
@@ -186,7 +184,7 @@ class DialogUtils {
       onForgotPassword: onForgotPassword,
     );
 
-    if (DialogStyles.isIOS) {
+    if (isIOS) {
       return await showCupertinoDialog<List<String>>(
         context: context,
         builder: (_) => widget,
@@ -199,8 +197,6 @@ class DialogUtils {
   }
 
   // --- BOTTOM SHEETS & MENU ---
-  // Gestisce menu a comparsa dal basso.
-  // Su iOS usa `CupertinoActionSheet`, su Android `showModalBottomSheet`.
 
   static Future<String?> showSortSheet(
     BuildContext context, {
@@ -212,72 +208,24 @@ class DialogUtils {
     final loc = AppLocalizations.of(context)!;
     final cancelLabel = loc.cancel;
 
-    if (DialogStyles.isIOS) {
-      return await showCupertinoModalPopup<String>(
-        context: context,
-        builder: (_) => CupertinoActionSheet(
-          title: DialogStyles.buildSheetTitle(title),
-          actions: options.map((opt) {
-            return DialogStyles.buildSheetAction(
-              context,
-              text: opt["title"] ?? "",
-              isDark: isDark,
-              onPressed: () => Navigator.pop(context, opt["criteria"]),
-            );
-          }).toList(),
-          cancelButton: DialogStyles.buildSheetAction(
+    return isIOS
+        ? await _cupertinoSortSheet(
             context,
-            text: cancelLabel,
             isDark: isDark,
-            isCancel: true,
-            onPressed: () => Navigator.pop(context, null),
-          ),
-        ),
-      );
-    }
-
-    return await showModalBottomSheet<String>(
-      context: context,
-      shape: DialogStyles.roundedRectangleBorder(),
-      builder: (_) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(height: 22.h),
-            DialogStyles.buildSheetTitle(title),
-            const Divider(),
-            ...options.map(
-              (opt) => ListTile(
-                title: Text(
-                  opt["title"] ?? "",
-                  style: TextStyle(fontSize: 17.sp),
-                ),
-                onTap: () => Navigator.pop(context, opt["criteria"]),
-              ),
-            ),
-            const Divider(),
-            TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: Text(
-                cancelLabel,
-                style: TextStyle(
-                  color: isDark ? AppColors.textLight : AppColors.textDark,
-                  fontSize: 17.sp,
-                ),
-              ),
-            ),
-            SizedBox(height: 8.h),
-          ],
-        ),
-      ),
-    );
+            options: options,
+            title: title,
+            cancelLabel: cancelLabel,
+          )
+        : await _materialSortSheet(
+            context,
+            isDark: isDark,
+            options: options,
+            title: title,
+            cancelLabel: cancelLabel,
+          );
   }
 
   // --- DATE & TIME PICKERS ---
-  // Selettori di data e ora.
-  // Su iOS usano un container custom con altezza fissa per simulare lo slot machine style.
-  // Su Android usano i dialoghi nativi full-screen.
-  //
 
   static Future<DateTime?> showDatePickerAdaptive(
     BuildContext context, {
@@ -286,75 +234,25 @@ class DialogUtils {
     DateTime? lastDate,
   }) async {
     if (!context.mounted) return null;
-    final isDark = DialogStyles.isDark(context);
+    final dark = isDark(context);
     final minDate = firstDate ?? DateTime(2000);
     final maxDate = lastDate ?? DateTime.now();
 
-    if (DialogStyles.isIOS) {
-      DateTime tempPicked = initialDate;
-      return await showCupertinoModalPopup<DateTime>(
-        context: context,
-        builder: (_) => Container(
-          height: 300.h,
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.backgroundDark
-                : AppColors.backgroundLight,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-          ),
-          child: Column(
-            children: [
-              PickerHeader(
-                textColor: DialogStyles.textColor(context),
-                onConfirm: () => Navigator.pop(context, tempPicked),
-              ),
-              Divider(height: 0, thickness: 1.h),
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.date,
-                  initialDateTime: initialDate,
-                  minimumDate: minDate,
-                  maximumDate: maxDate,
-                  onDateTimeChanged: (val) => tempPicked = val,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: minDate,
-      lastDate: maxDate,
-      builder: (context, child) {
-        // Recuperiamo il tema base per non perdere altre impostazioni
-        final theme = Theme.of(context);
-
-        return Theme(
-          data: theme.copyWith(
-            colorScheme: theme.colorScheme.copyWith(
-              // Questo cambia lo sfondo del giorno selezionato e l'header
-              primary: AppColors.primary,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                // Cambia il colore del testo dei pulsanti
-                foregroundColor: isDark
-                    ? AppColors.textLight
-                    : AppColors.textDark,
-              ),
-            ),
-            datePickerTheme: DatePickerThemeData(
-              shape: DialogStyles.roundedRectangleBorder(),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+    return isIOS
+        ? await _cupertinoDatePicker(
+            context,
+            initialDate: initialDate,
+            minDate: minDate,
+            maxDate: maxDate,
+            isDark: dark,
+          )
+        : await _materialDatePicker(
+            context,
+            initialDate: initialDate,
+            minDate: minDate,
+            maxDate: maxDate,
+            isDark: dark,
+          );
   }
 
   static Future<TimeOfDay?> showTimePickerAdaptive(
@@ -362,81 +260,11 @@ class DialogUtils {
     required TimeOfDay initialTime,
   }) async {
     if (!context.mounted) return null;
-    final isDark = DialogStyles.isDark(context);
+    final dark = isDark(context);
 
-    if (DialogStyles.isIOS) {
-      TimeOfDay picked = initialTime;
-      final now = DateTime.now();
-      return await showCupertinoModalPopup<TimeOfDay>(
-        context: context,
-        builder: (_) => Container(
-          height: 300.h,
-          decoration: BoxDecoration(
-            color: isDark
-                ? AppColors.backgroundDark
-                : AppColors.backgroundLight,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-          ),
-          child: Column(
-            children: [
-              PickerHeader(
-                textColor: DialogStyles.textColor(context),
-                onConfirm: () => Navigator.pop(context, picked),
-              ),
-              Divider(height: 0, thickness: 1.h),
-              Expanded(
-                child: CupertinoDatePicker(
-                  mode: CupertinoDatePickerMode.time,
-                  initialDateTime: DateTime(
-                    now.year,
-                    now.month,
-                    now.day,
-                    initialTime.hour,
-                    initialTime.minute,
-                  ),
-                  use24hFormat: true,
-                  onDateTimeChanged: (val) =>
-                      picked = TimeOfDay(hour: val.hour, minute: val.minute),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Material Theme helpers locali
-    ColorScheme timeScheme(bool dark) => ColorScheme(
-      brightness: dark ? Brightness.dark : Brightness.light,
-      primary: AppColors.primary,
-      onPrimary: AppColors.textLight,
-      secondary: AppColors.primary,
-      onSecondary: AppColors.textLight,
-      surface: dark ? AppColors.backgroundDark : AppColors.backgroundLight,
-      onSurface: dark ? AppColors.textLight : AppColors.textDark,
-      error: AppColors.delete,
-      onError: AppColors.textLight,
-    );
-
-    return await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: timeScheme(isDark),
-          timePickerTheme: TimePickerThemeData(
-            backgroundColor: isDark
-                ? AppColors.backgroundDark
-                : AppColors.backgroundLight,
-            dialBackgroundColor: isDark
-                ? AppColors.cardDark
-                : AppColors.cardLight,
-            entryModeIconColor: AppColors.primary,
-          ),
-        ),
-        child: child!,
-      ),
-    );
+    return isIOS
+        ? await _cupertinoTimePicker(context, initialTime: initialTime, isDark: dark)
+        : await _materialTimePicker(context, initialTime: initialTime, isDark: dark);
   }
 
   static Future<String?> showYearPickerAdaptive(
@@ -445,87 +273,29 @@ class DialogUtils {
     required String selectedYear,
   }) async {
     if (!context.mounted) return null;
-    final isDark = DialogStyles.isDark(context);
-    final txtColor = DialogStyles.textColor(context);
+    final dark = isDark(context);
     final loc = AppLocalizations.of(context)!;
 
-    Widget buildItem(String year) => Text(
-      year,
-      style: TextStyle(
-        color: txtColor,
-        fontWeight: year == selectedYear ? FontWeight.bold : FontWeight.normal,
-        fontSize: DialogStyles.isIOS ? 17.sp : 16.sp,
-      ),
-    );
-
-    if (DialogStyles.isIOS) {
-      return await showCupertinoModalPopup<String>(
-        context: context,
-        builder: (_) => CupertinoActionSheet(
-          title: DialogStyles.buildSheetTitle(loc.selectYear),
-          actions: years
-              .map(
-                (year) => CupertinoActionSheetAction(
-                  onPressed: () => Navigator.pop(context, year),
-                  child: buildItem(year),
-                ),
-              )
-              .toList(),
-          cancelButton: DialogStyles.buildSheetAction(
+    return isIOS
+        ? await _cupertinoYearPicker(
             context,
-            text: loc.cancel,
-            isDark: isDark,
-            isCancel: true,
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-      );
-    }
-
-    return await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 8.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: EdgeInsets.all(16.w),
-                child: DialogStyles.buildSheetTitle(loc.selectYear),
-              ),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: years.length,
-                  itemBuilder: (ctx, i) => ListTile(
-                    title: Center(child: buildItem(years[i])),
-                    onTap: () => Navigator.pop(context, years[i]),
-                  ),
-                ),
-              ),
-              Divider(height: 16.h),
-              ListTile(
-                title: Center(
-                  child: Text(
-                    loc.cancel,
-                    style: TextStyle(color: txtColor, fontSize: 15.sp),
-                  ),
-                ),
-                onTap: () => Navigator.pop(context, null),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+            years: years,
+            selectedYear: selectedYear,
+            isDark: dark,
+            title: loc.selectYear,
+            cancelLabel: loc.cancel,
+          )
+        : await _materialYearPicker(
+            context,
+            years: years,
+            selectedYear: selectedYear,
+            isDark: dark,
+            title: loc.selectYear,
+            cancelLabel: loc.cancel,
+          );
   }
 
-  // --- PRIVATE HELPERS ---
+  // --- PRIVATE DISPATCH: DIALOGO GENERICO (Info/Confirm) ---
 
   static Future<T?> _showGenericDialog<T>({
     required BuildContext context,
@@ -533,30 +303,247 @@ class DialogUtils {
     required String content,
     required List<Widget> Function(BuildContext, Color) actions,
   }) async {
-    final textColor = DialogStyles.textColor(context);
+    final color = textColor(context);
+    return isIOS
+        ? await _cupertinoGenericDialog<T>(
+            context,
+            title: title,
+            content: content,
+            actions: actions(context, color),
+          )
+        : await _materialGenericDialog<T>(
+            context,
+            title: title,
+            content: content,
+            actions: actions(context, color),
+          );
+  }
+}
 
-    if (DialogStyles.isIOS) {
-      return await showCupertinoDialog<T>(
-        context: context,
-        builder: (_) => CupertinoAlertDialog(
-          title: Text(title, style: TextStyle(fontSize: 15.sp)),
-          content: Padding(
-            padding: EdgeInsets.only(top: 8.h),
-            child: Text(content, style: TextStyle(fontSize: 14.sp)),
+// --- WIDGET CONDIVISI (platform-agnostic) ---
+
+/// Riga con checkbox adattiva (Checkbox.adaptive gestisce da sola lo stile
+/// per piattaforma), usata identica da entrambe le varianti di showInstructionDialog.
+class DialogCheckboxRow extends StatelessWidget {
+  final bool value;
+  final String label;
+  final ValueChanged<bool> onChanged;
+
+  const DialogCheckboxRow({
+    super.key,
+    required this.value,
+    required this.label,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Checkbox.adaptive(
+            value: value,
+            onChanged: (v) => onChanged(v ?? false),
+            activeColor: AppColors.primary,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
-          actions: actions(context, textColor),
-        ),
-      );
-    }
-
-    return await showDialog<T>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: DialogStyles.roundedRectangleBorder(),
-        title: Text(title, style: TextStyle(fontSize: 15.sp)),
-        content: Text(content, style: TextStyle(fontSize: 14.sp)),
-        actions: actions(context, textColor),
+          SizedBox(width: 6.w),
+          Flexible(child: Text(label, style: TextStyle(fontSize: 13.sp))),
+        ],
       ),
     );
+  }
+}
+
+/// Contenuto condiviso (testo + checkbox) di showInstructionDialog, identico
+/// su entrambe le piattaforme: solo il "contenitore" del dialog differisce.
+Widget _instructionDialogContent({
+  required String message,
+  required String checkboxLabel,
+  required bool dontShowAgain,
+  required ValueChanged<bool> onToggle,
+}) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        message,
+        style: TextStyle(fontSize: DialogUtils.isIOS ? 13.sp : 14.sp),
+        textAlign: TextAlign.center,
+      ),
+      SizedBox(height: 16.h),
+      DialogCheckboxRow(value: dontShowAgain, label: checkboxLabel, onChanged: onToggle),
+    ],
+  );
+}
+
+// --- INPUT DIALOG WIDGET (stato condiviso, chrome per-piattaforma) ---
+
+class InputDialogWidget extends StatefulWidget {
+  final String title;
+  final List<Map<String, dynamic>> fields;
+  final String confirmText;
+  final String cancelText;
+  final VoidCallback? onForgotPassword;
+
+  const InputDialogWidget({
+    super.key,
+    required this.title,
+    required this.fields,
+    required this.confirmText,
+    required this.cancelText,
+    this.onForgotPassword,
+  });
+
+  @override
+  State<InputDialogWidget> createState() => _InputDialogWidgetState();
+}
+
+class _InputDialogWidgetState extends State<InputDialogWidget> {
+  late final List<TextEditingController> _controllers;
+  late final List<ValueNotifier<bool>> _obscureStates;
+  late final List<FocusNode> _focusNodes;
+
+  Color get _textColor => DialogUtils.textColor(context);
+
+  @override
+  void initState() {
+    super.initState();
+    _controllers = widget.fields
+        .map((f) => TextEditingController(text: f["initialValue"] ?? ""))
+        .toList();
+    _obscureStates = widget.fields
+        .map((f) => ValueNotifier<bool>(f["obscureText"] ?? false))
+        .toList();
+    _focusNodes = List.generate(widget.fields.length, (_) => FocusNode());
+  }
+
+  @override
+  void dispose() {
+    for (var c in _controllers) {
+      c.dispose();
+    }
+    for (var n in _obscureStates) {
+      n.dispose();
+    }
+    for (var f in _focusNodes) {
+      f.dispose();
+    }
+    super.dispose();
+  }
+
+  void _onConfirm() {
+    Navigator.pop(context, _controllers.map((c) => c.text).toList());
+  }
+
+  Widget _buildTextField(int index) {
+    final field = widget.fields[index];
+    final isLast = index == widget.fields.length - 1;
+    final hasPassword = field["obscureText"] == true;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12.h),
+      child: ValueListenableBuilder<bool>(
+        valueListenable: _obscureStates[index],
+        builder: (_, hide, _) => Theme(
+          data: Theme.of(context).copyWith(
+            textSelectionTheme: TextSelectionThemeData(
+              selectionHandleColor: AppColors.primary,
+            ),
+          ),
+          child: TextField(
+            controller: _controllers[index],
+            focusNode: _focusNodes[index],
+            cursorColor: AppColors.primary,
+            obscureText: hide,
+            keyboardType: field["keyboardType"] ?? TextInputType.text,
+            textInputAction: isLast ? TextInputAction.done : TextInputAction.next,
+            onSubmitted: (_) {
+              final scope = FocusScope.of(context);
+              isLast ? scope.unfocus() : scope.requestFocus(_focusNodes[index + 1]);
+            },
+            style: TextStyle(fontSize: 15.sp),
+            decoration: InputDecoration(
+              labelText: field["label"],
+              floatingLabelStyle: TextStyle(color: _textColor),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primary),
+              ),
+              prefixIcon: field["prefixIcon"] != null
+                  ? Icon(field["prefixIcon"], size: 20.sp)
+                  : null,
+              hintText: field["hintText"],
+              hintStyle: TextStyle(fontSize: 14.sp),
+              suffixIcon: hasPassword
+                  ? IconButton(
+                      icon: Icon(
+                        hide ? Icons.visibility_off : Icons.visibility,
+                        color: _textColor,
+                        size: 20.sp,
+                      ),
+                      onPressed: () => _obscureStates[index].value = !hide,
+                    )
+                  : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForgotPassword() {
+    final loc = AppLocalizations.of(context)!;
+    return Padding(
+      padding: EdgeInsets.only(top: 8.h),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: TextButton(
+          onPressed: widget.onForgotPassword,
+          style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size(0, 30.h)),
+          child: Text(
+            loc.forgotPassword,
+            style: TextStyle(
+              color: _textColor,
+              fontSize: 13.sp,
+              decoration: TextDecoration.underline,
+              decorationColor: _textColor,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ...List.generate(widget.fields.length, _buildTextField),
+        if (widget.onForgotPassword != null) _buildForgotPassword(),
+      ],
+    );
+
+    return DialogUtils.isIOS
+        ? _cupertinoInputDialogChrome(
+            context,
+            title: widget.title,
+            content: content,
+            cancelText: widget.cancelText,
+            confirmText: widget.confirmText,
+            textColor: _textColor,
+            onConfirm: _onConfirm,
+          )
+        : _materialInputDialogChrome(
+            context,
+            title: widget.title,
+            content: content,
+            cancelText: widget.cancelText,
+            confirmText: widget.confirmText,
+            textColor: _textColor,
+            onConfirm: _onConfirm,
+          );
   }
 }

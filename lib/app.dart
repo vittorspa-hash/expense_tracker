@@ -1,4 +1,5 @@
 import 'package:expense_tracker/config/app_router.dart';
+import 'package:expense_tracker/config/build_theme.dart';
 import 'package:expense_tracker/config/di/riverpod_providers.dart';
 import 'package:expense_tracker/config/supported_locales.dart';
 import 'package:expense_tracker/l10n/app_localizations.dart';
@@ -6,7 +7,6 @@ import 'package:expense_tracker/pages/auth_wrapper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// FILE: app.dart
 /// DESCRIZIONE: Root widget dell'applicazione (App). Configura il MaterialApp
@@ -16,7 +16,8 @@ import 'package:google_fonts/google_fonts.dart';
 /// Monitora il ciclo di vita tramite WidgetsBindingObserver per azzerare
 /// i badge delle notifiche al ritorno in primo piano.
 
-final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 class App extends ConsumerStatefulWidget {
   const App({super.key});
@@ -81,16 +82,8 @@ class _AppState extends ConsumerState<App> with WidgetsBindingObserver {
 
       // CONFIGURAZIONE TEMI E FONT
       themeMode: themeMode,
-      theme: ThemeData.light(useMaterial3: true).copyWith(
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          ThemeData.light(useMaterial3: true).textTheme,
-        ),
-      ),
-      darkTheme: ThemeData.dark(useMaterial3: true).copyWith(
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          ThemeData.dark(useMaterial3: true).textTheme,
-        ),
-      ),
+      theme: buildTheme(Brightness.light),
+      darkTheme: buildTheme(Brightness.dark),
 
       // CONFIGURAZIONE ROTTE E NAVIGAZIONE
       home: const AuthWrapper(),

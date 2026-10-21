@@ -126,6 +126,10 @@ class SnackbarUtils {
             ),
             if (isDeleteSnackbar)
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: textColor,
+                  overlayColor: textColor.withValues(alpha: 0.12),
+                ),
                 onPressed: () {
                   messenger.hideCurrentSnackBar();
                   onRestore(deletedItem);
