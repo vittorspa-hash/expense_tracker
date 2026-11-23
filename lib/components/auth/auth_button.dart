@@ -1,6 +1,7 @@
 import 'package:expense_tracker/config/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// FILE: auth_button.dart
 /// DESCRIZIONE: Widget pulsante standardizzato per le schermate di login e registrazione.
@@ -12,7 +13,7 @@ class AuthButton extends StatelessWidget {
   // Callback per l'azione (null = disabilitato), metadati visivi (icona/testo)
   // e widget opzionale per sostituire il contenuto standard (utile per stati di caricamento).
   final VoidCallback? onPressed; 
-  final IconData? icon; 
+  final FaIconData? icon; 
   final String text;
   final Widget? child; 
 
@@ -57,7 +58,7 @@ class AuthButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 15.r, color: AppColors.textLight),
+                FaIcon(icon!, size: 15.r, color: AppColors.textLight),
                 SizedBox(width: 12.w),
               ],
               Text(

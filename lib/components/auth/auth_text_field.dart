@@ -14,7 +14,7 @@ class AuthTextField extends StatelessWidget {
   // nodi per la gestione del focus e flag di stato.
   final TextEditingController controller;
   final String hint;
-  final IconData icon;
+  final FaIconData icon;
   final String? Function(String?)? validator;
   final bool obscure;
   final VoidCallback? onToggleObscure;
@@ -89,7 +89,7 @@ class AuthTextField extends StatelessWidget {
         // Icona sinistra
         prefixIcon: Container(
           margin: EdgeInsets.only(right: 12.w),
-          child: Icon(
+          child: FaIcon(
             icon,
             size: 16.sp,
             color: enabled
@@ -104,7 +104,7 @@ class AuthTextField extends StatelessWidget {
         suffixIcon: onToggleObscure == null
             ? null
             : IconButton(
-                icon: Icon(
+                icon: FaIcon(
                   obscure ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
                   size: 14.sp,
                   color: enabled

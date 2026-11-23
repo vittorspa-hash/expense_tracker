@@ -85,7 +85,7 @@ class AuthTabSelector extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(FontAwesomeIcons.rightToBracket, size: 15.sp),
+                    FaIcon(FontAwesomeIcons.rightToBracket, size: 15.sp),
                     SizedBox(width: 8.w),
                     Text(loc.loginTab),
                   ],
@@ -95,7 +95,7 @@ class AuthTabSelector extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(FontAwesomeIcons.userPlus, size: 15.sp),
+                    FaIcon(FontAwesomeIcons.userPlus, size: 15.sp),
                     SizedBox(width: 8.w),
                     Text(loc.registerTab),
                   ],
