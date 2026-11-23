@@ -53,6 +53,7 @@ dependencies:
 
   # Font
   google_fonts: ^8.1.0
+  flutter_native_badge: ^2.0.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

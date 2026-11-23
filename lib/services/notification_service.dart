@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_native_badge/flutter_native_badge.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -342,23 +343,12 @@ class NotificationService {
   }
 
   Future<void> clearBadge() async {
-    if (Platform.isIOS) {
-      await _notifications.show(
-        0,
-        '',
-        '',
-        const NotificationDetails(
-          iOS: DarwinNotificationDetails(
-            badgeNumber: 0,
-            presentAlert: false,
-            presentSound: false,
-          ),
-        ),
-      );
-    } else if (Platform.isAndroid) {
-      await _notifications.cancelAll();
-    }
+  if (Platform.isIOS) {
+    await FlutterNativeBadge.clearBadgeCount();
+  } else if (Platform.isAndroid) {
+    await _notifications.cancelAll();
   }
+}
 
   // --- UTILS E CALLBACK ---
   // Callback invocati quando l'utente interagisce con una notifica.
