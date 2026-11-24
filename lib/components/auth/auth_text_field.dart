@@ -89,14 +89,20 @@ class AuthTextField extends StatelessWidget {
         // Icona sinistra
         prefixIcon: Container(
           margin: EdgeInsets.only(right: 12.w),
-          child: FaIcon(
-            icon,
-            size: 16.sp,
-            color: enabled
-                ? AppColors.primary
-                : (isDark
-                    ? AppColors.greyDark.withValues(alpha: 0.4)
-                    : AppColors.greyLight.withValues(alpha: 0.4)),
+          child: SizedBox(
+            height: 20.sp,
+            width: 20.sp,
+            child: Center(
+              child: FaIcon(
+                icon,
+                size: 16.sp,
+                color: enabled
+                    ? AppColors.primary
+                    : (isDark
+                        ? AppColors.greyDark.withValues(alpha: 0.4)
+                        : AppColors.greyLight.withValues(alpha: 0.4)),
+              ),
+            ),
           ),
         ),
 
